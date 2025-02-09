@@ -2,3 +2,5 @@ CompileFlags:
   Add: 
     - "-DWEBVIEW_PLATFORM_WINDOWS=1"
     - "-DWEBVIEW_EDGE=1"
+    - "-I/home/michaeladmin/code/fork/webview/build/_deps/microsoft_web_webview2-src/build/native/include/"
+    - "-I/home/michaeladmin/code/fork/webview/compatibility/mingw/include"
