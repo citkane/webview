@@ -677,6 +677,7 @@ protected:
     }};
     auto res =
         m_webview->AddScriptToExecuteOnDocumentCreated(wjs.c_str(), &handler);
+    LogHRESULT("bind", res);
     if (SUCCEEDED(res)) {
       // Sadly we need to pump the even loop in order to get the script ID.
       while (!done) {
