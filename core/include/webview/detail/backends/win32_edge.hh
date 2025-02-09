@@ -656,9 +656,13 @@ protected:
   noresult eval_impl(const std::string &js) override {
     // TODO: Skip if no content has begun loading yet. Can't check with
     //       ICoreWebView2::get_Source because it returns "about:blank".
-    auto wjs = widen_string(js);
-    auto res = m_webview->ExecuteScript(wjs.c_str(), nullptr);
-    LogHRESULT("eval", res);
+    std::function<void()> postFn = [js]() {
+      auto wjs = widen_string(js);
+      m_webview->ExecuteScript(wjs.c_str(), nullptr);
+    };
+    PostMessageW(m_message_window, WM_APP, 0,
+                 (LPARAM) new dispatch_fn_t(postFn));
+
     return {};
   }
 
@@ -882,13 +886,14 @@ private:
   POINT m_minsz = POINT{0, 0};
   POINT m_maxsz = POINT{0, 0};
   DWORD m_main_thread = GetCurrentThreadId();
-  ICoreWebView2 *m_webview = nullptr;
+  static ICoreWebView2 *m_webview;
   ICoreWebView2Controller *m_controller = nullptr;
   webview2_com_handler *m_com_handler = nullptr;
   mswebview2::loader m_webview2_loader;
   int m_dpi{};
   bool m_owns_window{};
 };
+ICoreWebView2 *win32_edge_engine::m_webview = nullptr;
 } // namespace detail
 
 using browser_engine = detail::win32_edge_engine;
