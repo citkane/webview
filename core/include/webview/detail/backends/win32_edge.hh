@@ -603,9 +603,12 @@ protected:
     return error_info{WEBVIEW_ERROR_INVALID_STATE};
   }
   noresult terminate_impl() override {
-    debug("terminating");
-    PostQuitMessage(0);
-    debug("terminated");
+    auto f = []() { PostQuitMessage(0); };
+    if (isCrossThreaded()) {
+      dispatch_impl(f);
+    } else {
+      f();
+    };
     return {};
   }
   noresult dispatch_impl(dispatch_fn_t f) override {
@@ -659,8 +662,8 @@ protected:
 
     auto wjs = widen_string(js);
     auto f = [this, wjs]() { m_webview->ExecuteScript(wjs.c_str(), nullptr); };
-    if (isCrossThread()) {
-      PostMessageW(m_message_window, WM_APP, 0, (LPARAM) new dispatch_fn_t(f));
+    if (isCrossThreaded()) {
+      dispatch_impl(f);
     } else {
       f();
     }
@@ -678,7 +681,7 @@ protected:
     std::wstring script_id;
     bool done{};
     webview2_user_script_added_handler handler{[&](HRESULT res, LPCWSTR id) {
-      LogHRESULT("add_user_script1", res, isCrossThread());
+      LogHRESULT("add_user_script1", res, isCrossThreaded());
       if (SUCCEEDED(res)) {
         script_id = id;
       }
@@ -686,7 +689,7 @@ protected:
     }};
     auto res =
         m_webview->AddScriptToExecuteOnDocumentCreated(wjs.c_str(), &handler);
-    LogHRESULT("add_user_script2", res, isCrossThread());
+    LogHRESULT("add_user_script2", res, isCrossThreaded());
     if (SUCCEEDED(res)) {
       // Sadly we need to pump the even loop in order to get the script ID.
       while (!done) {
@@ -876,7 +879,7 @@ private:
       }
     }
   }
-  bool isCrossThread() const { return m_main_thread != GetCurrentThreadId(); }
+  bool isCrossThreaded() const { return m_main_thread != GetCurrentThreadId(); }
 
   // The app is expected to call CoInitializeEx before
   // CreateCoreWebView2EnvironmentWithOptions.
