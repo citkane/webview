@@ -36,11 +36,10 @@
 // ====================================================================
 //
 
-#include "../logHresult.h";
-
 #include "../../errors.hh"
 #include "../../types.hh"
 #include "../engine_base.hh"
+#include "../logHresult.h"
 #include "../native_library.hh"
 #include "../platform/windows/com_init_wrapper.hh"
 #include "../platform/windows/dpi.hh"
