@@ -702,13 +702,15 @@ protected:
       if (isCrossThread) {
         std::unique_lock<std::mutex> lock(m);
         allDone = true;
+        debug("All Done");
         cv.notify_one();
       }
     };
     if (isCrossThreaded()) {
       dispatch_impl(f);
-      std::unique_lock<std::mutex> lock(m);
+      std::unique_lock<std::mutex> lock(m, std::adopt_lock);
       cv.wait(lock, [allDone] { return allDone; });
+      lock.release();
     } else {
       f();
     }
