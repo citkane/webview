@@ -656,6 +656,10 @@ protected:
   noresult eval_impl(const std::string &js) override {
     // TODO: Skip if no content has begun loading yet. Can't check with
     //       ICoreWebView2::get_Source because it returns "about:blank".
+    auto isCrossThread = m_main_thread == GetCurrentThreadId();
+    auto isCrossThread_t =
+        isCrossThread ? "cross threaded" : "not cross threaded";
+    debug(isCrossThread_t);
     std::function<void()> postFn = [this, js]() {
       auto wjs = widen_string(js);
       m_webview->ExecuteScript(wjs.c_str(), nullptr);
