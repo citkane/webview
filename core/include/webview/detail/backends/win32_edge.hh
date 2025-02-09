@@ -672,12 +672,12 @@ protected:
   }
 
   user_script add_user_script_impl(const std::string &js) override {
-    debug(js.c_str());
+    //debug(js.c_str());
     auto wjs = widen_string(js);
     std::wstring script_id;
     bool done{};
     webview2_user_script_added_handler handler{[&](HRESULT res, LPCWSTR id) {
-      LogHRESULT("add_user_script1", res);
+      LogHRESULT("add_user_script1", res, m_owns_window);
       if (SUCCEEDED(res)) {
         script_id = id;
       }
@@ -685,7 +685,7 @@ protected:
     }};
     auto res =
         m_webview->AddScriptToExecuteOnDocumentCreated(wjs.c_str(), &handler);
-    LogHRESULT("add_user_script2", res);
+    LogHRESULT("add_user_script2", res, m_owns_window);
     if (SUCCEEDED(res)) {
       // Sadly we need to pump the even loop in order to get the script ID.
       while (!done) {

@@ -1,7 +1,8 @@
 #include <iostream>
 #include <windows.h> // for FormatMessageA and other Windows API functions
 
-void LogHRESULT(const char *funcName, HRESULT hr) {
+void LogHRESULT(const char *funcName, HRESULT hr, bool m_owns_window) {
+  auto ownsWindow = m_owns_window ? "true" : "false";
   if (FAILED(hr)) {
     LPSTR messageBuffer = nullptr;
     DWORD bufferLength = FormatMessageA(
@@ -11,16 +12,20 @@ void LogHRESULT(const char *funcName, HRESULT hr) {
         (LPSTR)&messageBuffer, 0, nullptr);
     if (bufferLength > 0) {
       std::cerr << "[WV] " << "Function: `" << funcName
-                << "`, Failed with error: " << messageBuffer << '\n';
+                << "`, Failed with error: " << messageBuffer
+                << ", Owns Window: " << ownsWindow << '\n';
     } else {
       std::cerr << "[WV] " << "Function: `" << funcName
                 << "`, Failed with HRESULT error 0x" << std::hex
-                << std::uppercase << hr << '\n';
+                << std::uppercase << hr << ", Owns Window: " << ownsWindow
+                << '\n';
     }
     LocalFree(messageBuffer); // Free the buffer allocated by FormatMessageA
   } else {
     std::cout << "[WV] " << "Function: `" << funcName
-              << "`, executed successfully\n";
+              << "`, executed successfully" << ", Owns Window: " << ownsWindow
+              << '\n';
+    ;
   }
 }
 void debug(const char *message) { std::cout << "[WV] " << message << '\n'; }
