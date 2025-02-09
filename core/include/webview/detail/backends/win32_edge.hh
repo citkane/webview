@@ -876,13 +876,15 @@ private:
   POINT m_maxsz = POINT{0, 0};
   DWORD m_main_thread = GetCurrentThreadId();
   static ICoreWebView2 *m_webview;
-  ICoreWebView2Controller *m_controller = nullptr;
-  webview2_com_handler *m_com_handler = nullptr;
+  static ICoreWebView2Controller *m_controller;
+  static webview2_com_handler *m_com_handler;
   mswebview2::loader m_webview2_loader;
   int m_dpi{};
   bool m_owns_window{};
 };
 ICoreWebView2 *win32_edge_engine::m_webview = nullptr;
+ICoreWebView2Controller *win32_edge_engine::m_controller = nullptr;
+webview2_com_handler *win32_edge_engine::m_com_handler = nullptr;
 } // namespace detail
 
 using browser_engine = detail::win32_edge_engine;
