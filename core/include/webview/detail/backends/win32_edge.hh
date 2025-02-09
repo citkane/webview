@@ -704,13 +704,17 @@ protected:
         allDone = true;
         debug("All Done");
         cv.notify_one();
+        debug("Notified");
       }
     };
     if (isCrossThreaded()) {
       dispatch_impl(f);
       std::unique_lock<std::mutex> lock(m, std::adopt_lock);
+      debug("Waiting");
       cv.wait(lock, [allDone] { return allDone; });
+      debug("Finished waiting");
       lock.release();
+      debug("Released");
     } else {
       f();
     }
