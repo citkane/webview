@@ -10,17 +10,17 @@ void LogHRESULT(const char *funcName, HRESULT hr) {
         nullptr, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
         (LPSTR)&messageBuffer, 0, nullptr);
     if (bufferLength > 0) {
-      std::cerr << "[WV] " << "Function: " << funcName
-                << ", Failed with error: " << messageBuffer << '\n';
+      std::cerr << "[WV] " << "Function: `" << funcName
+                << "`, Failed with error: " << messageBuffer << '\n';
     } else {
-      std::cerr << "[WV] " << "Function: " << funcName
-                << ", Failed with HRESULT error 0x" << std::hex
+      std::cerr << "[WV] " << "Function: `" << funcName
+                << "`, Failed with HRESULT error 0x" << std::hex
                 << std::uppercase << hr << '\n';
     }
     LocalFree(messageBuffer); // Free the buffer allocated by FormatMessageA
   } else {
-    std::cout << "[WV] " << "Function: " << funcName
-              << "executed successfully\n";
+    std::cout << "[WV] " << "Function: `" << funcName
+              << "`, executed successfully\n";
   }
 }
 void debug(const char *message) { std::cout << "[WV] " << message << '\n'; }
