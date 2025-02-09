@@ -678,7 +678,7 @@ protected:
   user_script add_user_script_impl(const std::string &js) override {
     std::mutex m;
     std::condition_variable cv;
-    auto allDone = false;
+    std::atomic<bool> allDone = false;
     auto const isCrossThread = isCrossThreaded();
     auto wjs = widen_string(js);
     std::wstring script_id;
@@ -701,7 +701,7 @@ protected:
       }
       if (isCrossThread) {
         std::unique_lock<std::mutex> lock(m);
-        allDone = true;
+        allDone.store(true, std::memory_order_release);
         debug("All Done");
         cv.notify_one();
         debug("Notified");
@@ -709,12 +709,11 @@ protected:
     };
     if (isCrossThreaded()) {
       dispatch_impl(f);
-      std::unique_lock<std::mutex> lock(m, std::adopt_lock);
+      std::unique_lock<std::mutex> lock(m);
       debug("Waiting");
-      cv.wait(lock, [allDone] { return allDone; });
+      cv.wait(lock,
+              [&allDone] { return allDone.load(std::memory_order_acquire); });
       debug("Finished waiting");
-      lock.release();
-      debug("Released");
     } else {
       f();
     }
