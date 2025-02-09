@@ -676,9 +676,13 @@ protected:
   }
 
   user_script add_user_script_impl(const std::string &js) override {
+    std::mutex m;
+    std::condition_variable cv;
+    auto allDone = false;
+    auto const isCrossThread = isCrossThreaded();
     auto wjs = widen_string(js);
     std::wstring script_id;
-    auto f = [this, wjs, &script_id]() {
+    auto f = [this, wjs, &script_id, isCrossThread, &allDone, &m, &cv]() {
       bool done{};
       webview2_user_script_added_handler handler{[&](HRESULT res, LPCWSTR id) {
         LogHRESULT("add_user_script1", res, isCrossThreaded());
@@ -689,19 +693,26 @@ protected:
       }};
       auto res =
           m_webview->AddScriptToExecuteOnDocumentCreated(wjs.c_str(), &handler);
-      LogHRESULT("add_user_script2", res, isCrossThreaded());
       if (SUCCEEDED(res)) {
         // Sadly we need to pump the even loop in order to get the script ID.
         while (!done) {
           deplete_run_loop_event_queue();
         }
       }
+      if (isCrossThread) {
+        std::unique_lock<std::mutex> lock(m);
+        allDone = true;
+        cv.notify_one();
+      }
     };
     if (isCrossThreaded()) {
       dispatch_impl(f);
+      std::unique_lock<std::mutex> lock(m);
+      cv.wait(lock, [allDone] { return allDone; });
     } else {
       f();
     }
+
     // TODO: There's a non-zero chance that we didn't get the script ID.
     //       We need to convey the error somehow.
     return user_script{
