@@ -39,7 +39,6 @@
 #include "../../errors.hh"
 #include "../../types.hh"
 #include "../engine_base.hh"
-#include "../logUtil.h"
 #include "../native_library.hh"
 #include "../platform/windows/com_init_wrapper.hh"
 #include "../platform/windows/dpi.hh"
@@ -685,7 +684,6 @@ protected:
     auto f = [this, wjs, &script_id, isCrossThread, &allDone, &m, &cv]() {
       bool done{};
       webview2_user_script_added_handler handler{[&](HRESULT res, LPCWSTR id) {
-        LogHRESULT("add_user_script1", res, isCrossThreaded());
         if (SUCCEEDED(res)) {
           script_id = id;
         }
@@ -702,18 +700,14 @@ protected:
       if (isCrossThread) {
         std::unique_lock<std::mutex> lock(m);
         allDone.store(true, std::memory_order_release);
-        debug("All Done");
         cv.notify_one();
-        debug("Notified");
       }
     };
     if (isCrossThreaded()) {
       dispatch_impl(f);
       std::unique_lock<std::mutex> lock(m);
-      debug("Waiting");
       cv.wait(lock,
               [&allDone] { return allDone.load(std::memory_order_acquire); });
-      debug("Finished waiting");
     } else {
       f();
     }
