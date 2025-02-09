@@ -18,6 +18,7 @@ void LogHRESULT(const char *funcName, HRESULT hr) {
     }
     LocalFree(messageBuffer); // Free the buffer allocated by FormatMessageA
   } else {
-    std::cout << "Function executed successfully\n";
+    std::cout << "[WV] " << "Function executed successfully\n";
   }
 }
+void debug(const char *message) { std::cout << message << '\n'; }

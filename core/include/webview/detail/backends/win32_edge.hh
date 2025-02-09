@@ -39,7 +39,7 @@
 #include "../../errors.hh"
 #include "../../types.hh"
 #include "../engine_base.hh"
-#include "../logHresult.h"
+#include "../logUtil.h"
 #include "../native_library.hh"
 #include "../platform/windows/com_init_wrapper.hh"
 #include "../platform/windows/dpi.hh"
@@ -603,7 +603,9 @@ protected:
     return error_info{WEBVIEW_ERROR_INVALID_STATE};
   }
   noresult terminate_impl() override {
+    debug("terminating");
     PostQuitMessage(0);
+    debug("terminated");
     return {};
   }
   noresult dispatch_impl(dispatch_fn_t f) override {
