@@ -36,6 +36,8 @@
 // ====================================================================
 //
 
+#include "../logHresult.h";
+
 #include "../../errors.hh"
 #include "../../types.hh"
 #include "../engine_base.hh"
@@ -654,7 +656,8 @@ protected:
     // TODO: Skip if no content has begun loading yet. Can't check with
     //       ICoreWebView2::get_Source because it returns "about:blank".
     auto wjs = widen_string(js);
-    m_webview->ExecuteScript(wjs.c_str(), nullptr);
+    auto res = m_webview->ExecuteScript(wjs.c_str(), nullptr);
+    LogHRESULT("eval", res);
     return {};
   }
 
@@ -875,16 +878,13 @@ private:
   POINT m_minsz = POINT{0, 0};
   POINT m_maxsz = POINT{0, 0};
   DWORD m_main_thread = GetCurrentThreadId();
-  static ICoreWebView2 *m_webview;
-  static ICoreWebView2Controller *m_controller;
-  static webview2_com_handler *m_com_handler;
+  ICoreWebView2 *m_webview = nullptr;
+  ICoreWebView2Controller *m_controller = nullptr;
+  webview2_com_handler *m_com_handler = nullptr;
   mswebview2::loader m_webview2_loader;
   int m_dpi{};
   bool m_owns_window{};
 };
-ICoreWebView2 *win32_edge_engine::m_webview = nullptr;
-ICoreWebView2Controller *win32_edge_engine::m_controller = nullptr;
-webview2_com_handler *win32_edge_engine::m_com_handler = nullptr;
 } // namespace detail
 
 using browser_engine = detail::win32_edge_engine;
