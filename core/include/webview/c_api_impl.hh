@@ -34,7 +34,11 @@
 #include "json_deprecated.hh"
 #include "macros.h"
 #include "types.h"
+#include "utility/threads.hh"
 #include "version.h"
+
+using namespace webview::detail;
+using namespace webview::utility;
 
 namespace webview {
 namespace detail {
@@ -89,7 +93,9 @@ inline webview *cast_to_webview(void *w) {
 } // namespace webview
 
 WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
-  using namespace webview::detail;
+  if (!threads::is_main_thread()) {
+    threads::warn("`webview_create`");
+  }
   webview::webview *w{};
   auto err = api_filter(
       [=]() -> webview::result<webview::webview *> {
@@ -97,13 +103,13 @@ WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
       },
       [&](webview::webview *w_) { w = w_; });
   if (err == WEBVIEW_ERROR_OK) {
+    threads::set_wv_instance(w);
     return w;
   }
   return nullptr;
 }
 
 WEBVIEW_API webview_error_t webview_destroy(webview_t w) {
-  using namespace webview::detail;
   return api_filter([=]() -> webview::noresult {
     delete cast_to_webview(w);
     return {};
@@ -111,19 +117,24 @@ WEBVIEW_API webview_error_t webview_destroy(webview_t w) {
 }
 
 WEBVIEW_API webview_error_t webview_run(webview_t w) {
-  using namespace webview::detail;
-  return api_filter([=] { return cast_to_webview(w)->run(); });
+  auto do_work = [=] { return cast_to_webview(w)->run(); };
+  if (!threads::is_main_thread()) {
+    threads::warn("`webview_run`");
+    return threads::dispatch(do_work);
+  } else {
+    return api_filter(do_work);
+  }
 }
 
 WEBVIEW_API webview_error_t webview_terminate(webview_t w) {
-  using namespace webview::detail;
-  return api_filter([=] { return cast_to_webview(w)->terminate(); });
+  auto do_work = [=] { return cast_to_webview(w)->terminate(); };
+  return threads::is_main_thread() ? api_filter(do_work)
+                                   : threads::dispatch(do_work);
 }
 
 WEBVIEW_API webview_error_t webview_dispatch(webview_t w,
                                              void (*fn)(webview_t, void *),
                                              void *arg) {
-  using namespace webview::detail;
   if (!fn) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
@@ -132,7 +143,6 @@ WEBVIEW_API webview_error_t webview_dispatch(webview_t w,
 }
 
 WEBVIEW_API void *webview_get_window(webview_t w) {
-  using namespace webview::detail;
   void *window = nullptr;
   auto err = api_filter([=] { return cast_to_webview(w)->window(); },
                         [&](void *value) { window = value; });
@@ -144,7 +154,6 @@ WEBVIEW_API void *webview_get_window(webview_t w) {
 
 WEBVIEW_API void *webview_get_native_handle(webview_t w,
                                             webview_native_handle_kind_t kind) {
-  using namespace webview::detail;
   void *handle{};
   auto err = api_filter(
       [=]() -> webview::result<void *> {
@@ -168,22 +177,25 @@ WEBVIEW_API void *webview_get_native_handle(webview_t w,
 }
 
 WEBVIEW_API webview_error_t webview_set_title(webview_t w, const char *title) {
-  using namespace webview::detail;
   if (!title) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
-  return api_filter([=] { return cast_to_webview(w)->set_title(title); });
+  std::string title_ss = title;
+  auto do_work = [=] { return cast_to_webview(w)->set_title(title_ss); };
+  return threads::is_main_thread() ? api_filter(do_work)
+                                   : threads::dispatch(do_work);
 }
 
 WEBVIEW_API webview_error_t webview_set_size(webview_t w, int width, int height,
                                              webview_hint_t hints) {
-  using namespace webview::detail;
-  return api_filter(
-      [=] { return cast_to_webview(w)->set_size(width, height, hints); });
+  auto do_work = [=] {
+    return cast_to_webview(w)->set_size(width, height, hints);
+  };
+  return threads::is_main_thread() ? api_filter(do_work)
+                                   : threads::dispatch(do_work);
 }
 
 WEBVIEW_API webview_error_t webview_navigate(webview_t w, const char *url) {
-  using namespace webview::detail;
   if (!url) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
@@ -191,15 +203,16 @@ WEBVIEW_API webview_error_t webview_navigate(webview_t w, const char *url) {
 }
 
 WEBVIEW_API webview_error_t webview_set_html(webview_t w, const char *html) {
-  using namespace webview::detail;
   if (!html) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
-  return api_filter([=] { return cast_to_webview(w)->set_html(html); });
+  std::string html_ss = html;
+  auto do_work = [=]() { return cast_to_webview(w)->set_html(html_ss); };
+  return threads::is_main_thread() ? api_filter(do_work)
+                                   : threads::dispatch(do_work);
 }
 
 WEBVIEW_API webview_error_t webview_init(webview_t w, const char *js) {
-  using namespace webview::detail;
   if (!js) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
@@ -207,7 +220,6 @@ WEBVIEW_API webview_error_t webview_init(webview_t w, const char *js) {
 }
 
 WEBVIEW_API webview_error_t webview_eval(webview_t w, const char *js) {
-  using namespace webview::detail;
   if (!js) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
@@ -218,22 +230,23 @@ WEBVIEW_API webview_error_t webview_bind(webview_t w, const char *name,
                                          void (*fn)(const char *id,
                                                     const char *req, void *arg),
                                          void *arg) {
-  using namespace webview::detail;
   if (!name || !fn) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
-  return api_filter([=] {
+  std::string name_ss = name;
+  auto do_work = [=] {
     return cast_to_webview(w)->bind(
-        name,
+        name_ss,
         [=](const std::string &seq, const std::string &req, void *arg_) {
           fn(seq.c_str(), req.c_str(), arg_);
         },
         arg);
-  });
+  };
+  return threads::is_main_thread() ? api_filter(do_work)
+                                   : threads::dispatch(do_work);
 }
 
 WEBVIEW_API webview_error_t webview_unbind(webview_t w, const char *name) {
-  using namespace webview::detail;
   if (!name) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
@@ -242,7 +255,6 @@ WEBVIEW_API webview_error_t webview_unbind(webview_t w, const char *name) {
 
 WEBVIEW_API webview_error_t webview_return(webview_t w, const char *id,
                                            int status, const char *result) {
-  using namespace webview::detail;
   if (!id || !result) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
@@ -251,7 +263,7 @@ WEBVIEW_API webview_error_t webview_return(webview_t w, const char *id,
 }
 
 WEBVIEW_API const webview_version_info_t *webview_version(void) {
-  return &webview::detail::library_version_info;
+  return &library_version_info;
 }
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
