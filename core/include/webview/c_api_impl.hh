@@ -34,6 +34,7 @@
 #include "json_deprecated.hh"
 #include "macros.h"
 #include "types.h"
+#include "utility/console.hh"
 #include "utility/threads.hh"
 #include "version.h"
 
@@ -93,6 +94,7 @@ inline webview *cast_to_webview(void *w) {
 } // namespace webview
 
 WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
+  console::attach_console("webview_create");
   if (!threads::is_main_thread()) {
     threads::warn("`webview_create`");
   }
