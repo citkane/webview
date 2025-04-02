@@ -1,9 +1,8 @@
-#pragma once
+#ifndef WEBVIEW_UTILITY_THREADS_HH
+#define WEBVIEW_UTILITY_THREADS_HH
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
 #include "webview/backends.hh"
-#include "webview/detail/basic_result.hh"
-#include "webview/types.hh"
 
 namespace webview {
 namespace utility {
@@ -22,9 +21,9 @@ public:
 private:
   /// The webview class instance
   static webview *wv_instance;
-};
 
+}; // class threads
 } // namespace utility
 } // namespace webview
-
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#endif // WEBVIEW_UTILITY_THREADS_HH

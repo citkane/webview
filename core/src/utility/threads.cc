@@ -1,4 +1,5 @@
-#pragma once
+#ifndef WEBVIEW_UTILITY_THREADS_CC
+#define WEBVIEW_UTILITY_THREADS_CC
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
 #include "webview/utility/threads.hh"
@@ -33,7 +34,7 @@ webview::webview *threads::wv_instance;
 #include <pthread.h>
 bool threads::is_main_thread() { return pthread_main_np() != 0; };
 
-#elif defined(__linux__)
+#elif defined(__linux__) // defined(__APPLE__)
 
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -43,8 +44,47 @@ bool threads::is_main_thread() {
   return (tid == getpid());
 };
 
-#elif defined(_WIN32)
+#elif defined(_WIN32) // defined(__linux__)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
 
-#endif
+#include <atomic>
+#include <windows.h>
 
+namespace webview::utility {
+struct unique_tag {};
+template <typename Tag> struct main_thread {
+  static std::atomic<DWORD> id;
+  static std::atomic<bool> initialized;
+};
+template <typename Tag> std::atomic<DWORD> main_thread<Tag>::id{0};
+template <typename Tag> std::atomic<bool> main_thread<Tag>::initialized{false};
+struct capture_main_thread_t {
+  capture_main_thread_t() noexcept {
+    bool expected = false;
+    auto &initialized = main_thread<unique_tag>::initialized;
+    if (initialized.compare_exchange_strong(expected, true,
+                                            std::memory_order_relaxed,
+                                            std::memory_order_relaxed)) {
+      main_thread<unique_tag>::id.store(GetCurrentThreadId(),
+                                        std::memory_order_relaxed);
+    }
+  }
+};
+static const capture_main_thread_t capturer;
+} // namespace webview::utility
+namespace {
+inline bool webview_utility_inline_is_main_thread() {
+  return GetCurrentThreadId() ==
+         main_thread<unique_tag>::id.load(std::memory_order_relaxed);
+};
+} // namespace
+
+bool threads::is_main_thread() {
+  return webview_utility_inline_is_main_thread();
+};
+
+#endif // #if defined(__APPLE__) #elif defined(__linux__)  #elif defined(_WIN32)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#endif // WEBVIEW_UTILITY_THREADS_CC
