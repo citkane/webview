@@ -52,7 +52,8 @@ bool threads::is_main_thread() {
 #include <atomic>
 #include <windows.h>
 
-namespace webview::utility {
+namespace webview {
+namespace utility {
 struct unique_tag {};
 template <typename Tag> struct main_thread {
   static std::atomic<DWORD> id;
@@ -73,7 +74,8 @@ struct capture_main_thread_t {
   }
 };
 static const capture_main_thread_t capturer;
-} // namespace webview::utility
+} // namespace utility
+} // namespace webview
 namespace {
 inline bool webview_utility_inline_is_main_thread() {
   return GetCurrentThreadId() ==
