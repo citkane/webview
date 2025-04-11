@@ -218,7 +218,10 @@ WEBVIEW_API webview_error_t webview_init(webview_t w, const char *js) {
   if (!js) {
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
-  return api_filter([=] { return cast_to_webview(w)->init(js); });
+  std::string js_ss = js;
+  auto do_work = [=]() { return cast_to_webview(w)->init(js_ss); };
+  return threads::is_main_thread() ? api_filter(do_work)
+                                   : threads::dispatch(do_work);
 }
 
 WEBVIEW_API webview_error_t webview_eval(webview_t w, const char *js) {
