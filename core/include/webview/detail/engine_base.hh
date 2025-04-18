@@ -27,6 +27,9 @@
 #define WEBVIEW_DETAIL_ENGINE_BASE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#ifndef WEBVIEW_UNBIND_TIMEOUT
+#define WEBVIEW_UNBIND_TIMEOUT 20
+#endif
 
 #include "../errors.hh"
 #include "../types.h"
@@ -34,14 +37,20 @@
 #include "json.hh"
 #include "user_script.hh"
 
+#include <algorithm>
 #include <atomic>
+#include <cerrno>
 #include <chrono>
 #include <condition_variable>
+#include <cstdio>
+#include <exception>
 #include <functional>
 #include <list>
 #include <map>
 #include <mutex>
 #include <string>
+#include <thread>
+#include <vector>
 
 namespace webview {
 namespace detail {
@@ -59,81 +68,120 @@ public:
     return navigate_impl(url);
   }
 
-  using binding_t = std::function<void(std::string, std::string, void *)>;
-  class binding_ctx_t {
-  public:
-    binding_ctx_t(binding_t callback, void *arg)
-        : m_callback(callback), m_arg(arg) {}
-    void call(std::string id, std::string args) const {
-      if (m_callback) {
-        m_callback(id, args, m_arg);
-      }
-    }
-
-  private:
-    // This function is called upon execution of the bound JS function
-    binding_t m_callback;
-    // This user-supplied argument is passed to the callback
-    void *m_arg;
-  };
-
   using sync_binding_t = std::function<std::string(std::string)>;
+  using binding_t = std::function<void(std::string, std::string, void *)>;
 
   // Synchronous bind
   noresult bind(const std::string &name, sync_binding_t fn) {
     auto wrapper = [this, fn](const std::string &id, const std::string &req,
                               void * /*arg*/) { resolve(id, 0, fn(req)); };
-    return bind(name, wrapper, nullptr);
+    skip_queue = true;
+    auto res = bind(name, wrapper, nullptr);
+    skip_queue = false;
+    return res;
   }
 
   // Asynchronous bind
   noresult bind(const std::string &name, binding_t fn, void *arg) {
-    std::mutex mtx;
-    std::unique_lock<std::mutex> lock(mtx);
+
+    auto is_unbinding = list_contains(unbind_queue, name);
 
     // NOLINTNEXTLINE(readability-container-contains): contains() requires C++20
-    if (bindings.count(name) > 0) {
+    if (!is_unbinding && bindings.count(name) > 0) {
       return error_info{WEBVIEW_ERROR_DUPLICATE};
     }
-    bindings.emplace(name, binding_ctx_t(fn, arg));
-    if (resolve_is_complete.count(name) > 0) {
-      resolve_is_complete.find(name)->second.store(true);
-    } else {
-      resolve_is_complete.emplace(name, true);
+
+    auto send_to_queue = dom_ready.load() && (is_unbinding || bind_busy.load());
+    /*
+    printf("Webview: bind: %s | %s | %s\n",
+           send_to_queue ? "queue" : "no queue",
+           dispatch_bind.load() ? "dispatch" : "no dispatch", name.c_str());
+*/
+    if (!skip_queue && send_to_queue) {
+      list_add(bind_queue, name);
+      if (bind_busy.load()) {
+        return {};
+      }
+      bind_busy.store(true);
+      bind_cv.notify_one();
+      bind_queue.clear();
+      return {};
     }
-    replace_bind_script();
-    // Notify that a binding was created if the init script has already
-    // set things up.
-    eval("if (window.__webview__) {\n\
-window.__webview__.onBind(" +
-         json_escape(name) + ")\n\
+
+    auto do_work = [this, name, fn, arg] {
+      promise_ids[name] = {};
+      bindings.emplace(name, binding_ctx_t(fn, arg));
+      replace_bind_script();
+      if (!dom_ready.load()) {
+        return;
+      }
+      // Notify that a binding was created if the init script has already
+      // set things up.
+      eval("if (window.__webview__) {\n\
+  window.__webview__.onBind(" +
+           json_escape(name) + ")\n\
 }");
+    };
+
+    if (dispatch_bind.load()) {
+      dispatch(do_work);
+    } else {
+      do_work();
+    }
+
     return {};
   }
 
   noresult unbind(const std::string &name) {
-    std::mutex mtx;
-    std::unique_lock<std::mutex> lock(mtx);
+    auto send_to_queue =
+        !dispatch_unbind.load() &&
+        (unbind_busy.load() || list_contains(has_unres_promises, name));
+
+    printf("Webview: unbind: %s: %s\n", send_to_queue ? "queued" : "not queued",
+           name.c_str());
+    for (auto &name : has_unres_promises) {
+      printf("Webview: unbind: unresolved: %s\n", name.c_str());
+    }
+
+    if (send_to_queue) {
+      list_add(unbind_queue, name);
+      if (unbind_busy.load()) {
+        return {};
+      };
+      unbind_busy.store(true);
+      unbind_cv.notify_one();
+      unbind_queue.clear();
+
+      return {};
+    }
 
     auto found = bindings.find(name);
     if (found == bindings.end()) {
       return error_info{WEBVIEW_ERROR_NOT_FOUND};
     }
+    found = bindings.end();
 
-    // Notify that a binding was created if the init script has already
-    // set things up.
-    eval("if (window.__webview__) {\n\
+    const auto do_work = [this, name]() {
+      printf("Webview: unbind: doing work: %s\n", name.c_str());
+
+      list_erase(has_unres_promises, name);
+      bindings.erase(name);
+      replace_bind_script();
+      if (!dom_ready.load()) {
+        return;
+      }
+      // Notify that a binding was created if the init script has already
+      // set things up.
+      eval("if (window.__webview__) {\n\
 window.__webview__.onUnbind(" +
-         json_escape(name) + ")\n\
+           json_escape(name) + ")\n\
 }");
-    unbind_cv.wait_for(lock, std::chrono::milliseconds(20),
-                       atomic_acquire(&resolve_is_complete.find(name)->second));
-    if (is_terminating) {
-      return {};
+    };
+
+    if (dispatch_unbind.load()) {
+      return dispatch(do_work);
     }
-    resolve_is_complete.find(name)->second.store(true);
-    bindings.erase(found);
-    replace_bind_script();
+    do_work();
     return {};
   }
 
@@ -158,11 +206,32 @@ window.__webview__.onUnbind(" +
     std::mutex mtx;
     std::unique_lock<std::mutex> lock(mtx);
 
-    is_terminating = true;
-    for (auto &flag : resolve_is_complete) {
-      flag.second.store(true);
+    is_terminating.store(true);
+
+    for (auto &resolved : is_promise_resolved) {
+      auto &resolved_flag = resolved.second;
+      if (!resolved_flag.load()) {
+        resolved_flag.store(true);
+      };
     }
-    unbind_cv.notify_all();
+
+    bind_busy.store(true);
+    unbind_busy.store(true);
+    eval_busy.store(true);
+    resolver_busy.store(true);
+
+    bind_cv.notify_one();
+    unbind_cv.notify_one();
+    eval_cv.notify_one();
+    resolver_cv.notify_all();
+
+    bind_cv.wait(lock, thread_acquire(&bind_thread));
+    unbind_cv.wait(lock, thread_acquire(&unbind_thread));
+    eval_cv.wait(lock, thread_acquire(&eval_thread));
+
+    bind_thread.join();
+    unbind_thread.join();
+    eval_thread.join();
 
     return terminate_impl();
   }
@@ -183,15 +252,30 @@ window.__webview__.onUnbind(" +
   }
 
   noresult eval(const std::string &js) {
-    std::mutex mtx;
-    std::unique_lock<std::mutex> lock(mtx);
 
-    auto included_binds = eval_includes_binds(js);
-    for (auto &name : included_binds) {
-      resolve_is_complete.find(name)->second.store(false);
+    register_eval_promises(js);
+
+    printf("\nWebview: eval:\n%s\n\n", js.c_str());
+
+    auto send_to_queue =
+        !dispatch_eval.load() && (!dom_ready.load() || eval_busy.load());
+
+    if (!skip_queue && send_to_queue) {
+      list_add(eval_queue, js);
+      if (eval_busy.load()) {
+        return {};
+      };
+      eval_busy.store(true);
+      eval_cv.notify_one();
+      eval_queue.clear();
+      return {};
     }
-
-    return eval_impl(js);
+    /*
+    printf("Webview: eval: %s\n%s\n",
+           dispatch_eval.load() ? "dispatch" : "no dispatch", js.c_str());
+*/
+    return dispatch_eval.load() ? dispatch([this, js] { eval_impl(js); })
+                                : eval_impl(js);
   }
 
 protected:
@@ -315,6 +399,13 @@ protected:
     return Webview_;\n\
   })();\n\
   window.__webview__ = new Webview();\n\
+  __webview__.post(\n\
+    JSON.stringify({\n\
+      id: \"DOM_ready\",\n\
+      method: \"NOOP\",\n\
+      params: [],\n\
+    })\n\
+  );\n\
 })()";
     return js;
   }
@@ -344,27 +435,32 @@ protected:
   }
 
   virtual void on_message(const std::string &msg) {
-    std::mutex mtx;
-    std::unique_lock<std::mutex> lock(mtx);
-
-    auto id = json_parse(msg, "id", 0);
     auto name = json_parse(msg, "method", 0);
-    auto args = json_parse(msg, "params", 0);
-    auto found = bindings.find(name);
-    if (found == bindings.end()) {
+    auto id = json_parse(msg, "id", 0);
+
+    if (id == "DOM_ready") {
+      printf("Webview: on_message: DOM is ready\n");
+      dom_ready.store(true);
+      dom_cv.notify_all();
       return;
     }
-    resolve_is_complete.find(name)->second.store(false);
-    unbind_cv.notify_all();
 
-    const auto &context = found->second;
-    dispatch([context, id, args, name, this] {
-      std::mutex mtx;
-      std::unique_lock<std::mutex> lock(mtx);
-      context.call(id, args);
-      resolve_is_complete.find(name)->second.store(true);
-      unbind_cv.notify_all();
-    });
+    auto found = bindings.find(name);
+    if (found == bindings.end()) {
+      auto message =
+          "Promise %s was rejected because binding `" + name + "` got unbound.";
+      resolve(id, 1, json_escape(message));
+      return;
+    }
+    found = bindings.end();
+
+    list_add_unique(has_unres_promises, name);
+    list_add(promise_ids[name], id);
+    unbind_cv.notify_one();
+
+    std::thread resolver = std::thread(&engine_base::resolve_thread_constructor,
+                                       this, name, msg, id);
+    resolver.detach();
   }
 
   virtual void on_window_created() { inc_window_count(); }
@@ -418,6 +514,238 @@ private:
     return 0;
   }
 
+  typedef std::vector<std::string> list_t;
+
+  class binding_ctx_t {
+  public:
+    binding_ctx_t(binding_t callback, void *arg)
+        : m_callback(callback), m_arg(arg) {}
+    void call(std::string id, std::string args) const {
+      if (m_callback) {
+        m_callback(id, args, m_arg);
+      }
+    }
+    // This function is called upon execution of the bound JS function
+    binding_t m_callback;
+    // This user-supplied argument is passed to the callback
+    void *m_arg;
+  };
+
+  std::function<bool()> atomic_acquire(std::atomic_bool *flag,
+                                       bool expected = true) {
+    return [flag, expected]() {
+      return flag->load(std::memory_order_acquire) == expected;
+    };
+  }
+  std::function<bool()> thread_acquire(std::thread *thread) {
+    return [thread]() { return thread->joinable(); };
+  }
+
+  /// Parses the JS eval string for calls to bound functions.
+  /// Matches are added to a list for `webview_unbind` to process appropriately.
+  void register_eval_promises(const std::string &js) {
+    for (auto &promises : promise_ids) {
+      auto const &name = promises.first;
+
+      if (list_contains(has_unres_promises, name)) {
+        return;
+      }
+      auto const &needle = "" + name + "(";
+      auto found = js.find(needle) != std::string::npos;
+      if (found) {
+        list_add_unique(has_unres_promises, name);
+      }
+    }
+  }
+
+  bool list_contains(list_t &list, const std::string &value) {
+    auto pos = std::find(list.begin(), list.end(), value);
+    auto found = pos != list.end();
+    if (found) {
+      pos = list.end();
+    };
+    return found;
+  }
+
+  void list_erase(list_t &list, const std::string &value) {
+    list.erase(std::remove(list.begin(), list.end(), value), list.end());
+  }
+
+  void list_add(list_t &list, const std::string &value) {
+    list.emplace_back(value);
+  }
+
+  void list_add_unique(list_t &list, const std::string &value) {
+    if (!list_contains(list, value)) {
+      list.emplace_back(value);
+    }
+  }
+
+  /// Creates a thread that allows eval operations to wait for bind operations
+  /// and DOM readiness to complete without stalling the main/app thread.
+  void eval_thread_constructor() {
+    std::mutex mtx;
+    std::unique_lock<std::mutex> lock(mtx);
+
+    while (true) {
+      eval_cv.wait(lock, atomic_acquire(&eval_busy));
+      if (is_terminating.load()) {
+        break;
+      }
+      printf("Webview: eval thread: BUSY\n");
+      dom_cv.wait(lock, atomic_acquire(&dom_ready));
+      printf("Webview: eval thread: DOM_ready\n");
+      //eval_cv.wait(lock, atomic_acquire(&bind_busy, false));
+
+      list_t active_queue = eval_queue;
+
+      dispatch_eval.store(true);
+      for (auto &js : active_queue) {
+        eval(js);
+      }
+      if (eval_queue.empty()) {
+        printf("Webview: eval thread: EMPTY\n");
+        //eval_queue.shrink_to_fit();
+        eval_busy.store(false);
+        dispatch_eval.store(false);
+      }
+    }
+  }
+
+  /// Creates a thread that allows bind operations to wait for corresponding
+  /// unbind operations to complete without stalling the main/app thread.
+  void bind_thread_constructor() {
+    std::mutex mtx;
+    std::unique_lock<std::mutex> lock(mtx);
+
+    while (true) {
+      bind_cv.wait(lock, atomic_acquire(&bind_busy));
+      if (is_terminating.load()) {
+        break;
+      }
+      //bind_cv.wait(lock, atomic_acquire(&unbind_busy, false));
+      list_t active_queue = bind_queue;
+
+      dispatch_bind.store(true);
+      for (auto &name : active_queue) {
+        auto ctx = bindings.find(name)->second;
+        auto fn = ctx.m_callback;
+        auto arg = ctx.m_arg;
+
+        bind(name, fn, arg);
+      }
+      if (bind_queue.empty()) {
+        //bind_queue.shrink_to_fit();
+        dispatch_bind.store(false);
+        bind_busy.store(false);
+      }
+    }
+  }
+
+  /// Creates a thread that allows native unresolved promise work units to
+  /// resolve/reject before unbinding without stalling the main/app thread.
+  void unbind_thread_constructor() {
+    std::mutex mtx;
+    std::unique_lock<std::mutex> lock(mtx);
+
+    const auto timeout = std::chrono::milliseconds(WEBVIEW_UNBIND_TIMEOUT);
+    const auto get_rej_message = [&](std::string name) {
+      std::string message =
+          "The native callback function `" + name + "` timed out after " +
+          std::to_string(WEBVIEW_UNBIND_TIMEOUT) +
+          "ms while unbinding.\nYou can adjust the default timeout when "
+          "compiling your application:\nWEBVIEW_UNBIND_TIMEOUT=`int value`";
+      return message;
+    };
+
+    while (true) {
+      unbind_cv.wait(lock, atomic_acquire(&unbind_busy));
+      if (is_terminating.load()) {
+        break;
+      }
+      dom_cv.wait(lock, atomic_acquire(&dom_ready));
+
+      list_t active_queue = unbind_queue;
+
+      dispatch_unbind.store(true);
+      for (auto &name : active_queue) {
+        if (!list_contains(has_unres_promises, name)) {
+          unbind(name);
+          return;
+        }
+
+        if (promise_ids[name].empty()) {
+          unbind_cv.wait_for(lock, timeout,
+                             [&] { return !promise_ids[name].empty(); });
+        }
+        auto latest_promise_id = promise_ids[name].back();
+        resolver_cv.wait_for(
+            lock, timeout,
+            atomic_acquire(&is_promise_resolved[latest_promise_id]));
+
+        for (auto &id : promise_ids[name]) {
+          auto found = is_promise_resolved.find(id);
+          auto is_resolved = found->second.load();
+          found = is_promise_resolved.end();
+
+          if (!is_resolved) {
+            resolve(id, 1, json_escape(get_rej_message(name)));
+          }
+        }
+
+        unbind(name);
+      }
+
+      if (unbind_queue.empty()) {
+        //unbind_queue.shrink_to_fit();
+        dispatch_unbind.store(false);
+        unbind_busy.store(false);
+        //bind_cv.notify_one();
+      }
+    }
+  }
+
+  /// Creates a child thread for each native work unit of a bound JS promise.
+  /// We want native promise work units to run in parralel.
+  /// We do not want native promise work units to stall the main/app thread.
+  void resolve_thread_constructor(const std::string &name,
+                                  const std::string &msg,
+                                  const std::string &id) {
+    std::mutex mtx;
+    std::unique_lock<std::mutex> lock(mtx, std::defer_lock);
+
+    auto args = json_parse(msg, "params", 0);
+    is_promise_resolved[id].store(false);
+
+    try {
+      auto found = bindings.find(name);
+      const auto &context = found->second;
+      context.call(id, args);
+      found = bindings.end();
+
+    } catch (const std::exception &err) {
+      auto e_message =
+          "Uncaught exception from native user callback function `" + name +
+          "`:\n" + std::string(err.what());
+
+      dispatch(
+          [this, id, e_message] { resolve(id, 1, json_escape(e_message)); });
+
+    } catch (...) {
+      auto e_message =
+          "\nNative user callback function `%s` failed "
+          "because Webview terminated before it could complete.\n\n";
+
+      perror(e_message);
+    };
+
+    is_promise_resolved[id].store(true);
+    resolver_cv.notify_all();
+
+    list_erase(promise_ids[name], id);
+    is_promise_resolved.erase(id);
+  }
+
   std::map<std::string, binding_ctx_t> bindings;
   user_script *m_bind_script{};
   std::list<user_script> m_user_scripts;
@@ -425,28 +753,56 @@ private:
   bool m_is_init_script_added{};
   bool m_is_size_set{};
   bool m_owns_window{};
-  bool is_terminating{};
   static const int m_initial_width = 640;
   static const int m_initial_height = 480;
 
-  std::condition_variable unbind_cv;
-  std::map<std::string, std::atomic_bool> resolve_is_complete;
-  std::function<bool()> atomic_acquire(std::atomic_bool *flag) {
-    return [=]() { return flag->load(std::memory_order_acquire); };
-  }
-  std::list<std::string> eval_includes_binds(std::string js) {
-    std::mutex mtx;
-    std::unique_lock<std::mutex> lock(mtx);
+  std::atomic_bool dom_ready{};
+  std::atomic_bool is_terminating{};
+  /// Flag that spins the eval thread event loop
+  std::atomic_bool eval_busy{};
+  /// Flag that spins the unbind thread event loop
+  std::atomic_bool unbind_busy{};
+  /// Flag that spins the bind thread event loop
+  std::atomic_bool bind_busy{};
+  /// Flag that spins the user native callback thread event loop
+  std::atomic_bool resolver_busy{};
+  /// Flag to advise unbind to dispatch to main thread
+  std::atomic_bool dispatch_unbind{};
+  /// Flag to advise bind to dispatch to main thread
+  std::atomic_bool dispatch_bind{};
+  /// Flag to advise eval to dispatch to main thread
+  std::atomic_bool dispatch_eval{};
 
-    std::list<std::string> bind_list{};
-    for (auto &atomic_flag : resolve_is_complete) {
-      const std::string &name = atomic_flag.first;
-      if (js.find(name + "(") != std::string::npos) {
-        bind_list.emplace_back(name);
-      }
-    }
-    return bind_list;
-  }
+  bool skip_queue{};
+
+  std::condition_variable resolver_cv;
+  std::condition_variable unbind_cv;
+  std::condition_variable bind_cv;
+  std::condition_variable eval_cv;
+  std::condition_variable dom_cv;
+
+  /// Flag that releases a wait when a promise resolves
+  std::map<std::string, std::atomic_bool> is_promise_resolved;
+  /// Keeps a list of unresolved promise id's
+  std::map<std::string, list_t> promise_ids;
+
+  /// An order list of pending bind operations
+  list_t bind_queue;
+  /// An ordered list of pending unbind operations
+  list_t unbind_queue;
+  /// An ordered list of pending eval operations
+  list_t eval_queue;
+  /// A list of binding names that have unresolved promises
+  list_t has_unres_promises;
+
+  std::thread unbind_thread =
+      std::thread(&engine_base::unbind_thread_constructor, this);
+
+  std::thread eval_thread =
+      std::thread(&engine_base::eval_thread_constructor, this);
+
+  std::thread bind_thread =
+      std::thread(&engine_base::bind_thread_constructor, this);
 };
 
 } // namespace detail
