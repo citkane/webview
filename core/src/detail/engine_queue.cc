@@ -15,15 +15,15 @@ engine_queue::engine_queue(engine_base *engine) : engine(engine) {};
 
 void engine_queue::notify(str_arg_t method) {
   if (method == "dom_ready") {
-    debug.queue.notify.on_notify(method.c_str());
+    trace.queue.notify.on_notify(method.c_str());
     set_dom_ready();
   }
   if (method == "on_bind") {
-    debug.queue.notify.on_notify(method.c_str());
+    trace.queue.notify.on_notify(method.c_str());
     bind.set_done(true);
   }
   if (method == "on_unbind") {
-    debug.queue.notify.on_notify(method.c_str());
+    trace.queue.notify.on_notify(method.c_str());
     unbind.set_done(true);
   }
 }
@@ -56,7 +56,7 @@ void engine_queue::register_unresolved_binds(str_arg_t js) {
 
 noresult engine_queue::enqueue_work(str_arg_t name, do_work_t fn,
                                     scope_t scp) const {
-  debug.queue.enqueue.added(name.c_str());
+  trace.queue.enqueue.added(name.c_str());
   if (scp == scope.bind) {
     list.pending_binds.push_back(name);
   }
@@ -67,7 +67,7 @@ noresult engine_queue::enqueue_work(str_arg_t name, do_work_t fn,
 };
 noresult engine_queue::enqueue_work(do_work_t fn, scope_t scp) const {
   list.queue.emplace_back(scp, fn);
-  debug.queue.enqueue.added(scp, list.queue.size());
+  trace.queue.enqueue.added(scp, list.queue.size());
   cv.queue.notify_one();
   return {};
 };
@@ -129,7 +129,7 @@ void engine_queue::queue_thread_constructor() {
   std::unique_lock<std::mutex> lock(mtx);
 
   auto const bind_fn = [this, &lock](do_work_t fn) {
-    debug.queue.bind.start();
+    trace.queue.bind.start();
     try {
       engine->dispatch(fn);
       cv.bind.wait(lock, [this] { return bind.get_done(); });
@@ -137,11 +137,11 @@ void engine_queue::queue_thread_constructor() {
       perror(e.what());
     }
     //list.pending_binds.pop_front();
-    debug.queue.bind.done(bind.get_done());
+    trace.queue.bind.done(bind.get_done());
   };
 
   auto const unbind_fn = [this, &lock](do_work_t fn) {
-    debug.queue.unbind.start();
+    trace.queue.unbind.start();
     try {
       engine->dispatch(fn);
       cv.unbind.wait(lock, [this] { return unbind.get_done(); });
@@ -149,21 +149,21 @@ void engine_queue::queue_thread_constructor() {
       perror(e.what());
     }
     //list.pending_unbinds.pop_front();
-    debug.queue.unbind.done(unbind.get_done());
+    trace.queue.unbind.done(unbind.get_done());
   };
   auto const eval_fn = [this, &lock](do_work_t fn) {
-    debug.queue.eval.start();
+    trace.queue.eval.start();
     try {
       engine->dispatch(fn);
       cv.eval.wait(lock, [this] { return eval.get_done(); });
     } catch (std::exception &e) {
       perror(e.what());
     }
-    debug.queue.eval.done(eval.get_done());
+    trace.queue.eval.done(eval.get_done());
   };
 
   while (true) {
-    debug.queue.loop.wait(list.queue.size(), flags.get_queue_empty(),
+    trace.queue.loop.wait(list.queue.size(), flags.get_queue_empty(),
                           flags.get_dom_ready());
     try {
       cv.queue.wait(lock, [this] {
@@ -173,7 +173,7 @@ void engine_queue::queue_thread_constructor() {
         break;
       }
 
-      debug.queue.loop.start(list.queue.size());
+      trace.queue.loop.start(list.queue.size());
 
       auto work = list.queue.front();
       auto current_fn = work.first;
@@ -184,7 +184,7 @@ void engine_queue::queue_thread_constructor() {
         bind.set_done(false);
       }
       if (current_fn == scope.unbind) {
-        debug.queue.unbind.wait();
+        trace.queue.unbind.wait();
         cv.queue.wait_for(lock, std::chrono::seconds(2),
                           [this] { return flags.get_terminating(); });
         unbind_fn(work_fn);
@@ -196,7 +196,7 @@ void engine_queue::queue_thread_constructor() {
       }
 
       flags.set_queue_empty();
-      debug.queue.loop.end(list.queue.size());
+      trace.queue.loop.end(list.queue.size());
     } catch (std::exception &e) {
       perror(e.what());
     }

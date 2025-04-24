@@ -207,7 +207,7 @@ private:
   void promise_erase(str_arg_t id);
   void promise_flag_bind(str_arg_t name);
 
-  debug_t debug = debug_t("Webview: ");
+  debug_t trace = debug_t("Webview: ");
 };
 
 } // namespace detail

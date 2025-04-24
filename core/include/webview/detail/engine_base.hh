@@ -258,7 +258,7 @@ private:
   /// Flag that indicates if a Webview event should skip the queue and execute directly
   bool skip_queue{};
 
-  debug_t debug = debug_t("Webview: ");
+  debug_t trace = debug_t("Webview: ");
   /*
 
   bool is_busy() {

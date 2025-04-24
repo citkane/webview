@@ -60,9 +60,9 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
   return res;
 }
 noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
-  debug.base.bind.start(name.c_str());
+  trace.base.bind.start(name.c_str());
   do_work_t do_work = [this, name, fn, arg] {
-    debug.base.bind.work(name.c_str());
+    trace.base.bind.work(name.c_str());
     bindings.emplace(name, binding_ctx_t(fn, arg));
     replace_bind_script();
     skip_queue = true;
@@ -81,9 +81,9 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
   return {};
 }
 noresult engine_base::unbind(str_arg_t name) {
-  debug.base.unbind.start(name.c_str());
+  trace.base.unbind.start(name.c_str());
   do_work_t do_work = [this, name]() {
-    debug.base.unbind.work(name.c_str());
+    trace.base.unbind.work(name.c_str());
     bindings.erase(name);
     replace_bind_script();
     skip_queue = true;
@@ -134,10 +134,10 @@ noresult engine_base::init(str_arg_t js) {
   return {};
 }
 noresult engine_base::eval(str_arg_t js) {
-  debug.base.eval.start(js.c_str(), skip_queue);
+  trace.base.eval.start(js.c_str(), skip_queue);
   auto skip = skip_queue;
   do_work_t do_work = [this, js, skip] {
-    debug.base.eval.work(js.c_str());
+    trace.base.eval.work(js.c_str());
     eval_impl(js);
     if (!skip) {
       dispatch([this] { q->eval.set_done(true); });
