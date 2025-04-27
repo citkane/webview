@@ -29,20 +29,21 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
 #include "webview/detail/engine_base.hh"
-#include "webview/detail/engine_js.hh"
+#include "webview/detail/engine_frontend.hh"
 #include "webview/detail/engine_queue.hh"
 #include "webview/detail/json.hh"
-
+#include <algorithm>
 #include <functional>
+#include <iterator>
 #include <string>
 
 namespace webview {
-/* **************************************************************
- * `engine_base` PUBLIC implementations
- ****************************************************************/
+
+// Container: `engine_base` PUBLIC implementations
 namespace detail {
+
 engine_base::engine_base(bool owns_window)
-    : m_owns_window{owns_window}, q(new engine_queue(this)) {}
+    : m_owns_window{owns_window}, queue(new engine_queue(this)) {}
 
 noresult engine_base::navigate(str_arg_t url) {
   if (url.empty()) {
@@ -50,6 +51,7 @@ noresult engine_base::navigate(str_arg_t url) {
   }
   return navigate_impl(url);
 }
+
 noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
   auto wrapper = [this, fn](str_arg_t id, str_arg_t req, void * /*arg*/) {
     resolve(id, 0, fn(req));
@@ -59,104 +61,121 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
   skip_queue = false;
   return res;
 }
+
 noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
-  trace.base.bind.start(name.c_str());
+  trace.base.bind.start(name);
   do_work_t do_work = [this, name, fn, arg] {
-    trace.base.bind.work(name.c_str());
+    trace.base.bind.work(name);
     bindings.emplace(name, binding_ctx_t(fn, arg));
     replace_bind_script();
     skip_queue = true;
-    eval(engine_js::onbind(name));
+    eval(frontend.js.onbind(name));
     skip_queue = false;
   };
   auto const is_error = bindings.count(name) > 0;
   if (is_error) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
   }
-  q->promises.list_init(name);
+  queue->promises.list_init(name);
   if (!skip_queue) {
-    return q->bind.enqueue(do_work, name);
+    return queue->bind.enqueue(do_work, name);
   }
   do_work();
   return {};
 }
+
 noresult engine_base::unbind(str_arg_t name) {
-  trace.base.unbind.start(name.c_str());
+  trace.base.unbind.start(name);
+
   do_work_t do_work = [this, name]() {
-    trace.base.unbind.work(name.c_str());
+    trace.base.unbind.work(name);
+    skip_queue = true;
+    eval(frontend.js.onunbind(name));
+    skip_queue = false;
     bindings.erase(name);
     replace_bind_script();
-    skip_queue = true;
-    eval(engine_js::onunbind(name));
-    skip_queue = false;
   };
-
-  auto const is_error =
-      bindings.count(name) == 0 && !q->unbind.awaits_bind(name);
+  auto is_rebind = queue->unbind.awaits_bind(name);
+  auto const is_error = bindings.count(name) == 0 && !is_rebind;
   if (is_error) {
     return error_info{WEBVIEW_ERROR_NOT_FOUND};
   }
-  return q->unbind.enqueue(do_work, name);
+  return queue->unbind.enqueue(do_work, name);
 }
-noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
-  q->promises.erase(id);
-  str_arg_t escaped_result = result.empty() ? "undefined" : json_escape(result);
-  str_arg_t promised_js = engine_js::onreply(id, status, escaped_result);
 
-  return dispatch([this, promised_js] {
+noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
+  str_arg_t escaped_result = result.empty() ? "undefined" : json_escape(result);
+  str_arg_t promised_js = frontend.js.onreply(id, status, escaped_result);
+
+  return dispatch([this, promised_js, id] {
     skip_queue = true;
     eval(promised_js);
     skip_queue = false;
+    queue->promises.resolved(id);
   });
 }
+
 noresult engine_base::reject(str_arg_t id, str_arg_t err) {
   return resolve(id, 1, json_escape(err));
 }
+
+result<void *> engine_base::window() { return window_impl(); }
+
+result<void *> engine_base::widget() { return widget_impl(); }
+
+result<void *> engine_base::browser_controller() {
+  return browser_controller_impl();
+}
+
 noresult engine_base::run() { return run_impl(); }
+
 noresult engine_base::terminate() {
-  q->terminate();
+  queue->terminate();
   return terminate_impl();
 }
+
 noresult engine_base::dispatch(std::function<void()> f) {
   return dispatch_impl(f);
 }
+
 noresult engine_base::set_title(str_arg_t title) {
   return set_title_impl(title);
 }
+
 noresult engine_base::set_size(int width, int height, webview_hint_t hints) {
   auto res = set_size_impl(width, height, hints);
   m_is_size_set = true;
   return res;
 }
+
 noresult engine_base::set_html(str_arg_t html) { return set_html_impl(html); }
+
 noresult engine_base::init(str_arg_t js) {
   add_user_script(js);
   return {};
 }
+
 noresult engine_base::eval(str_arg_t js) {
-  trace.base.eval.start(js.c_str(), skip_queue);
-  auto skip = skip_queue;
-  do_work_t do_work = [this, js, skip] {
-    trace.base.eval.work(js.c_str());
-    eval_impl(js);
-    if (!skip) {
-      dispatch([this] { q->eval.set_done(true); });
-    }
+  trace.base.eval.start(js, skip_queue);
+  do_work_t do_work = [this, js] {
+    auto wrapped_js = frontend.js.eval_wrapper(js);
+    trace.base.eval.work(wrapped_js);
+    eval_impl(wrapped_js);
   };
 
   if (!skip_queue) {
-    //q->register_unresolved_binds(js);
-    return q->eval.enqueue(do_work);
+    return queue->eval.enqueue(do_work, js);
   }
-  do_work();
+  trace.base.eval.work(js);
+  eval_impl(js);
   return {};
 }
+
 } // namespace detail
 
-/* **************************************************************
- * `engine_base` PROTECTED implementations
- ****************************************************************/
+// Container: `engine_base` PROTECTED implementations
 namespace detail {
+
 user_script *engine_base::add_user_script(str_arg_t js) {
   return std::addressof(
       *m_user_scripts.emplace(m_user_scripts.end(), add_user_script_impl(js)));
@@ -176,6 +195,7 @@ user_script *engine_base::replace_user_script(const user_script &old_script,
   }
   return old_script_ptr;
 }
+
 void engine_base::replace_bind_script() {
   auto replacement_js = create_bind_script();
   if (m_bind_script) {
@@ -184,163 +204,77 @@ void engine_base::replace_bind_script() {
     m_bind_script = add_user_script(replacement_js);
   }
 }
-void engine_base::on_message(str_arg_t msg) {
-  auto name = json_parse(msg, "method", 0);
-  auto id = json_parse(msg, "id", 0);
-  if (id == "sysop") {
-    q->notify(name);
-    return;
-  }
-  auto found = bindings.find(name);
-  auto const is_unbound = found == bindings.end();
-  if (is_unbound) {
-    std::string err = "Promise " + id + " was rejected because binding `" +
-                      name + "` got unbound.";
-    reject(id, err);
-    return;
-  }
-  q->promises.flag_bind(name);
-  q->promises.add(name, id);
-  binding_ctx_t ctx = found->second;
-  q->resolve(&ctx, name, id, msg);
-  found = bindings.end();
+
+void engine_base::add_init_script(str_arg_t post_fn) {
+  add_user_script(frontend.js.init(post_fn));
+  m_is_init_script_sent = true;
 }
+
+std::string engine_base::create_bind_script() {
+  std::vector<std::string> bound_names;
+  bound_names.reserve(bindings.size());
+  std::transform(bindings.begin(), bindings.end(),
+                 std::back_inserter(bound_names),
+                 [](const std::pair<std::string, binding_ctx_t> &pair) {
+                   return pair.first;
+                 });
+  return frontend.js.bind(bound_names);
+}
+
+void engine_base::on_message(str_arg_t msg) { queue->resolve(msg, &bindings); }
+
+void engine_base::on_window_created() { inc_window_count(); }
+
+void engine_base::on_window_destroyed(bool skip_termination) {
+  if (dec_window_count() <= 0) {
+    if (!skip_termination) {
+      terminate();
+    }
+  }
+}
+
+void engine_base::deplete_run_loop_event_queue() {
+  bool done{};
+  dispatch([&] { done = true; });
+  run_event_loop_while([&] { return !done; });
+}
+
+void engine_base::dispatch_size_default() {
+  if (!owns_window() || !m_is_init_script_sent) {
+    return;
+  };
+  dispatch([this]() {
+    if (!m_is_size_set) {
+      set_size(m_initial_width, m_initial_height, WEBVIEW_HINT_NONE);
+    }
+  });
+}
+
+void engine_base::set_default_size_guard(bool guarded) {
+  m_is_size_set = guarded;
+}
+
+bool engine_base::owns_window() const { return m_owns_window; }
+
 } // namespace detail
 
-/* **************************************************************
- * `engine_base` PRIVATE implementations
- ****************************************************************/
+// Container: `engine_base` PRIVATE implementations
 namespace detail {
 
-/*
-void engine_base::bind_thread_constructor() {
-  std::mutex mtx;
-  std::unique_lock<std::mutex> lock(mtx);
-
-  while (true) {
-    bind_cv.wait(lock, [this] { return bind_busy.load(); });
-    if (is_terminating.load()) {
-      break;
-    }
-
-    q->api().bind.dispatch(true);
-    list_t<bind_q_ctx_t> active_queue = bind_queue;
-    for (auto &ctx : active_queue) {
-      // bind may be re-binding unbind name, so defer for it's queue to drain without locking the process.
-      if (!list_contains(unbind_queue, ctx.name)) {
-        list_erase(bind_queue, ctx.name);
-        bind(ctx.name, ctx.fn, ctx.arg);
-      } else {
-        bind_busy.store(false);
-        // eval may be waiting for bind to complete
-        eval_cv.notify_one();
-        bind_busy.store(true);
-      }
-    }
-    if (bind_queue.empty()) {
-      //bind_queue.shrink_to_fit();
-      dispatch_f.bind.store(false);
-      bind_busy.store(false);
-      // eval may be waiting for bind to complete
-      eval_cv.notify_one();
-    }
-  }
+std::atomic_uint &engine_base::window_ref_count() {
+  static std::atomic_uint ref_count{0};
+  return ref_count;
 }
-void engine_base::eval_thread_constructor() {
-  std::mutex mtx;
-  std::unique_lock<std::mutex> lock(mtx);
 
-  while (true) {
-    eval_cv.wait(lock, [this] { return eval_busy.load(); });
-    if (is_terminating.load()) {
-      break;
-    }
-    // eval may contain a call to a bind, so wait for it's queue to drain
-    eval_cv.wait(lock, [this] { return !bind_busy.load(); });
+unsigned int engine_base::inc_window_count() { return ++window_ref_count(); }
 
-    dispatch_f.eval.store(true);
-    list_t<> active_queue = eval_queue;
-    for (auto &js : active_queue) {
-      list_erase(eval_queue, js);
-      eval(js);
-    }
-    if (eval_queue.empty()) {
-      //eval_queue.shrink_to_fit();
-      dispatch_f.eval.store(false);
-      eval_busy.store(false);
-      // unbind may be waiting for eval to complete
-      unbind_cv.notify_one();
-    }
+unsigned int engine_base::dec_window_count() {
+  auto &count = window_ref_count();
+  if (count > 0) {
+    return --count;
   }
+  return 0;
 }
-void engine_base::unbind_thread_constructor() {
-  std::mutex mtx;
-  std::unique_lock<std::mutex> lock(mtx);
-
-  const auto timeout = std::chrono::milliseconds(WEBVIEW_UNBIND_TIMEOUT);
-  const auto get_rej_message = [&](std::string name) {
-    std::string message =
-        "The native callback function `" + name + "` timed out after " +
-        std::to_string(WEBVIEW_UNBIND_TIMEOUT) +
-        "ms while unbinding.\nYou can adjust the default timeout when "
-        "compiling your application:\nWEBVIEW_UNBIND_TIMEOUT=`int value`";
-    return message;
-  };
-
-  while (true) {
-    unbind_cv.wait(lock, [this] { return unbind_busy.load(); });
-    if (is_terminating.load()) {
-      break;
-    }
-    // eval may have called a bound function, so we we wait for it's queue to drain
-    //unbind_cv.wait(lock, [this] { return !eval_busy.load(); });
-
-    dispatch_f.unbind.store(true);
-    list_t<std::string> active_queue = unbind_queue;
-    for (auto &name : active_queue) {
-      printf("Webiew: unbind thread: %s\n", name.c_str());
-
-      list_erase(unbind_queue, name);
-      // The bound function has no unresolved promises, so unbind it immediately
-      if (!list_contains(has_unres_promises, name)) {
-        unbind(name);
-        return;
-      }
-      // The backend has not yet messaged the native code, so give it a sane amount of time to do so.
-      if (promise_ids[name].empty()) {
-        unbind_cv.wait_for(lock, timeout,
-                           [&] { return !promise_ids[name].empty(); });
-      }
-      if (!promise_ids[name].empty()) {
-        // Get the latest promise to be sent to the bound function
-        auto latest_promise_id = promise_ids[name].back();
-        // Give the latest promise a sane amount of time to resolve
-        resolver_cv.wait_for(lock, timeout, [this, latest_promise_id] {
-          return is_promise_resolved[latest_promise_id].load();
-        });
-        // The function is now going to unbind, so reject all it's remaining unresolved promises
-        for (auto &id : promise_ids[name]) {
-          auto found = is_promise_resolved.find(id);
-          auto is_resolved = found->second.load();
-          if (!is_resolved) {
-            resolve(id, 1, json_escape(get_rej_message(name)));
-          }
-        }
-        promise_ids.erase(name);
-      }
-
-      list_erase(has_unres_promises, name);
-      unbind(name);
-    }
-
-    if (unbind_queue.empty()) {
-      //unbind_queue.shrink_to_fit();
-      dispatch_f.unbind.store(false);
-      unbind_busy.store(false);
-    }
-  }
-}
-*/
 
 } // namespace detail
 } // namespace webview
