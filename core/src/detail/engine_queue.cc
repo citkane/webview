@@ -82,19 +82,15 @@ bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
     return false;
   };
   if (method == DOM_READY_M) {
-    self->trace.queue.notify.on_message(method);
     self->flags.set_dom_ready();
   }
   if (method == BIND_DONE_M) {
-    self->trace.queue.notify.on_message(method);
     self->flags.done.bind(true);
   }
   if (method == UNBIND_DONE_M) {
-    self->trace.queue.notify.on_message(method);
     self->flags.done.unbind(true);
   }
   if (method == EVAL_READY_M) {
-    self->trace.queue.notify.on_message(method);
     self->flags.done.eval(true);
   }
   return true;
@@ -127,30 +123,24 @@ void engine_queue::queue_thread_constructor(engine_base *wv) {
   std::unique_lock<std::mutex> lock(mtx);
 
   while (true) {
-    trace.queue.loop.wait(list.queue.size(), flags.queue_empty(),
-                          flags.get_dom_ready());
     cv.queue.wait(
         lock, [this] { return flags.get_dom_ready() && !flags.queue_empty(); });
     if (flags.get_terminating()) {
       break;
     }
-    trace.queue.loop.start(list.queue.size());
     auto work = &list.queue.front();
     auto val = work->val;
     auto fn = work->fn;
 
     // `bind` user work unit
     if (work->ctx == ctx.bind) {
-      trace.queue.bind.start(val);
       wv->dispatch(fn);
       cv.bind.wait(lock, [this] { return flags.done.bind(); });
       list.pending_binds.pop_front();
-      trace.queue.bind.done(flags.done.bind(), val);
       flags.done.bind(false);
     }
     // `unbind` user work unit
     if (work->ctx == ctx.unbind) {
-      trace.queue.unbind.wait(val);
       cv.unbind_timeout.wait_for(
           lock, std::chrono::milliseconds(WEBVIEW_UNBIND_TIMEOUT), [this, val] {
             return flags.get_terminating() ||
@@ -161,23 +151,18 @@ void engine_queue::queue_thread_constructor(engine_base *wv) {
         wv->reject(id, utility::frontend.err_message.reject_unbound(id, val));
       }
       list.name_unres_promises.erase(val);
-      trace.queue.unbind.start(val);
       wv->dispatch(fn);
       cv.unbind.wait(lock, [this] { return flags.done.unbind(); });
-      trace.queue.unbind.done(flags.done.unbind(), val);
       flags.done.unbind(false);
     }
     // `eval` user work unit
     if (work->ctx == ctx.eval) {
-      trace.queue.eval.start(val);
       wv->dispatch(fn);
       cv.eval.wait(lock, [this] { return flags.done.eval(); });
-      trace.queue.eval.done(flags.done.eval());
       flags.done.eval(false);
     }
 
     flags.update_queue_size();
-    trace.queue.loop.end();
   }
 }
 
@@ -198,8 +183,6 @@ noresult engine_queue::queue_work(str_arg_t name_or_js, do_work_t fn,
   if (fn_ctx == ctx.bind) {
     list.pending_binds.push_back(name_or_js);
   }
-
-  trace.queue.enqueue.added(fn_ctx, list.queue.size(), name_or_js);
   list.queue.push_back({fn_ctx, fn, name_or_js});
   flags.queue_empty(false);
   return {};
@@ -246,7 +229,6 @@ void engine_queue::promise_erase(str_arg_t id) {
   list.promise_id_name.erase(list.promise_id_name.at(id));
   list.name_unres_promises[name].remove(id);
   cv.unbind_timeout.notify_one();
-  trace.queue.unbind.print_here("Promise erased: " + name + " | " + id);
 };
 
 bool engine_queue::done_t::bind() { return self->bind_done.load(); }

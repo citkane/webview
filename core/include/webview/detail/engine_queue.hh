@@ -32,7 +32,6 @@
 #endif
 
 #include "webview/types.hh"
-#include "webview/utility/trace_log.hh"
 #include <atomic>
 #include <condition_variable>
 #include <functional>
@@ -248,10 +247,6 @@ private:
   /// A thread to concurrently choreograph user work queueing.
   std::thread queue_thread;
   bool queue_thread_is_constructed{};
-
-  /// Temporary debug tracing utility
-  /// @todo remove before merge
-  utility::trace_t trace = {"Webview::"};
 };
 
 } // namespace detail

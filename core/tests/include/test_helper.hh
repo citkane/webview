@@ -27,10 +27,10 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "webview/detail/backends/gtk_webkitgtk.hh"
+#include "webview/detail/engine_base.hh"
 #include "webview/utility/frontend_strings.hh"
-#include "webview/utility/trace_log.hh"
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 
 namespace webview {
@@ -46,6 +46,8 @@ namespace templates {
   ");"
 
 } // namespace templates
+
+using namespace webview::detail;
 
 /// Static test utilities class
 class tester {
@@ -70,7 +72,7 @@ public:
   }
 
   /// Dispatches -> wv.eval of a tokenised `window.__webview__.post` string with a test value
-  static void post_value(browser_engine *wv, const std::string &value) {
+  static void post_value(engine_base *wv, const std::string &value) {
     auto js = post_value(value);
     auto do_work = [=] { wv->eval(js); };
     wv->dispatch(do_work);
@@ -85,7 +87,7 @@ public:
   }
 
   /// Dispatches -> wv.terminate
-  static void terminate(browser_engine *wv) {
+  static void terminate(engine_base *wv) {
     wv->dispatch([wv] { wv->terminate(); });
   }
 
@@ -102,12 +104,6 @@ public:
   static std::chrono::seconds timeout_sec(int seconds = 1) {
     return std::chrono::seconds(seconds);
   };
-
-  /// Print helpful trace messages for debugging purposes
-  static utility::trace_t &trace() {
-    static utility::trace_t trace{"TEST::"};
-    return trace;
-  }
 
 private:
   static std::string &string_value() {

@@ -53,7 +53,6 @@ noresult engine_base::navigate(str_arg_t url) {
 }
 
 noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
-  trace.base.bind.print_here(name);
   auto wrapper = [this, fn](str_arg_t id, str_arg_t req, void * /*arg*/) {
     resolve(id, 0, fn(req));
   };
@@ -64,9 +63,7 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
 }
 
 noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
-  trace.base.bind.start(name);
   do_work_t do_work = [this, name, fn, arg] {
-    trace.base.bind.work(name);
     bindings.emplace(name, binding_ctx_t(fn, arg));
     replace_bind_script();
     skip_queue = true;
@@ -86,10 +83,7 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
 }
 
 noresult engine_base::unbind(str_arg_t name) {
-  trace.base.unbind.start(name);
-
   do_work_t do_work = [this, name]() {
-    trace.base.unbind.work(name);
     skip_queue = true;
     eval(utility::frontend.js.onunbind(name));
     skip_queue = false;
@@ -158,17 +152,14 @@ noresult engine_base::init(str_arg_t js) {
 }
 
 noresult engine_base::eval(str_arg_t js) {
-  trace.base.eval.start(js, skip_queue);
   do_work_t do_work = [this, js] {
     auto wrapped_js = utility::frontend.js.eval_wrapper(js);
-    trace.base.eval.work(wrapped_js);
     eval_impl(wrapped_js);
   };
 
   if (!skip_queue) {
     return queue.eval.enqueue(do_work, js);
   }
-  trace.base.eval.work(js);
   eval_impl(js);
   return {};
 }
@@ -277,13 +268,6 @@ void engine_base::set_default_size_guard(bool guarded) {
 
 bool engine_base::owns_window() const { return m_owns_window; }
 
-//engine_queue::public_api_t *engine_base::queue;
-//void engine_base::queue_init(engine_base &wv) {
-//  trace.base.print_here("Initialising engine_queue");
-//  auto queue_api = new engine_queue{};
-//  queue = &queue_api->queue;
-//  queue.init_queue(wv);
-//};
 } // namespace detail
 
 // PRIVATE methods

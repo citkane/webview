@@ -32,7 +32,6 @@
 #include "../types.hh"
 #include "user_script.hh"
 #include "webview/detail/engine_queue.hh"
-#include "webview/utility/trace_log.hh"
 #include <atomic>
 #include <list>
 #include <map>
@@ -197,10 +196,6 @@ private:
   static const int m_initial_height = 480;
   /// Flag that indicates if a Webview work unit should skip the user work queue and execute directly
   bool skip_queue{};
-
-  /// Temporary debug tracing utility
-  /// @todo remove before merge
-  utility::trace_t trace = {"Webview::"};
 };
 
 } // namespace detail
