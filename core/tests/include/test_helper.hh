@@ -25,6 +25,8 @@
 #ifndef WEBVIEW_TEST_HELPER_HH
 #define WEBVIEW_TEST_HELPER_HH
 
+#if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+
 #include "webview/detail/backends/gtk_webkitgtk.hh"
 #include "webview/utility/frontend_strings.hh"
 #include "webview/utility/trace_log.hh"
@@ -133,4 +135,5 @@ private:
 } // namespace test
 } // namespace webview
 
+#endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_TEST_HELPER_HH
