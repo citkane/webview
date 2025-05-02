@@ -30,34 +30,24 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
 #include "webview/detail/json.hh"
+#include "webview/utility/frontend_strings.hh"
 #include <string>
 #include <vector>
 
-// Containter: Template tokens
-namespace templates {
-
-#define NAME_TOKEN "_name_"
-#define ID_TOKEN "_id_"
-#define STATUS_TOKEN "_status_"
-#define RESULT_TOKEN "_result_"
-#define POST_FN_TOKEN "_post_fn_"
-#define JS_NAMES_TOKEN "_js_names_"
-#define USER_JS_TOKEN "_user_js_"
-#define WHAT_TOKEN "_what_"
+namespace webview {
+namespace utility {
+namespace signal_strings {
 
 #define DOM_READY_M "dom_ready"
 #define BIND_DONE_M "bind_done"
 #define UNBIND_DONE_M "unbind_done"
 #define EVAL_READY_M "js_eval_start"
 
-#define SYSTEM_NOTIFICATION_FLAG "sysop"
+} // namespace signal_strings
 
-} // namespace templates
+namespace init_js {
 
-// Containter: Template for Webview JS init script
-namespace templates {
-
-#define INIT_JS                                                                \
+#define WEVBIEW_INIT_JS                                                        \
   "(function() {\n"                                                            \
   "  'use strict';\n"                                                          \
   "  function generateId() {\n"                                                \
@@ -73,7 +63,7 @@ namespace templates {
   "    var _promises = {};\n"                                                  \
   "    function Webview_() {}\n"                                               \
   "    Webview_.prototype.post = function(message) {\n"                        \
-  "      return (" POST_FN_TOKEN ")(message);\n"                               \
+  "      return (" TOKEN_POST_FN ")(message);\n"                               \
   "    };\n"                                                                   \
   "    Webview_.prototype.sysop = function(command) {\n"                       \
   "      this.post(JSON.stringify({\n"                                         \
@@ -134,15 +124,14 @@ namespace templates {
   "  window.__webview__.sysop(\"" DOM_READY_M "\");\n"                         \
   "})()"
 
-} // namespace templates
+} // namespace init_js
 
-// Container: Templates for various JS functions and wrappers
-namespace templates {
+namespace js_functions {
 
 #define ON_BIND                                                                \
   "if (window.__webview__) {\n"                                                \
   "  try {\n"                                                                  \
-  "    window.__webview__.onBind(" NAME_TOKEN ");\n"                           \
+  "    window.__webview__.onBind(" TOKEN_NAME ");\n"                           \
   "    window.__webview__.sysop(\"" BIND_DONE_M "\");\n"                       \
   "  } catch(err) {\n"                                                         \
   "    window.__webview__.sysop(\"" BIND_DONE_M "\");\n"                       \
@@ -151,19 +140,19 @@ namespace templates {
 #define ON_UNBIND                                                              \
   "if (window.__webview__) {\n"                                                \
   "  try {\n"                                                                  \
-  "    window.__webview__.onUnbind(" NAME_TOKEN ");\n"                         \
+  "    window.__webview__.onUnbind(" TOKEN_NAME ");\n"                         \
   "    window.__webview__.sysop(\"" UNBIND_DONE_M "\");\n"                     \
   "  } catch(err) {\n"                                                         \
   "    window.__webview__.sysop(\"" UNBIND_DONE_M "\");\n"                     \
   "  }\n"                                                                      \
   "}"
 #define ON_REPLY                                                               \
-  "window.__webview__.onReply(" ID_TOKEN ", " STATUS_TOKEN ", " RESULT_TOKEN ")"
+  "window.__webview__.onReply(" TOKEN_ID ", " TOKEN_STATUS ", " TOKEN_RESULT ")"
 
 #define BIND                                                                   \
   "(function() {\n"                                                            \
   " 'use strict';\n"                                                           \
-  " var methods = " JS_NAMES_TOKEN ";\n"                                       \
+  " var methods = " TOKEN_JS_NAMES ";\n"                                       \
   " methods.forEach(function(name) {\n"                                        \
   "   window.__webview__.onBind(name);\n"                                      \
   " });\n"                                                                     \
@@ -173,144 +162,102 @@ namespace templates {
   "try {\n"                                                                    \
   "  setTimeout(() => {\n"                                                     \
   "    window.__webview__.sysop(\"" EVAL_READY_M "\");\n"                      \
-  "  });\n" USER_JS_TOKEN "\n"                                                 \
+  "  });\n" TOKEN_USER_JS "\n"                                                 \
   "} catch (err) {\n"                                                          \
   "  window.__webview__.sysop(\"" EVAL_READY_M "\");\n"                        \
   "  console.error(err);\n"                                                    \
   "}"
 
-} // namespace templates
+} // namespace js_functions
 
 // Container: Templates for JS error messages
-namespace templates {
+namespace error_messages {
 
 #define REJECT_UNBOUND_M                                                       \
-  "Promise id " ID_TOKEN " was rejected because function \"" NAME_TOKEN        \
+  "Promise id " TOKEN_ID " was rejected because function \"" TOKEN_NAME        \
   "\" was unbound."
 
 #define UNCAUGHT_EXP_M                                                         \
-  "Uncaught exception from native user callback function \"" NAME_TOKEN        \
-  "\":\n" WHAT_TOKEN
+  "Uncaught exception from native user callback function \"" TOKEN_NAME        \
+  "\":\n" TOKEN_WHAT
 
 #define WEBVIEW_TERMINATED_M                                                   \
-  "\nNative user callback function \"" NAME_TOKEN                              \
+  "\nNative user callback function \"" TOKEN_NAME                              \
   "\" failed because Webview terminated before it could complete.\n\n"
 
-} // namespace templates
-namespace webview {
-namespace detail {
-
-// Container: Utility functions
-namespace utility {
-
-/// Performs string replacement for tokens.
-/// @todo REGEX is probably going to be optimal for performance
-std::string tokeniser(const std::string &template_string,
-                      const std::string &token,
-                      const std::string &replacement) {
-  if (token.empty()) {
-    return template_string;
-  }
-  std::string tokenised_string = template_string;
-  size_t start_pos = 0;
-  while ((start_pos = tokenised_string.find(token, start_pos)) !=
-         std::string::npos) {
-    tokenised_string.replace(start_pos, token.length(), replacement);
-    start_pos += replacement.length();
-  }
-
-  return tokenised_string;
-}
-
-/// Parses a vector into a JSON array string.
-std::string json_list(std::vector<std::string> &binding_names) {
-  std::string json = "[";
-  bool first = true;
-  for (const auto &name : binding_names) {
-    if (first) {
-      first = false;
-    } else {
-      json += ",";
-    }
-    json += webview::detail::json_escape(name);
-  }
-  json += "]";
-
-  return json;
-}
-
-} // namespace utility
-} // namespace detail
-
-// Container: Class API
-namespace detail {
-using namespace utility;
+} // namespace error_messages
 
 struct front_end_t {
+  ~front_end_t() = default;
   front_end_t() = default;
 
-  struct js_t {
+  struct js_string_t {
     /// Returns a tokenised JS function string for `unbind` which notifies that
     /// a binding was destroyed after the init script has already set things up.
     std::string onunbind(const std::string &name) const {
-      return utility::tokeniser(ON_UNBIND, NAME_TOKEN, json_escape(name));
+      return tokeniser(ON_UNBIND, TOKEN_NAME, detail::json_escape(name));
     }
 
     /// Returns a tokenised JS function string for `bind` which notifies that
     /// a binding was created after the init script has already set things up.
     std::string onbind(const std::string &name) const {
-      return utility::tokeniser(ON_BIND, NAME_TOKEN, json_escape(name));
+      return tokeniser(ON_BIND, TOKEN_NAME, detail::json_escape(name));
     }
 
     /// Returns a tokenised JS function string for a promise resolve/reject.
     std::string onreply(std::string id, int status,
                         std::string escaped_result) const {
-      std::string js = utility::tokeniser(ON_REPLY, ID_TOKEN, json_escape(id));
-      js = utility::tokeniser(js, STATUS_TOKEN, std::to_string(status));
-      js = utility::tokeniser(js, RESULT_TOKEN, escaped_result);
+      std::string js = tokeniser(ON_REPLY, TOKEN_ID, detail::json_escape(id));
+      js = tokeniser(js, TOKEN_STATUS, std::to_string(status));
+      js = tokeniser(js, TOKEN_RESULT, escaped_result);
       return js;
     }
 
     /// Returns a tokenised JS function string for the Webview backend init function.
     std::string init(const std::string &post_fn) const {
-      return utility::tokeniser(INIT_JS, POST_FN_TOKEN, post_fn);
+      return tokeniser(WEVBIEW_INIT_JS, TOKEN_POST_FN, post_fn);
     }
 
     /// Returns a tokenised JS function string for the Webview backend `bind` functions.
     std::string bind(std::vector<std::string> &bound_names) const {
-      auto names = utility::json_list(bound_names);
-      auto js = utility::tokeniser(BIND, JS_NAMES_TOKEN, names);
+      auto names = json_list(bound_names);
+      auto js = tokeniser(BIND, TOKEN_JS_NAMES, names);
       return js;
     }
 
     /// Wraps user JS to notify the native code when eval is ready.
     std::string eval_wrapper(std::string user_js) const {
-      return utility::tokeniser(EVAL_WRAPPER, USER_JS_TOKEN, user_js);
+      return tokeniser(EVAL_WRAPPER, TOKEN_USER_JS, user_js);
     }
   } js{};
+
   struct error_message_t {
-    /// Returns a tokenised error message string for rejecting a promise if a callback binding was unbound.
+    /// Returns a tokenised error string for rejecting a promise if a callback binding was unbound.
     std::string reject_unbound(std::string id, std::string name) const {
-      auto message = utility::tokeniser(REJECT_UNBOUND_M, ID_TOKEN, id);
-      message = utility::tokeniser(message, NAME_TOKEN, name);
+      auto message = tokeniser(REJECT_UNBOUND_M, TOKEN_ID, id);
+      message = tokeniser(message, TOKEN_NAME, name);
       return message;
     }
 
+    /// Returns a tokenised error string for rejecting a promise if a native callback has an uncaught exception.
     std::string uncaught_exception(std::string name, std::string what) const {
-      auto message = utility::tokeniser(UNCAUGHT_EXP_M, NAME_TOKEN, name);
-      message = utility::tokeniser(message, WHAT_TOKEN, what);
+      auto message = tokeniser(UNCAUGHT_EXP_M, TOKEN_NAME, name);
+      message = tokeniser(message, TOKEN_WHAT, what);
       return message;
     }
 
+    /// Returns a tokenised error string for native callbacks in detached threads after webview terminates.
     std::string webview_terminated(std::string name) const {
-      return utility::tokeniser(WEBVIEW_TERMINATED_M, NAME_TOKEN, name);
+      return tokeniser(WEBVIEW_TERMINATED_M, TOKEN_NAME, name);
     }
 
   } err_message{};
 };
+
 /// API for generating HTML and JS related strings.
 static const front_end_t frontend{};
-} // namespace detail
+
+} // namespace utility
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

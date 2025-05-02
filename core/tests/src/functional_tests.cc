@@ -6,6 +6,7 @@
 #define WEBVIEW_VERSION_PRE_RELEASE "-test"
 #define WEBVIEW_VERSION_BUILD_METADATA "+gaabbccd"
 
+#include "webview/utility/frontend_strings.hh"
 #include "webview/webview.h"
 
 #include <cassert>
@@ -109,9 +110,6 @@ TEST_CASE("Use C API to test binding and unbinding") {
     }
     REQUIRE(!"Should not reach here");
   };
-  auto html = "<script>\n"
-              "  window.test(0);\n"
-              "</script>";
   auto w = webview_create(1, nullptr);
   context.w = w;
   // Attempting to remove non-existing binding is OK
@@ -119,7 +117,8 @@ TEST_CASE("Use C API to test binding and unbinding") {
   webview_bind(w, "test", test, &context);
   // Attempting to bind multiple times only binds once
   webview_bind(w, "test", test, &context);
-  webview_set_html(w, html);
+  webview_set_html(w, "Hello");
+  webview_eval(w, "window.test(0);");
   webview_run(w);
 }
 
@@ -260,37 +259,50 @@ TEST_CASE("webview_version()") {
   REQUIRE(webview_version() == vi);
 }
 
-struct test_webview : webview::browser_engine {
-  using cb_t = std::function<void(test_webview *, int, const std::string &)>;
-  test_webview(cb_t cb) : webview::browser_engine(true, nullptr), m_cb(cb) {}
-  void on_message(const std::string &msg) override { m_cb(this, i++, msg); }
-  int i = 0;
-  cb_t m_cb;
-};
-
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
-  test_webview browser([](test_webview *w, int i, const std::string &msg) {
-    switch (i) {
-    case 0:
-      REQUIRE(msg == "loaded");
-      w->eval("window.__webview__.post('exiting ' + window.x)");
-      break;
-    case 1:
-      REQUIRE(msg == "exiting 42");
-      w->terminate();
-      break;
-    default:
-      REQUIRE(0);
-    }
-  });
-  browser.init(R"(
-    window.x = 42;
-    window.onload = () => {
-      window.__webview__.post('loaded');
-    };
-  )");
-  browser.navigate("data:text/html,%3Chtml%3Ehello%3C%2Fhtml%3E");
-  browser.run();
+#define TEST_CASE_URL "data:text/html,%3Chtml%3Ehello%3C%2Fhtml%3E"
+#define TEST_CASE_INIT_JS                                                      \
+  "window.x = 42;\n"                                                           \
+  "window.onload = () => {\n"                                                  \
+  " " TOKEN_POST_FN "\n"                                                       \
+  "};"
+
+  std::mutex mtx;
+  std::unique_lock<std::mutex> lock(mtx);
+  using namespace webview::detail;
+  using namespace webview::utility;
+
+  auto on_load_val = tester::post_value("\"loaded\"");
+  auto init_js = tokeniser(TEST_CASE_INIT_JS, TOKEN_POST_FN, on_load_val);
+  webview::webview wv{true, nullptr};
+  webview::webview *wv_pointer = &wv;
+  auto async_tests = std::thread(
+      [](webview::webview *wv) {
+        std::mutex mtx;
+        std::unique_lock<std::mutex> lock(mtx);
+
+        tester::worker_thread_ready(true);
+        tester::expect_value("loaded");
+        tester::worker_cv().wait_for(lock, tester::timeout_sec(2),
+                                     []() { return tester::values_match(); });
+        REQUIRE(tester::values_match());
+
+        tester::expect_value("exiting 42");
+        tester::post_value(wv, "\"exiting \" + window.x");
+        tester::worker_cv().wait_for(lock, tester::timeout_sec(),
+                                     [] { return tester::values_match(); });
+        REQUIRE(tester::values_match());
+
+        tester::terminate(wv);
+      },
+      wv_pointer);
+
+  wv.navigate(TEST_CASE_URL);
+  wv.init(init_js);
+  tester::main_cv().wait(lock, [] { return tester::worker_thread_ready(); });
+
+  wv.run();
+  async_tests.join();
 }
 
 #define ASSERT_WEBVIEW_FAILED(expr) REQUIRE(WEBVIEW_FAILED(expr))

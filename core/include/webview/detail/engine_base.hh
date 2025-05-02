@@ -31,7 +31,8 @@
 #include "../types.h"
 #include "../types.hh"
 #include "user_script.hh"
-#include "webview/detail/engine_trace.hh"
+#include "webview/detail/engine_queue.hh"
+#include "webview/utility/trace_log.hh"
 #include <atomic>
 #include <list>
 #include <map>
@@ -41,7 +42,6 @@ namespace webview {
 // Container: Global header declarations
 namespace detail {
 
-using webview::noresult;
 /// Internally used callback function type for messaging in the promise resolution
 /// native / JS round trip
 using sync_binding_t = std::function<std::string(std::string)>;
@@ -49,8 +49,7 @@ using sync_binding_t = std::function<std::string(std::string)>;
 using str_arg_t = const std::string &;
 /// Shorthand type for callback lamda functions ie `bind`, `unbind` and `eval`.
 using do_work_t = std::function<void()>;
-/// Forward declaration of \file ./engine_queue.hh to prevent a circular dependency.
-class engine_queue;
+
 } // namespace detail
 
 // Container: `engine_base` class
@@ -60,7 +59,7 @@ namespace detail {
 /// - cocoa_webkit
 /// - gtk_webkitgtk
 /// - win32_edge
-class engine_base {
+class engine_base : public engine_queue {
 
 public:
   virtual ~engine_base() = default;
@@ -146,7 +145,7 @@ protected:
   // Creates a `bind` JS script string for the frontend window.
   std::string create_bind_script();
   /// Handler for messages from the frontend window to the native Webview process.
-  virtual void on_message(str_arg_t msg);
+  virtual void on_message(const std::string &msg);
   /// Handler to increment the browser window count
   virtual void on_window_created();
   /// Handler to decrement the browser window count
@@ -165,8 +164,14 @@ protected:
   void set_default_size_guard(bool guarded);
   /// Gets a flag for whether the Webview window is embedded, or is owned by the user process.
   bool owns_window() const;
+  /// @brief Creates the user work queue thread.
+  ///
+  /// We call this from the backend class to ensure the webview instance reference injection
+  /// order is consistent across C/C++ API instantiation methods.
+  //void queue_init(engine_base &wv);
 
 private:
+  friend class engine_queue;
   /// Keeps track of the number of platform window instances.
   static std::atomic_uint &window_ref_count();
   /// Increments the reference number of platform window instances.
@@ -190,16 +195,12 @@ private:
   static const int m_initial_width = 640;
   /// The default platform window height
   static const int m_initial_height = 480;
-
-  /// Reference to an `engine_queue` class instance.
-  /// It choreographs the user work unit queue and concurrentently resolves native promise callbacks.
-  engine_queue *queue;
   /// Flag that indicates if a Webview work unit should skip the user work queue and execute directly
   bool skip_queue{};
 
   /// Temporary debug tracing utility
   /// @todo remove before merge
-  trace_t trace = trace_t("Webview::");
+  utility::trace_t trace = {"Webview::"};
 };
 
 } // namespace detail

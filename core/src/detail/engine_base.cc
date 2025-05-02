@@ -26,11 +26,12 @@
 #ifndef WEBVIEW_DETAIL_ENGINE_BASE_CC
 #define WEBVIEW_DETAIL_ENGINE_BASE_CC
 
+#include "webview/types.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
+#include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/engine_frontend.hh"
-#include "webview/detail/engine_queue.hh"
 #include "webview/detail/json.hh"
 #include <algorithm>
 #include <functional>
@@ -39,11 +40,11 @@
 
 namespace webview {
 
-// Container: `engine_base` PUBLIC implementations
+// PUBLIC methods
 namespace detail {
-
-engine_base::engine_base(bool owns_window)
-    : m_owns_window{owns_window}, queue(new engine_queue(this)) {}
+engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {
+  queue.init_queue(*this);
+}
 
 noresult engine_base::navigate(str_arg_t url) {
   if (url.empty()) {
@@ -53,6 +54,7 @@ noresult engine_base::navigate(str_arg_t url) {
 }
 
 noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
+  trace.base.bind.print_here(name);
   auto wrapper = [this, fn](str_arg_t id, str_arg_t req, void * /*arg*/) {
     resolve(id, 0, fn(req));
   };
@@ -69,16 +71,16 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
     bindings.emplace(name, binding_ctx_t(fn, arg));
     replace_bind_script();
     skip_queue = true;
-    eval(frontend.js.onbind(name));
+    eval(utility::frontend.js.onbind(name));
     skip_queue = false;
   };
   auto const is_error = bindings.count(name) > 0;
   if (is_error) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
   }
-  queue->promises.list_init(name);
+  queue.promises.list_init(name);
   if (!skip_queue) {
-    return queue->bind.enqueue(do_work, name);
+    return queue.bind.enqueue(do_work, name);
   }
   do_work();
   return {};
@@ -90,28 +92,29 @@ noresult engine_base::unbind(str_arg_t name) {
   do_work_t do_work = [this, name]() {
     trace.base.unbind.work(name);
     skip_queue = true;
-    eval(frontend.js.onunbind(name));
+    eval(utility::frontend.js.onunbind(name));
     skip_queue = false;
     bindings.erase(name);
     replace_bind_script();
   };
-  auto is_rebind = queue->unbind.awaits_bind(name);
+  auto is_rebind = queue.unbind.awaits_bind(name);
   auto const is_error = bindings.count(name) == 0 && !is_rebind;
   if (is_error) {
     return error_info{WEBVIEW_ERROR_NOT_FOUND};
   }
-  return queue->unbind.enqueue(do_work, name);
+  return queue.unbind.enqueue(do_work, name);
 }
 
 noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
   str_arg_t escaped_result = result.empty() ? "undefined" : json_escape(result);
-  str_arg_t promised_js = frontend.js.onreply(id, status, escaped_result);
+  str_arg_t promised_js =
+      utility::frontend.js.onreply(id, status, escaped_result);
 
   return dispatch([this, promised_js, id] {
     skip_queue = true;
     eval(promised_js);
     skip_queue = false;
-    queue->promises.resolved(id);
+    queue.promises.resolved(id);
   });
 }
 
@@ -119,18 +122,18 @@ noresult engine_base::reject(str_arg_t id, str_arg_t err) {
   return resolve(id, 1, json_escape(err));
 }
 
-result<void *> engine_base::window() { return window_impl(); }
+webview::result<void *> engine_base::window() { return window_impl(); }
 
-result<void *> engine_base::widget() { return widget_impl(); }
+webview::result<void *> engine_base::widget() { return widget_impl(); }
 
-result<void *> engine_base::browser_controller() {
+webview::result<void *> engine_base::browser_controller() {
   return browser_controller_impl();
 }
 
 noresult engine_base::run() { return run_impl(); }
 
 noresult engine_base::terminate() {
-  queue->terminate();
+  queue.terminate_queue();
   return terminate_impl();
 }
 
@@ -158,23 +161,23 @@ noresult engine_base::init(str_arg_t js) {
 noresult engine_base::eval(str_arg_t js) {
   trace.base.eval.start(js, skip_queue);
   do_work_t do_work = [this, js] {
-    auto wrapped_js = frontend.js.eval_wrapper(js);
+    auto wrapped_js = utility::frontend.js.eval_wrapper(js);
     trace.base.eval.work(wrapped_js);
     eval_impl(wrapped_js);
   };
 
   if (!skip_queue) {
-    return queue->eval.enqueue(do_work, js);
+    return queue.eval.enqueue(do_work, js);
   }
   trace.base.eval.work(js);
   eval_impl(js);
   return {};
 }
-
 } // namespace detail
 
-// Container: `engine_base` PROTECTED implementations
+// PROTECTED methods
 namespace detail {
+using namespace webview::test;
 
 user_script *engine_base::add_user_script(str_arg_t js) {
   return std::addressof(
@@ -206,7 +209,7 @@ void engine_base::replace_bind_script() {
 }
 
 void engine_base::add_init_script(str_arg_t post_fn) {
-  add_user_script(frontend.js.init(post_fn));
+  add_user_script(utility::frontend.js.init(post_fn));
   m_is_init_script_sent = true;
 }
 
@@ -218,10 +221,29 @@ std::string engine_base::create_bind_script() {
                  [](const std::pair<std::string, binding_ctx_t> &pair) {
                    return pair.first;
                  });
-  return frontend.js.bind(bound_names);
+  return utility::frontend.js.bind(bound_names);
 }
 
-void engine_base::on_message(str_arg_t msg) { queue->resolve(msg, &bindings); }
+void engine_base::on_message(str_arg_t msg) {
+  auto id = json_parse(msg, "id", 0);
+  if (id == TEST_NOTIFICATION_FLAG) {
+    auto test_value = json_parse(msg, "method", 0);
+    tester::set_value(test_value);
+    return;
+  }
+  auto name = json_parse(msg, "method", 0);
+  if (queue.promises.is_system_message(id, name)) {
+    return;
+  }
+  auto found = bindings.find(name);
+  if (found == bindings.end()) {
+    reject(id, utility::frontend.err_message.reject_unbound(id, name));
+    return;
+  }
+  found = bindings.end();
+  auto args = json_parse(msg, "params", 0);
+  queue.promises.resolve(this, name, id, args);
+}
 
 void engine_base::on_window_created() { inc_window_count(); }
 
@@ -256,11 +278,17 @@ void engine_base::set_default_size_guard(bool guarded) {
 
 bool engine_base::owns_window() const { return m_owns_window; }
 
+//engine_queue::public_api_t *engine_base::queue;
+//void engine_base::queue_init(engine_base &wv) {
+//  trace.base.print_here("Initialising engine_queue");
+//  auto queue_api = new engine_queue{};
+//  queue = &queue_api->queue;
+//  queue.init_queue(wv);
+//};
 } // namespace detail
 
-// Container: `engine_base` PRIVATE implementations
+// PRIVATE methods
 namespace detail {
-
 std::atomic_uint &engine_base::window_ref_count() {
   static std::atomic_uint ref_count{0};
   return ref_count;
