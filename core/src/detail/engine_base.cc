@@ -26,11 +26,10 @@
 #ifndef WEBVIEW_DETAIL_ENGINE_BASE_CC
 #define WEBVIEW_DETAIL_ENGINE_BASE_CC
 
-#include "webview/types.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/engine_base.hh"
+#include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/engine_frontend.hh"
 #include "webview/detail/json.hh"
 #include <algorithm>
