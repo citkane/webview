@@ -76,13 +76,13 @@ public:
     public_api_t(engine_queue *self);
 
     struct bind_api_t : api_base<engine_queue> {
-      bind_api_t(engine_queue *self) : api_base(self) {};
+      bind_api_t(engine_queue *self) : api_base(self) {}
       /// Puts a user `bind` work unit onto the queue.
       noresult enqueue(do_work_t fn, str_arg_t name) const;
     } bind;
 
     struct unbind_api_t : api_base<engine_queue> {
-      unbind_api_t(engine_queue *self) : api_base(self) {};
+      unbind_api_t(engine_queue *self) : api_base(self) {}
       /// Puts a user `unbind` work unit onto the queue.
       noresult enqueue(do_work_t fn, str_arg_t name) const;
       /// Indicates to `unbind` if the name is queued to `bind`,
@@ -91,13 +91,13 @@ public:
     } unbind;
 
     struct eval_api_t : api_base<engine_queue> {
-      eval_api_t(engine_queue *self) : api_base(self) {};
+      eval_api_t(engine_queue *self) : api_base(self) {}
       /// Puts a user `eval` work unit onto the queue.
       noresult enqueue(do_work_t fn, str_arg_t js) const;
     } eval;
 
     struct promise_api_t : api_base<engine_queue> {
-      promise_api_t(engine_queue *self) : api_base(self) {};
+      promise_api_t(engine_queue *self) : api_base(self) {}
       /// Initialises an empty list for promise id's of a given bind name
       void list_init(str_arg_t name) const;
       /// Takes queue action for a resolved promise
@@ -169,7 +169,7 @@ private:
 
   /// \ref flags_api_t.done nested API type
   struct done_t : api_base<engine_queue> {
-    done_t(engine_queue *self) : api_base(self) {};
+    done_t(engine_queue *self) : api_base(self) {}
     /// Gets the bind flag state
     bool bind();
     /// Sets the bind flag state
