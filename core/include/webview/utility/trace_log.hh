@@ -26,7 +26,7 @@
 #ifndef WEBVIEW_UTIL_TRACE_LOG_HH
 #define WEBVIEW_UTIL_TRACE_LOG_HH
 
-//#if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
 #include <chrono>
 #include <string>
@@ -256,5 +256,5 @@ public:
 } // namespace webview
 // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
-//#endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_UTIL_TRACE_LOG_HH
