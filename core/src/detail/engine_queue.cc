@@ -96,12 +96,12 @@ bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
   return true;
 }
 
-void public_api_t::init_queue(engine_base &wv) {
+void public_api_t::init_queue(engine_base *wv) {
   if (self->queue_thread_is_constructed) {
     return;
   };
   self->queue_thread =
-      std::thread(&engine_queue::queue_thread_constructor, self, &wv);
+      std::thread(&engine_queue::queue_thread_constructor, self, wv);
   self->queue_thread_is_constructed = true;
 }
 

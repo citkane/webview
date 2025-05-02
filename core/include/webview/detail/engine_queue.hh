@@ -110,7 +110,7 @@ public:
     } promises;
 
     /// Creates the user work queue thread.
-    void init_queue(engine_base &wv);
+    void init_queue(engine_base *wv);
 
     /// @brief Cleans up and shuts down the queue thread.
     ///
