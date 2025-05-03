@@ -61,7 +61,7 @@ namespace detail {
 class engine_queue {
 public:
   ~engine_queue() = default;
-  engine_queue(engine_base *wv);
+  engine_queue();
 
   /* ************************************************************************
    * Public API for `engine_queue`.
@@ -107,6 +107,7 @@ public:
       bool is_system_message(str_arg_t id, str_arg_t method);
     } promises;
 
+    void init_queue(engine_base *wv);
     /// @brief Cleans up and shuts down the queue thread.
     ///
     /// This is the only instance where we lock the main / app thread.

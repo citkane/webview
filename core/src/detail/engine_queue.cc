@@ -34,9 +34,7 @@
 #include <cstdio>
 
 namespace webview {
-detail::engine_queue::engine_queue(engine_base *wv) : queue{this}, flags{this} {
-  queue_thread = std::thread(&engine_queue::queue_thread_constructor, this, wv);
-};
+detail::engine_queue::engine_queue() : queue{this}, flags{this} {};
 
 // PUBLIC API implementation
 namespace detail {
@@ -97,6 +95,11 @@ bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
   }
   return true;
 }
+
+void public_api_t::init_queue(engine_base *wv) {
+  self->queue_thread =
+      std::thread(&engine_queue::queue_thread_constructor, self, wv);
+};
 
 void public_api_t::shutdown_queue() {
   std::mutex mtx;

@@ -42,8 +42,9 @@ namespace webview {
 // PUBLIC methods
 namespace detail {
 
-engine_base::engine_base(bool owns_window)
-    : engine_queue{this}, m_owns_window{owns_window} {}
+engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {
+  queue.init_queue(this);
+}
 
 noresult engine_base::navigate(str_arg_t url) {
   if (url.empty()) {
