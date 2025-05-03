@@ -34,6 +34,7 @@
 #include <condition_variable>
 
 namespace webview {
+using namespace webview::detail;
 namespace test {
 namespace templates {
 
@@ -46,8 +47,6 @@ namespace templates {
   ");"
 
 } // namespace templates
-
-using namespace webview::detail;
 
 /// Static test utilities class
 class tester {

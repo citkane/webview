@@ -34,7 +34,9 @@
 #include <cstdio>
 
 namespace webview {
-detail::engine_queue::engine_queue() : queue{this}, flags{this} {};
+detail::engine_queue::engine_queue(engine_base *wv) : queue{this}, flags{this} {
+  queue_thread = std::thread(&engine_queue::queue_thread_constructor, this, wv);
+};
 
 // PUBLIC API implementation
 namespace detail {
@@ -96,26 +98,18 @@ bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
   return true;
 }
 
-void public_api_t::init_queue(engine_base *wv) {
-  if (self->queue_thread_is_constructed) {
-    return;
-  };
-  self->queue_thread =
-      std::thread(&engine_queue::queue_thread_constructor, self, wv);
-  self->queue_thread_is_constructed = true;
-}
-
-void public_api_t::terminate_queue() {
+void public_api_t::shutdown_queue() {
   std::mutex mtx;
   std::unique_lock<std::mutex> lock(mtx);
 
-  self->flags.set_terminating();
+  self->flags.init_termination();
   self->cv.queue.wait(lock, [this] { return self->queue_thread.joinable(); });
   self->queue_thread.join();
 }
 
 } // namespace detail
 
+// PRIVATE implementation
 namespace detail {
 
 void engine_queue::queue_thread_constructor(engine_base *wv) {
@@ -125,7 +119,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv) {
   while (true) {
     cv.queue.wait(
         lock, [this] { return flags.get_dom_ready() && !flags.queue_empty(); });
-    if (flags.get_terminating()) {
+    if (flags.is_terminating()) {
       break;
     }
     auto work = &list.queue.front();
@@ -143,7 +137,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv) {
     if (work->ctx == ctx.unbind) {
       cv.unbind_timeout.wait_for(
           lock, std::chrono::milliseconds(WEBVIEW_UNBIND_TIMEOUT), [this, val] {
-            return flags.get_terminating() ||
+            return flags.is_terminating() ||
                    list.name_unres_promises[val].empty();
           });
       auto promises = list.name_unres_promises[val];
@@ -251,10 +245,10 @@ void engine_queue::flags_api_t::set_dom_ready() const {
   self->is_dom_ready.store(true);
   self->cv.queue.notify_one();
 };
-bool engine_queue::flags_api_t::get_terminating() const {
+bool engine_queue::flags_api_t::is_terminating() const {
   return self->is_terminating.load();
 };
-void engine_queue::flags_api_t::set_terminating() const {
+void engine_queue::flags_api_t::init_termination() const {
   self->is_terminating.store(true);
   self->queue_empty.store(false);
   self->is_dom_ready.store(true);

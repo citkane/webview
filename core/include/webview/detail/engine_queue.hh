@@ -52,9 +52,7 @@ template <typename T> struct api_base {
 using str_arg_t = const std::string &;
 /// Shorthand type for callback lamda functions ie `bind`, `unbind` and `eval`.
 using do_work_t = std::function<void()>;
-
 class engine_base;
-class engine_queue;
 
 } // namespace detail
 
@@ -63,7 +61,7 @@ namespace detail {
 class engine_queue {
 public:
   ~engine_queue() = default;
-  engine_queue();
+  engine_queue(engine_base *wv);
 
   /* ************************************************************************
    * Public API for `engine_queue`.
@@ -109,14 +107,11 @@ public:
       bool is_system_message(str_arg_t id, str_arg_t method);
     } promises;
 
-    /// Creates the user work queue thread.
-    void init_queue(engine_base *wv);
-
     /// @brief Cleans up and shuts down the queue thread.
     ///
     /// This is the only instance where we lock the main / app thread.
     /// We do so to prevent segfault before the queue thread joins.
-    void terminate_queue();
+    void shutdown_queue();
   };
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 
@@ -192,9 +187,9 @@ private:
     /// Notify the queue that the backend is ready to receive work.
     void set_dom_ready() const;
     /// Query if Webview is in the process of terminating.
-    bool get_terminating() const;
+    bool is_terminating() const;
     /// Signal the queue to do it's destruction.
-    void set_terminating() const;
+    void init_termination() const;
     /// Decrements the queue list and flags empty state.
     void update_queue_size() const;
     /// Query if the queue is empty.
@@ -246,7 +241,6 @@ private:
 
   /// A thread to concurrently choreograph user work queueing.
   std::thread queue_thread;
-  bool queue_thread_is_constructed{};
 };
 
 } // namespace detail

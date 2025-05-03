@@ -41,9 +41,9 @@ namespace webview {
 
 // PUBLIC methods
 namespace detail {
-engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {
-  queue.init_queue(this);
-}
+
+engine_base::engine_base(bool owns_window)
+    : engine_queue{this}, m_owns_window{owns_window} {}
 
 noresult engine_base::navigate(str_arg_t url) {
   if (url.empty()) {
@@ -126,7 +126,7 @@ webview::result<void *> engine_base::browser_controller() {
 noresult engine_base::run() { return run_impl(); }
 
 noresult engine_base::terminate() {
-  queue.terminate_queue();
+  queue.shutdown_queue();
   return terminate_impl();
 }
 
