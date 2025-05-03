@@ -3,7 +3,7 @@
 
 int main(void) {
   webview_t w = webview_create(0, NULL);
-  webview_dispatch(w, [&] { webview_terminate(w); });
+  webview_dispatch(w, [w]() { webview_terminate(w); });
   webview_run(w);
   webview_destroy(w);
   return 0;
