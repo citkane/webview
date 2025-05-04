@@ -47,29 +47,36 @@ using promise_api_t = engine_queue::promise_api_t;
 using eval_api_t = engine_queue::eval_api_t;
 
 noresult bind_api_t::enqueue(do_work_t fn, str_arg_t name) const {
+  std::lock_guard<std::mutex> lock(self->queue_thread_mtx);
   return self->queue_work(name, fn, self->ctx.bind);
 };
 
 noresult unbind_api_t::enqueue(do_work_t fn, str_arg_t name) const {
+  std::lock_guard<std::mutex> lock(self->queue_thread_mtx);
   return self->queue_work(name, fn, self->ctx.unbind);
 };
 bool unbind_api_t::awaits_bind(str_arg_t name) const {
+  std::lock_guard<std::mutex> lock(self->queue_thread_mtx);
   return self->unbind_awaiting_bind(name);
 };
 
 noresult eval_api_t::enqueue(do_work_t fn, str_arg_t js) const {
+  std::lock_guard<std::mutex> lock(self->queue_thread_mtx);
   return self->queue_work(js, fn, self->ctx.eval);
 };
 
 void promise_api_t::list_init(str_arg_t name) const {
+  std::lock_guard<std::mutex> lock(self->queue_thread_mtx);
   self->promise_list_init(name);
 };
+
 void promise_api_t::resolved(str_arg_t id) const {
+  std::lock_guard<std::mutex> lock(self->queue_thread_mtx);
   self->promise_completed(id);
 };
 void promise_api_t::resolve(engine_base *wv, str_arg_t name, str_arg_t id,
                             str_arg_t args) const {
-
+  std::lock_guard<std::mutex> lock(self->queue_thread_mtx);
   self->list.promise_id_name[id] = name;
   self->list.name_unres_promises[name].push_back(id);
 
@@ -82,33 +89,38 @@ bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
     return false;
   };
   if (method == DOM_READY_M) {
-    self->flags.dom.ready();
+    self->trace.queue.notify.on_message(method);
+    self->flags.dom.ready(true);
   }
   if (method == BIND_DONE_M) {
+    self->trace.queue.notify.on_message(method);
     self->flags.done.bind(true);
   }
   if (method == UNBIND_DONE_M) {
+    self->trace.queue.notify.on_message(method);
     self->flags.done.unbind(true);
   }
   if (method == EVAL_READY_M) {
+    self->trace.queue.notify.on_message(method);
     self->flags.done.eval(true);
   }
   return true;
 }
 
 void public_api_t::init(engine_base *wv) {
-  //std::unique_lock<std::mutex> lock(self->main_thread_mtx());
+  //std::lock_guard<std::mutex> lock(self->main_thread_mtx);
   self->queue_thread =
       std::thread(&engine_queue::queue_thread_constructor, self, wv);
 };
 
 void public_api_t::shutdown_queue() {
-  std::mutex main_thread_mtx;
-  std::unique_lock<std::mutex> lock(main_thread_mtx);
+  std::unique_lock<std::mutex> lock(self->main_thread_mtx);
   self->flags.terminate.init();
   self->cv.queue.wait(lock, [this] { return self->queue_thread.joinable(); });
   self->queue_thread.join();
 }
+
+std::mutex &public_api_t::main_mtx() { return self->main_thread_mtx; }
 
 } // namespace detail
 
@@ -116,20 +128,23 @@ void public_api_t::shutdown_queue() {
 namespace detail {
 
 void engine_queue::queue_thread_constructor(engine_base *wv) {
-  std::mutex queue_thread_mtx;
   std::unique_lock<std::mutex> lock(queue_thread_mtx);
   while (true) {
+    trace.queue.loop.wait(list.queue.size(), flags.queue.empty(),
+                          flags.dom.ready());
     cv.queue.wait(lock,
                   [this] { return flags.dom.ready() && !flags.queue.empty(); });
     if (flags.terminate.terminating()) {
       break;
     }
+    trace.queue.loop.start(list.queue.size());
     auto work = &list.queue.front();
     auto val = work->val;
     auto fn = work->fn;
 
     // `bind` user work unit
     if (work->ctx == ctx.bind) {
+      trace.queue.bind.start(val);
       wv->dispatch(fn);
       cv.bind.wait(lock, [this] { return flags.done.bind(); });
       list.pending_binds.pop_front();
@@ -137,35 +152,50 @@ void engine_queue::queue_thread_constructor(engine_base *wv) {
     }
     // `unbind` user work unit
     if (work->ctx == ctx.unbind) {
+      trace.queue.unbind.wait(val);
       cv.unbind_timeout.wait_for(
           lock, std::chrono::milliseconds(WEBVIEW_UNBIND_TIMEOUT), [this, val] {
             return flags.terminate.terminating() ||
                    list.name_unres_promises[val].empty();
           });
+      trace.queue.unbind.start(val);
       auto promises = list.name_unres_promises[val];
       for (auto &id : promises) {
         wv->reject(id, utility::frontend.err_message.reject_unbound(id, val));
       }
       list.name_unres_promises.erase(val);
+
       wv->dispatch(fn);
       cv.unbind.wait(lock, [this] { return flags.done.unbind(); });
+      trace.queue.unbind.done(flags.done.unbind(), val);
       flags.done.unbind(false);
     }
     // `eval` user work unit
     if (work->ctx == ctx.eval) {
+      trace.queue.eval.start(val);
       wv->dispatch(fn);
       cv.eval.wait(lock, [this] { return flags.done.eval(); });
+      trace.queue.eval.done(flags.done.eval());
       flags.done.eval(false);
     }
 
     flags.queue.update();
+    trace.queue.loop.end();
   }
 }
 
 void engine_queue::resolve_thread_constructor(engine_base *wv, str_arg_t name,
                                               str_arg_t id, str_arg_t args) {
+  binding_ctx_t *ctx;
+  std::unique_lock<std::mutex> lock(main_thread_mtx, std::defer_lock);
+  if (lock.try_lock()) {
+    ctx = &wv->bindings.at(name);
+    lock.unlock();
+  } else {
+    ctx = &wv->bindings.at(name);
+  }
   try {
-    wv->bindings.at(name).call(id, args);
+    ctx->call(id, args);
   } catch (const std::exception &err) {
     wv->reject(
         id, utility::frontend.err_message.uncaught_exception(name, err.what()));
@@ -176,11 +206,10 @@ void engine_queue::resolve_thread_constructor(engine_base *wv, str_arg_t name,
 
 noresult engine_queue::queue_work(str_arg_t name_or_js, do_work_t fn,
                                   context_t fn_ctx) {
-  //std::unique_lock<std::mutex> lock(main_thread_mtx(), std::defer_lock);
-  //lock.try_lock();
   if (fn_ctx == ctx.bind) {
     list.pending_binds.push_back(name_or_js);
   }
+  trace.queue.enqueue.added(fn_ctx, list.queue.size(), name_or_js);
   list.queue.push_back({fn_ctx, fn, name_or_js});
   flags.queue.empty(false);
   return {};
@@ -227,6 +256,7 @@ void engine_queue::promise_completed(str_arg_t id) {
   list.promise_id_name.erase(list.promise_id_name.at(id));
   list.name_unres_promises[name].remove(id);
   cv.unbind_timeout.notify_one();
+  trace.queue.unbind.print_here("Promise erased: " + name + " | " + id);
 };
 
 bool engine_queue::flags_done_t::bind() { return self->bind_done.load(); }
@@ -263,13 +293,12 @@ void engine_queue::flags_terminate_t::init() const {
   self->cv.unbind_timeout.notify_one();
 };
 void engine_queue::flags_queue_t::update() const {
-  //std::lock_guard<std::mutex> lock(self->main_thread_mtx());
   if (self->list.queue.size() > 1) {
     self->list.queue.pop_front();
   } else {
     self->list.queue.clear();
   }
-  empty(self->list.queue.empty());
+  flags_queue_t::empty(self->list.queue.empty());
 }
 bool engine_queue::flags_queue_t::empty() const {
   return self->queue_empty.load();

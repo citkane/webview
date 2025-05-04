@@ -32,6 +32,7 @@
 #endif
 
 #include "webview/types.hh"
+#include "webview/utility/trace_log.hh"
 #include <atomic>
 #include <condition_variable>
 #include <functional>
@@ -121,6 +122,7 @@ public:
     /// This is the only instance where we lock the main / app thread.
     /// We do so to prevent segfault before the queue thread joins.
     void shutdown_queue();
+    std::mutex &main_mtx();
   };
 
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
@@ -134,12 +136,12 @@ private:
   /// char 'b' = bind, 'u' = unbind, 'e' = eval
   enum context_t { bind_t = 'b', unbind_t = 'u', eval_t = 'e' };
   struct ctx_t {
-    context_t bind = context_t::bind_t;
+    context_t bind = context_t::unbind_t;
     context_t unbind = context_t::unbind_t;
     context_t eval = context_t::eval_t;
   };
   /// Container for user work operation tags, ie. `bind`, `unbind`, `eval`
-  ctx_t ctx{};
+  ctx_t const ctx{};
 
   /// @brief Constructs a thread to choreograph execution of `bind`, `unbind` or `eval` user work units.
   ///
@@ -260,6 +262,14 @@ private:
 
   /// A thread to concurrently choreograph user work queueing.
   std::thread queue_thread;
+
+  std::mutex main_thread_mtx;
+  std::mutex queue_thread_mtx;
+  std::mutex resolve_thread_mtx;
+
+  /// Temporary debug tracing utility
+  /// @todo remove before merge
+  utility::trace_t trace = {"Webview::"};
 };
 
 } // namespace detail

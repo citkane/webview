@@ -23,8 +23,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_UTIL_TRACE_LOG_HH
-#define WEBVIEW_UTIL_TRACE_LOG_HH
+#ifndef WEBVIEW_UTILITY_TRACE_LOG_HH
+#define WEBVIEW_UTILITY_TRACE_LOG_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
@@ -33,11 +33,6 @@
 
 namespace webview {
 namespace utility {
-
-template <typename T> struct api_base {
-  T *self;
-  api_base(T *self) : self(self) {}
-};
 using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
 
 class col {
@@ -66,126 +61,133 @@ private:
 // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 namespace queue_api {
 
+struct queue_print_t : public print_here_t {
+public:
+  queue_print_t(std::string prefix, std::string postfix)
+      : print_here_t{prefix, postfix}, prefix{prefix}, postfix(postfix) {};
+  void start(std::string name) const;
+  void wait(std::string name) const;
+  void done(bool done, std::string name) const;
+
+private:
+  std::string prefix;
+  std::string postfix;
+};
+
 class queue_bind_t : public print_here_t {
 public:
   ~queue_bind_t() = default;
-  queue_bind_t(std::string prefix, std::string postfix = "BIND");
-
-  void wait(std::string name) const;
-  void start(std::string name) const;
-  void done(bool done, std::string name) const;
-
-private:
-  std::string prefix;
-  std::string postfix;
+  queue_bind_t(std::string prefix, std::string postfix = "BIND")
+      : print_here_t{prefix, postfix}, bind{prefix, postfix} {};
+  struct wrapper_t : public queue_print_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : queue_print_t{prefix, postfix} {};
+  } bind;
 };
+
 class queue_unbind_t : public print_here_t {
 public:
   ~queue_unbind_t() = default;
-  queue_unbind_t(std::string prefix, std::string postfix = "UNBIND");
-
-  void wait(std::string name) const;
-  void start(std::string name) const;
-  void done(bool done, std::string name) const;
-
-private:
-  std::string prefix;
-  std::string postfix;
+  queue_unbind_t(std::string prefix, std::string postfix = "UNBIND")
+      : print_here_t{prefix, postfix}, unbind{prefix, postfix} {};
+  struct wrapper_t : public queue_print_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : queue_print_t{prefix, postfix} {};
+  } unbind;
 };
+
 class queue_eval_t : public print_here_t {
 public:
   ~queue_eval_t() = default;
-  queue_eval_t(std::string prefix, std::string postfix = "EVAL");
+  queue_eval_t(std::string prefix, std::string postfix = "EVAL")
+      : print_here_t(prefix, postfix), eval{prefix, postfix} {};
+  struct wrapper_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : prefix(prefix), postfix(postfix) {};
+    void start(std::string js) const;
+    void done(bool done) const;
 
-  void start(std::string js) const;
-  void done(bool done) const;
-
-private:
-  std::string prefix;
-  std::string postfix;
+  private:
+    std::string prefix;
+    std::string postfix;
+  } eval;
 };
+
 class queue_loop_t : public print_here_t {
 public:
   ~queue_loop_t() = default;
-  queue_loop_t(std::string prefix, std::string postfix = "loop: ");
+  queue_loop_t(std::string prefix, std::string postfix = "loop: ")
+      : print_here_t(prefix, postfix), loop{prefix, postfix} {};
+  struct wrapper_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : prefix(prefix), postfix(postfix) {};
+    void wait(size_t size, bool empty, bool dom_ready) const;
+    void start(size_t size) const;
+    void end() const;
 
-  void wait(size_t size, bool empty, bool dom_ready) const;
-  void start(size_t size) const;
-  void end() const;
-
-private:
-  time_point_t process_ts;
-  time_point_t mutable loop_wait_ts;
-  time_point_t mutable loop_start_ts;
-  time_point_t mutable loop_end_ts;
-  void set_loop_wait_ts() const;
-  void set_loop_start_ts() const;
-  void set_loop_end_ts() const;
-  std::string total_elapsed() const;
-  std::string wait_elapsed() const;
-  std::string loop_elapsed() const;
-  std::string prefix;
-  std::string postfix;
+  private:
+    void set_loop_wait_ts() const;
+    void set_loop_start_ts() const;
+    void set_loop_end_ts() const;
+    std::string total_elapsed() const;
+    std::string wait_elapsed() const;
+    std::string loop_elapsed() const;
+    time_point_t process_ts;
+    time_point_t mutable loop_wait_ts;
+    time_point_t mutable loop_start_ts;
+    time_point_t mutable loop_end_ts;
+    std::string prefix;
+    std::string postfix;
+  } loop;
 };
+
 class queue_notify_t : public print_here_t {
 public:
   ~queue_notify_t() = default;
-  queue_notify_t(std::string prefix, std::string postfix = "notify: ");
+  queue_notify_t(std::string prefix, std::string postfix = "notify: ")
+      : print_here_t(prefix, postfix), notify{prefix, postfix} {};
+  struct wrapper_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : prefix(prefix), postfix(postfix) {};
+    void on_message(std::string method) const;
 
-  void on_message(std::string method) const;
-
-private:
-  std::string prefix;
-  std::string postfix;
+  private:
+    std::string prefix;
+    std::string postfix;
+  } notify;
 };
+
 class queue_enqueue_t : public print_here_t {
 public:
   ~queue_enqueue_t() = default;
-  queue_enqueue_t(std::string prefix, std::string postfix = "enqueue: ");
+  queue_enqueue_t(std::string prefix, std::string postfix = "enqueue: ")
+      : print_here_t(prefix, postfix), enqueue{prefix, postfix} {};
+  struct wrapper_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : prefix(prefix), postfix(postfix) {};
+    void added(char scp, size_t size, std::string name_or_js) const;
+    void added(char scp, size_t size) const;
 
-  void added(char scp, size_t size, std::string name_or_js) const;
-  void added(char scp, size_t size) const;
-
-private:
-  std::string prefix;
-  std::string postfix;
-};
-class queue_t {
-public:
-  ~queue_t() = default;
-  queue_t(std::string prefix, std::string postfix = "QUEUE: ");
-
-  struct queue_s : api_base<queue_t>, public print_here_t {
-    queue_s(queue_t *self, std::string prefix, std::string postfix);
-    queue_bind_t bind;
-    queue_unbind_t unbind;
-    queue_eval_t eval;
-    queue_loop_t loop;
-    queue_notify_t notify;
-    queue_enqueue_t enqueue;
-  } queue;
-
-protected:
-  friend class trace_t;
-  friend class queue_bind_t;
-  friend class queue_unbind_t;
-  static void print_wait(std::string prefix, std::string postfix,
-                         std::string name);
-  static void print_start(std::string prefix, std::string postfix,
-                          std::string name);
-  static void print_done(std::string prefix, std::string postfix, bool done,
-                         std::string name);
+  private:
+    std::string prefix;
+    std::string postfix;
+  } enqueue;
 };
 
 } // namespace queue_api
 
 namespace base_api {
 
-class base_bind_t : public print_here_t {
+struct base_print_t : public print_here_t {
 public:
-  ~base_bind_t() = default;
-  base_bind_t(std::string prefix, std::string postfix = "bind: ");
-
+  base_print_t(std::string prefix, std::string postfix)
+      : print_here_t{prefix, postfix}, prefix{prefix}, postfix(postfix) {};
   void start(std::string name) const;
   void work(std::string name) const;
   void done(std::string name) const;
@@ -194,52 +196,48 @@ private:
   std::string prefix;
   std::string postfix;
 };
+
+class base_bind_t : public print_here_t {
+public:
+  ~base_bind_t() = default;
+  base_bind_t(std::string prefix, std::string postfix = "bind: ")
+      : print_here_t{prefix, postfix}, bind{prefix, postfix} {};
+  struct wrapper_t : public base_print_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : base_print_t{prefix, postfix} {};
+  } bind;
+};
+
 class base_unbind_t : public print_here_t {
 public:
   ~base_unbind_t() = default;
-  base_unbind_t(std::string prefix, std::string postfix = "unbind: ");
-
-  void start(std::string name) const;
-  void work(std::string name) const;
-  void done(std::string name) const;
-
-private:
-  std::string prefix;
-  std::string postfix;
+  base_unbind_t(std::string prefix, std::string postfix = "unbind: ")
+      : print_here_t{prefix, postfix}, unbind{prefix, postfix} {};
+  struct wrapper_t : public base_print_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : base_print_t{prefix, postfix} {};
+  } unbind;
 };
 
 class base_eval_t : public print_here_t {
 public:
   ~base_eval_t() = default;
-  base_eval_t(std::string prefix, std::string postfix = "eval: ");
+  base_eval_t(std::string prefix, std::string postfix = "eval: ")
+      : print_here_t{prefix, postfix}, eval{prefix, postfix} {};
+  struct wrapper_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : prefix(prefix), postfix(postfix) {};
+    void start(std::string js, bool skip_queue) const;
+    void work(std::string js) const;
+    void done(bool done, std::string js) const;
 
-  void start(std::string js, bool skip_queue) const;
-  void work(std::string js) const;
-  void done(bool done, std::string js) const;
-
-private:
-  std::string prefix;
-  std::string postfix;
-};
-
-class base_t {
-public:
-  base_t(std::string prefix, std::string postfix = "BASE: ");
-  struct base_s : api_base<base_t>, public print_here_t {
-    base_s(base_t *self, std::string prefix, std::string postfix);
-    base_bind_t bind;
-    base_unbind_t unbind;
-    base_eval_t eval;
-  } base;
-
-protected:
-  friend class trace_t;
-  friend class base_bind_t;
-  friend class base_unbind_t;
-  friend class base_eval_t;
-  static void print_start(std::string prefix, std::string name);
-  static void print_work(std::string prefix, std::string name);
-  static void print_done(std::string prefix, std::string name);
+  private:
+    std::string prefix;
+    std::string postfix;
+  } eval;
 };
 
 } // namespace base_api
@@ -247,10 +245,50 @@ protected:
 using namespace queue_api;
 using namespace base_api;
 
-class trace_t : public base_t, public queue_t, public print_here_t {
+class base_t : public print_here_t {
 public:
-  virtual ~trace_t() = default;
-  trace_t(std::string prefix, std::string postfix = "root: ");
+  ~base_t() = default;
+  base_t(std::string prefix, std::string postfix = "BASE: ")
+      : print_here_t{prefix, "root: "}, base{prefix, postfix} {};
+
+  struct wrapper_t : public base_bind_t,
+                     public base_unbind_t,
+                     public base_eval_t {
+    ~wrapper_t() = default;
+    wrapper_t(std::string prefix, std::string postfix)
+        : base_bind_t(prefix + postfix),
+          base_unbind_t(prefix + postfix),
+          base_eval_t(prefix + postfix) {};
+  } base;
+};
+
+class queue_t : public print_here_t {
+public:
+  ~queue_t() = default;
+  queue_t(std::string prefix, std::string postfix = "QUEUE: ")
+      : print_here_t(prefix, postfix), queue{prefix, postfix} {};
+
+  struct wrapper_t : public queue_bind_t,
+                     public queue_unbind_t,
+                     public queue_eval_t,
+                     public queue_loop_t,
+                     public queue_notify_t,
+                     public queue_enqueue_t {
+    wrapper_t(std::string prefix, std::string postfix)
+        : queue_bind_t{prefix, postfix},
+          queue_unbind_t{prefix, postfix},
+          queue_eval_t{prefix, postfix},
+          queue_loop_t{prefix, postfix},
+          queue_notify_t{prefix, postfix},
+          queue_enqueue_t{prefix, postfix} {};
+  } queue;
+};
+
+class trace_t : public base_t, public queue_t {
+public:
+  ~trace_t() = default;
+  trace_t(std::string prefix)
+      : base_t("........ " + prefix), queue_t(prefix) {};
 };
 
 } // namespace utility
@@ -258,4 +296,4 @@ public:
 // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_UTIL_TRACE_LOG_HH
+#endif // WEBVIEW_UTILITY_TRACE_LOG_HH

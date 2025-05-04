@@ -26,10 +26,11 @@
 #ifndef WEBVIEW_DETAIL_ENGINE_BASE_CC
 #define WEBVIEW_DETAIL_ENGINE_BASE_CC
 
+#include <mutex>
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "webview/detail/engine_base.hh"
 #include "webview/../../tests/include/test_helper.hh"
+#include "webview/detail/engine_base.hh"
 #include "webview/detail/engine_frontend.hh"
 #include "webview/detail/json.hh"
 #include <algorithm>
@@ -52,6 +53,7 @@ noresult engine_base::navigate(str_arg_t url) {
 }
 
 noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
+  trace.base.bind.print_here(name);
   auto wrapper = [this, fn](str_arg_t id, str_arg_t req, void * /*arg*/) {
     resolve(id, 0, fn(req));
   };
@@ -62,7 +64,10 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
 }
 
 noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
+  trace.base.bind.start(name);
   do_work_t do_work = [this, name, fn, arg] {
+    //std::lock_guard<std::mutex> lock(user_queue.main_mtx());
+    trace.base.bind.work(name);
     bindings.emplace(name, binding_ctx_t(fn, arg));
     replace_bind_script();
     skip_queue = true;
@@ -82,7 +87,10 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
 }
 
 noresult engine_base::unbind(str_arg_t name) {
+  trace.base.unbind.start(name);
   do_work_t do_work = [this, name]() {
+    //std::lock_guard<std::mutex> lock(user_queue.main_mtx());
+    trace.base.unbind.work(name);
     skip_queue = true;
     eval(utility::frontend.js.onunbind(name));
     skip_queue = false;
@@ -151,14 +159,17 @@ noresult engine_base::init(str_arg_t js) {
 }
 
 noresult engine_base::eval(str_arg_t js) {
+  trace.base.eval.start(js, skip_queue);
   do_work_t do_work = [this, js] {
     auto wrapped_js = utility::frontend.js.eval_wrapper(js);
+    trace.base.eval.work(wrapped_js);
     eval_impl(wrapped_js);
   };
 
   if (!skip_queue) {
     return user_queue.eval.enqueue(do_work, js);
   }
+  trace.base.eval.work(js);
   eval_impl(js);
   return {};
 }
@@ -203,6 +214,7 @@ void engine_base::add_init_script(str_arg_t post_fn) {
 }
 
 std::string engine_base::create_bind_script() {
+  //std::lock_guard<std::mutex> lock(user_queue.main_mtx());
   std::vector<std::string> bound_names;
   bound_names.reserve(bindings.size());
   std::transform(bindings.begin(), bindings.end(),
