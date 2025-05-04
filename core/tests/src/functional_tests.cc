@@ -1,3 +1,4 @@
+#include "webview/api.h"
 #include "webview/test_driver.hh"
 
 #define WEBVIEW_VERSION_MAJOR 1
@@ -57,6 +58,7 @@ TEST_CASE("Use C API to create a window, run app and terminate it") {
 }
 
 TEST_CASE("Use C API to test binding and unbinding") {
+  using namespace webview::utility;
   struct context_t {
     webview_t w;
     unsigned int number;
@@ -74,9 +76,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
       REQUIRE(context->number == 0);
       webview_bind(context->w, "increment", increment, context);
       webview_eval(context->w,
-                   "try{window.increment().then(r => window.test(1))"
-                   ".catch(() => window.test(1,1))}"
-                   "catch{window.test(1,1)}");
+                   tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "1").c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -85,9 +85,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
       REQUIRE(context->number == 1);
       webview_unbind(context->w, "increment");
       webview_eval(context->w,
-                   "try{window.increment().then(r => window.test(2))"
-                   ".catch(() => window.test(2,1))}"
-                   "catch{window.test(2,1)}");
+                   tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "2").c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -96,9 +94,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
       REQUIRE(context->number == 1);
       webview_bind(context->w, "increment", increment, context);
       webview_eval(context->w,
-                   "try{window.increment().then(r => window.test(3))"
-                   ".catch(() => window.test(3,1))}"
-                   "catch{window.test(3,1)}");
+                   tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "3").c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -112,48 +108,40 @@ TEST_CASE("Use C API to test binding and unbinding") {
   };
   auto w = webview_create(1, nullptr);
   context.w = w;
+  webview_set_html(w, "Use C API to test binding and unbinding");
   // Attempting to remove non-existing binding is OK
   webview_unbind(w, "test");
   webview_bind(w, "test", test, &context);
   // Attempting to bind multiple times only binds once
   webview_bind(w, "test", test, &context);
-  webview_set_html(w, "Hello");
   webview_eval(w, "window.test(0);");
   webview_run(w);
+  webview_destroy(w);
 }
 
 TEST_CASE("Test synchronous binding and unbinding") {
-  auto make_call_js = [](unsigned int result) {
-    std::string js;
-    js += "try{window.increment().then(r => window.test(";
-    js += std::to_string(result);
-    js += "))";
-    js += ".catch(() => window.test(";
-    js += std::to_string(result);
-    js += ",1))}catch{window.test(";
-    js += std::to_string(result);
-    js += ",1)}";
-    return js;
-  };
+  using namespace webview::utility;
+
   unsigned int number = 0;
-  webview::webview w(false, nullptr);
+  webview::webview w(true, nullptr);
   auto test = [&](const std::string &req) -> std::string {
     auto increment = [&](const std::string & /*req*/) -> std::string {
       ++number;
       return "";
     };
+    printf("%s\n", req.c_str());
     // Bind and increment number.
     if (req == "[0]") {
       REQUIRE(number == 0);
       w.bind("increment", increment);
-      w.eval(make_call_js(1));
+      w.eval(tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "1"));
       return "";
     }
     // Unbind and make sure that we cannot increment even if we try.
     if (req == "[1]") {
       REQUIRE(number == 1);
       w.unbind("increment");
-      w.eval(make_call_js(2));
+      w.eval(tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "2"));
       return "";
     }
     // We should have gotten an error on the JS side.
@@ -161,27 +149,26 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[2,1]") {
       REQUIRE(number == 1);
       w.bind("increment", increment);
-      w.eval(make_call_js(3));
+      w.eval(tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "3"));
       return "";
     }
     // Finish test.
     if (req == "[3]") {
       REQUIRE(number == 2);
+      //w.dispatch([&] { w.terminate(); });
       w.terminate();
       return "";
     }
     REQUIRE(!"Should not reach here");
     return "";
   };
-  auto html = "<script>\n"
-              "  window.test(0);\n"
-              "</script>";
+  w.set_html("Test synchronous binding and unbinding");
   // Attempting to remove non-existing binding is OK
   w.unbind("test");
   w.bind("test", test);
   // Attempting to bind multiple times only binds once
   w.bind("test", test);
-  w.set_html(html);
+  w.eval("window.test(0);");
   w.run();
 }
 

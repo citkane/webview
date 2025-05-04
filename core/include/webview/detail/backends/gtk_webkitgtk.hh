@@ -100,6 +100,7 @@ private:
 class gtk_webkit_engine : public engine_base {
 public:
   gtk_webkit_engine(bool debug, void *window) : engine_base{!window} {
+    user_queue.init(this);
     window_init(window);
     window_settings(debug);
     dispatch_size_default();

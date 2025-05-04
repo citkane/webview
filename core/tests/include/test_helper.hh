@@ -38,13 +38,22 @@ using namespace webview::detail;
 namespace test {
 namespace templates {
 
-#define WEBVIEW_POST_TEST                                                      \
+#define TEST_POST                                                              \
   "window.__webview__.post(\n"                                                 \
   "  JSON.stringify({\n"                                                       \
   "    id: \"" TEST_NOTIFICATION_FLAG "\",\n"                                  \
   "    method: " TOKEN_VALUE "\n"                                              \
   "  })\n"                                                                     \
   ");"
+
+#define TEST_B_UB_CALL                                                         \
+  "try {\n"                                                                    \
+  "  window.increment()"                                                       \
+  "  .then(r => window.test(" TOKEN_VALUE "))\n"                               \
+  "  .catch(() => window.test(" TOKEN_VALUE ",1))\n"                           \
+  "} catch {\n"                                                                \
+  "  window.test(" TOKEN_VALUE ",1)"                                           \
+  "}"
 
 } // namespace templates
 
@@ -67,7 +76,7 @@ public:
 
   /// Tokenises a `window.__webview__.post` string with a test value
   static std::string post_value(const std::string &value) {
-    return utility::tokeniser(WEBVIEW_POST_TEST, TOKEN_VALUE, value);
+    return utility::tokeniser(TEST_POST, TOKEN_VALUE, value);
   }
 
   /// Dispatches -> wv.eval of a tokenised `window.__webview__.post` string with a test value

@@ -42,9 +42,7 @@ namespace webview {
 // PUBLIC methods
 namespace detail {
 
-engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {
-  queue.init_queue(this);
-}
+engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {}
 
 noresult engine_base::navigate(str_arg_t url) {
   if (url.empty()) {
@@ -75,9 +73,9 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
   if (is_error) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
   }
-  queue.promises.list_init(name);
+  user_queue.promises.list_init(name);
   if (!skip_queue) {
-    return queue.bind.enqueue(do_work, name);
+    return user_queue.bind.enqueue(do_work, name);
   }
   do_work();
   return {};
@@ -91,12 +89,12 @@ noresult engine_base::unbind(str_arg_t name) {
     bindings.erase(name);
     replace_bind_script();
   };
-  auto is_rebind = queue.unbind.awaits_bind(name);
+  auto is_rebind = user_queue.unbind.awaits_bind(name);
   auto const is_error = bindings.count(name) == 0 && !is_rebind;
   if (is_error) {
     return error_info{WEBVIEW_ERROR_NOT_FOUND};
   }
-  return queue.unbind.enqueue(do_work, name);
+  return user_queue.unbind.enqueue(do_work, name);
 }
 
 noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
@@ -108,7 +106,7 @@ noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
     skip_queue = true;
     eval(promised_js);
     skip_queue = false;
-    queue.promises.resolved(id);
+    user_queue.promises.resolved(id);
   });
 }
 
@@ -127,7 +125,7 @@ webview::result<void *> engine_base::browser_controller() {
 noresult engine_base::run() { return run_impl(); }
 
 noresult engine_base::terminate() {
-  queue.shutdown_queue();
+  user_queue.shutdown_queue();
   return terminate_impl();
 }
 
@@ -159,7 +157,7 @@ noresult engine_base::eval(str_arg_t js) {
   };
 
   if (!skip_queue) {
-    return queue.eval.enqueue(do_work, js);
+    return user_queue.eval.enqueue(do_work, js);
   }
   eval_impl(js);
   return {};
@@ -223,7 +221,7 @@ void engine_base::on_message(str_arg_t msg) {
     return;
   }
   auto name = json_parse(msg, "method", 0);
-  if (queue.promises.is_system_message(id, name)) {
+  if (user_queue.promises.is_system_message(id, name)) {
     return;
   }
   auto found = bindings.find(name);
@@ -233,7 +231,7 @@ void engine_base::on_message(str_arg_t msg) {
   }
   found = bindings.end();
   auto args = json_parse(msg, "params", 0);
-  queue.promises.resolve(this, name, id, args);
+  user_queue.promises.resolve(this, name, id, args);
 }
 
 void engine_base::on_window_created() { inc_window_count(); }

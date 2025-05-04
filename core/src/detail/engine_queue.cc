@@ -26,27 +26,25 @@
 #ifndef WEBVIEW_ENGINE_QUEUE_CC
 #define WEBVIEW_ENGINE_QUEUE_CC
 
+#include <mutex>
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "webview/detail/engine_queue.hh"
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/engine_frontend.hh"
+#include "webview/detail/engine_queue.hh"
 #include <cstdio>
 
 namespace webview {
-detail::engine_queue::engine_queue() : queue{this}, flags{this} {};
+detail::engine_queue::engine_queue() : user_queue{this}, flags{this} {};
 
 // PUBLIC API implementation
 namespace detail {
 
 using public_api_t = engine_queue::public_api_t;
-using bind_api_t = public_api_t::bind_api_t;
-using unbind_api_t = public_api_t::unbind_api_t;
-using promise_api_t = public_api_t::promise_api_t;
-using eval_api_t = public_api_t::eval_api_t;
-
-public_api_t::public_api_t(engine_queue *self)
-    : api_base(self), bind(self), unbind{self}, eval{self}, promises{self} {};
+using bind_api_t = engine_queue::bind_api_t;
+using unbind_api_t = engine_queue::unbind_api_t;
+using promise_api_t = engine_queue::promise_api_t;
+using eval_api_t = engine_queue::eval_api_t;
 
 noresult bind_api_t::enqueue(do_work_t fn, str_arg_t name) const {
   return self->queue_work(name, fn, self->ctx.bind);
@@ -66,7 +64,9 @@ noresult eval_api_t::enqueue(do_work_t fn, str_arg_t js) const {
 void promise_api_t::list_init(str_arg_t name) const {
   self->promise_list_init(name);
 };
-void promise_api_t::resolved(str_arg_t id) const { self->promise_erase(id); };
+void promise_api_t::resolved(str_arg_t id) const {
+  self->promise_completed(id);
+};
 void promise_api_t::resolve(engine_base *wv, str_arg_t name, str_arg_t id,
                             str_arg_t args) const {
 
@@ -82,7 +82,7 @@ bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
     return false;
   };
   if (method == DOM_READY_M) {
-    self->flags.set_dom_ready();
+    self->flags.dom.ready();
   }
   if (method == BIND_DONE_M) {
     self->flags.done.bind(true);
@@ -96,16 +96,16 @@ bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
   return true;
 }
 
-void public_api_t::init_queue(engine_base *wv) {
+void public_api_t::init(engine_base *wv) {
+  //std::unique_lock<std::mutex> lock(self->main_thread_mtx());
   self->queue_thread =
       std::thread(&engine_queue::queue_thread_constructor, self, wv);
 };
 
 void public_api_t::shutdown_queue() {
-  std::mutex mtx;
-  std::unique_lock<std::mutex> lock(mtx);
-
-  self->flags.init_termination();
+  std::mutex main_thread_mtx;
+  std::unique_lock<std::mutex> lock(main_thread_mtx);
+  self->flags.terminate.init();
   self->cv.queue.wait(lock, [this] { return self->queue_thread.joinable(); });
   self->queue_thread.join();
 }
@@ -116,13 +116,12 @@ void public_api_t::shutdown_queue() {
 namespace detail {
 
 void engine_queue::queue_thread_constructor(engine_base *wv) {
-  std::mutex mtx;
-  std::unique_lock<std::mutex> lock(mtx);
-
+  std::mutex queue_thread_mtx;
+  std::unique_lock<std::mutex> lock(queue_thread_mtx);
   while (true) {
-    cv.queue.wait(
-        lock, [this] { return flags.get_dom_ready() && !flags.queue_empty(); });
-    if (flags.is_terminating()) {
+    cv.queue.wait(lock,
+                  [this] { return flags.dom.ready() && !flags.queue.empty(); });
+    if (flags.terminate.terminating()) {
       break;
     }
     auto work = &list.queue.front();
@@ -140,7 +139,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv) {
     if (work->ctx == ctx.unbind) {
       cv.unbind_timeout.wait_for(
           lock, std::chrono::milliseconds(WEBVIEW_UNBIND_TIMEOUT), [this, val] {
-            return flags.is_terminating() ||
+            return flags.terminate.terminating() ||
                    list.name_unres_promises[val].empty();
           });
       auto promises = list.name_unres_promises[val];
@@ -159,7 +158,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv) {
       flags.done.eval(false);
     }
 
-    flags.update_queue_size();
+    flags.queue.update();
   }
 }
 
@@ -177,11 +176,13 @@ void engine_queue::resolve_thread_constructor(engine_base *wv, str_arg_t name,
 
 noresult engine_queue::queue_work(str_arg_t name_or_js, do_work_t fn,
                                   context_t fn_ctx) {
+  //std::unique_lock<std::mutex> lock(main_thread_mtx(), std::defer_lock);
+  //lock.try_lock();
   if (fn_ctx == ctx.bind) {
     list.pending_binds.push_back(name_or_js);
   }
   list.queue.push_back({fn_ctx, fn, name_or_js});
-  flags.queue_empty(false);
+  flags.queue.empty(false);
   return {};
 };
 
@@ -221,37 +222,37 @@ void engine_queue::promise_list_init(str_arg_t name) {
   list.name_unres_promises[name] = {};
 }
 
-void engine_queue::promise_erase(str_arg_t id) {
+void engine_queue::promise_completed(str_arg_t id) {
   auto name = list.promise_id_name[id];
   list.promise_id_name.erase(list.promise_id_name.at(id));
   list.name_unres_promises[name].remove(id);
   cv.unbind_timeout.notify_one();
 };
 
-bool engine_queue::done_t::bind() { return self->bind_done.load(); }
-void engine_queue::done_t::bind(bool val) {
+bool engine_queue::flags_done_t::bind() { return self->bind_done.load(); }
+void engine_queue::flags_done_t::bind(bool val) {
   self->set_done(val, self->ctx.bind);
 }
-bool engine_queue::done_t::unbind() { return self->unbind_done.load(); }
-void engine_queue::done_t::unbind(bool val) {
+bool engine_queue::flags_done_t::unbind() { return self->unbind_done.load(); }
+void engine_queue::flags_done_t::unbind(bool val) {
   self->set_done(val, self->ctx.unbind);
 }
-bool engine_queue::done_t::eval() { return self->eval_done.load(); }
-void engine_queue::done_t::eval(bool val) {
+bool engine_queue::flags_done_t::eval() { return self->eval_done.load(); }
+void engine_queue::flags_done_t::eval(bool val) {
   self->set_done(val, self->ctx.eval);
 }
 
-bool engine_queue::flags_api_t::get_dom_ready() const {
+bool engine_queue::flags_dom_ready_t::ready() const {
   return self->is_dom_ready.load();
 };
-void engine_queue::flags_api_t::set_dom_ready() const {
-  self->is_dom_ready.store(true);
+void engine_queue::flags_dom_ready_t::ready(bool flag) const {
+  self->is_dom_ready.store(flag);
   self->cv.queue.notify_one();
 };
-bool engine_queue::flags_api_t::is_terminating() const {
+bool engine_queue::flags_terminate_t::terminating() const {
   return self->is_terminating.load();
 };
-void engine_queue::flags_api_t::init_termination() const {
+void engine_queue::flags_terminate_t::init() const {
   self->is_terminating.store(true);
   self->queue_empty.store(false);
   self->is_dom_ready.store(true);
@@ -261,18 +262,19 @@ void engine_queue::flags_api_t::init_termination() const {
   self->cv.queue.notify_one();
   self->cv.unbind_timeout.notify_one();
 };
-void engine_queue::flags_api_t::update_queue_size() const {
+void engine_queue::flags_queue_t::update() const {
+  //std::lock_guard<std::mutex> lock(self->main_thread_mtx());
   if (self->list.queue.size() > 1) {
     self->list.queue.pop_front();
   } else {
     self->list.queue.clear();
   }
-  queue_empty(self->list.queue.empty());
+  empty(self->list.queue.empty());
 }
-bool engine_queue::flags_api_t::queue_empty() const {
+bool engine_queue::flags_queue_t::empty() const {
   return self->queue_empty.load();
 };
-void engine_queue::flags_api_t::queue_empty(bool val) const {
+void engine_queue::flags_queue_t::empty(bool val) const {
   self->queue_empty.store(val);
   self->cv.queue.notify_one();
 }
