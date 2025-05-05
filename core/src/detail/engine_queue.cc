@@ -37,7 +37,7 @@
 
 namespace webview {
 detail::engine_queue::engine_queue()
-    : user_queue{this}, atomic{this}, wv(nullptr) {};
+    : user_queue{this}, atomic{this}, wv(nullptr) {}
 
 // PUBLIC API implementation
 namespace detail {

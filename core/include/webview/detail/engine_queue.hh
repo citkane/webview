@@ -221,7 +221,7 @@ private:
   };
   struct atomic_api_t : nested_api_t<engine_queue> {
     ~atomic_api_t() = default;
-    atomic_api_t(engine_queue *self) : nested_api_t(self) {};
+    atomic_api_t(engine_queue *self) : nested_api_t(self) {}
     atomic_dom_ready_t dom{this->self};
     atomic_terminate_t terminate{this->self};
     atomic_queue_t queue{this->self};

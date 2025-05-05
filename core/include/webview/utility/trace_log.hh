@@ -67,7 +67,7 @@ namespace queue_api {
 struct queue_print_t : public print_here_t {
 public:
   queue_print_t(string_t prefix, string_t postfix)
-      : print_here_t{prefix, postfix}, prefix{prefix}, postfix(postfix) {};
+      : print_here_t{prefix, postfix}, prefix{prefix}, postfix(postfix) {}
   void start(string_t name) const;
   void wait(string_t name) const;
   void done(bool done, string_t name) const;
@@ -109,7 +109,7 @@ public:
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
-        : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {};
+        : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {}
     void start(string_t js) const;
     void done(bool done) const;
 
@@ -130,7 +130,7 @@ public:
         : print_here_t(prefix, postfix),
           prefix(prefix),
           postfix(postfix),
-          process_ts(get_now()) {};
+          process_ts(get_now()) {}
     void wait(size_t size, bool empty, bool dom_ready) const;
     void start(size_t size) const;
     void end() const;
@@ -162,7 +162,7 @@ public:
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
-        : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {};
+        : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {}
     void on_message(string_t method) const;
 
   private:
@@ -179,7 +179,7 @@ public:
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
-        : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {};
+        : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {}
     void added(char scp, size_t size, string_t name_or_js) const;
     void added(char scp, size_t size) const;
 
@@ -196,7 +196,7 @@ namespace base_api {
 struct base_print_t : public print_here_t {
 public:
   base_print_t(string_t prefix, string_t postfix)
-      : print_here_t{prefix, postfix}, prefix{prefix}, postfix(postfix) {};
+      : print_here_t{prefix, postfix}, prefix{prefix}, postfix(postfix) {}
   void start(string_t name) const;
   void work(string_t name) const;
   void done(string_t name) const;
@@ -238,7 +238,7 @@ public:
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
-        : print_here_t{prefix, postfix}, prefix(prefix), postfix(postfix) {};
+        : print_here_t{prefix, postfix}, prefix(prefix), postfix(postfix) {}
     void start(string_t js, bool skip_queue) const;
     void work(string_t js) const;
     void done(bool done, string_t js) const;
@@ -269,7 +269,7 @@ public:
         : base_bind_t(prefix + postfix),
           base_unbind_t(prefix + postfix),
           base_eval_t(prefix + postfix),
-          print_here_t(prefix, postfix) {};
+          print_here_t(prefix, postfix) {}
   } base;
 };
 
@@ -301,7 +301,7 @@ public:
 class trace_t : public base_t, public queue_t {
 public:
   ~trace_t() = default;
-  trace_t(string_t prefix) : base_t("........ " + prefix), queue_t(prefix) {};
+  trace_t(string_t prefix) : base_t("........ " + prefix), queue_t(prefix) {}
 };
 
 } // namespace utility

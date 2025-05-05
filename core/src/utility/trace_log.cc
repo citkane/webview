@@ -117,7 +117,7 @@ string_t col::default_c() {
 };
 
 print_here_t::print_here_t(string_t prefix, string_t postfix)
-    : prefix(prefix), postfix(postfix) {};
+    : prefix(prefix), postfix(postfix) {}
 void print_here_t::print_here(string_t message) const {
   auto this_c = col::magenta();
   auto here_m = bold(this_c, "here") + ": ";
