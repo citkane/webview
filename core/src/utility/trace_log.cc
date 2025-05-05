@@ -60,87 +60,85 @@ inline std::string get_ctx(char scp) {
   return "eval";
 }
 
-inline time_point_t get_now() { return std::chrono::steady_clock::now(); }
 inline long elapsed_ms(time_point_t start, time_point_t end) {
   return std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
       .count();
 };
 
 inline std::string bool_s(bool flag) { return flag ? "true" : "false"; }
-inline std::string escape_s(std::string text) { return "\"" + text + "\""; }
+inline std::string escape_s(string_t text) { return "\"" + text + "\""; }
 inline std::string num_s(size_t val) { return std::to_string(val); }
 
-inline std::string bold(std::string this_col, std::string text) {
+inline std::string bold(string_t this_col, string_t text) {
   return ansi({1}) + text + col::default_c() + this_col;
 }
-inline std::string dim(std::string this_col, std::string text) {
+inline std::string dim(string_t this_col, string_t text) {
   return ansi({2}) + text + col::default_c() + this_col;
 }
 
-inline void printf_col(std::string this_col, std::string message) {
+inline void printf_col(string_t this_col, string_t message) {
   printf("%s%s%s\n", this_col.c_str(), message.c_str(),
          col::default_c().c_str());
 };
 
 } // namespace
 
-const std::string &col::yellow() {
-  static std::string col = ansi({33});
+string_t col::yellow() {
+  static string_t col = ansi({33});
   return col;
 };
-const std::string &col::yellow_dim() {
-  static std::string col = ansi({33, 2});
+string_t col::yellow_dim() {
+  static string_t col = ansi({33, 2});
   return col;
 };
-const std::string &col::green() {
-  static std::string col = ansi({92});
+string_t col::green() {
+  static string_t col = ansi({92});
   return col;
 };
-const std::string &col::red() {
-  static std::string col = ansi({91});
+string_t col::red() {
+  static string_t col = ansi({91});
   return col;
 };
-const std::string &col::blue() {
-  static std::string col = ansi({94});
+string_t col::blue() {
+  static string_t col = ansi({94});
   return col;
 };
-const std::string &col::blue_dark() {
-  static std::string col = ansi({34});
+string_t col::blue_dark() {
+  static string_t col = ansi({34});
   return col;
 };
-const std::string &col::magenta() {
-  static std::string col = ansi({95});
+string_t col::magenta() {
+  static string_t col = ansi({95});
   return col;
 };
-const std::string &col::default_c() {
-  static std::string col = ansi({0});
+string_t col::default_c() {
+  static string_t col = ansi({0});
   return col;
 };
 
-print_here_t::print_here_t(std::string prefix, std::string postfix)
+print_here_t::print_here_t(string_t prefix, string_t postfix)
     : prefix(prefix), postfix(postfix) {};
-void print_here_t::print_here(std::string message) const {
+void print_here_t::print_here(string_t message) const {
   auto this_c = col::magenta();
   auto here_m = bold(this_c, "here") + ": ";
-  message = col::default_c() + message;
-  printf_col(this_c, prefix + postfix + here_m + message);
+  auto message_ = col::default_c() + message;
+  printf_col(this_c, prefix + postfix + here_m + message_);
 };
 
 namespace queue_api {
-
-void queue_print_t::wait(std::string name) const {
-  auto this_c = col::yellow_dim();
-  auto postfix_m = bold(this_c, postfix) + ": ";
-  auto wait_m = bold(this_c, "WAIT: ") + escape_s(name);
-  printf_col(this_c, prefix + postfix_m + wait_m);
-}
-void queue_print_t::start(std::string name) const {
+void queue_print_t::start(string_t name) const {
   auto this_c = col::blue();
   auto postfix_m = bold(this_c, postfix) + ": ";
   auto start_m = bold(this_c, "START: ") + escape_s(name);
   printf_col(this_c, prefix + postfix_m + start_m);
 }
-void queue_print_t::done(bool done, std::string name) const {
+void queue_print_t::wait(string_t name) const {
+  auto this_c = col::yellow_dim();
+  auto postfix_m = bold(this_c, postfix) + ": ";
+  auto wait_m = bold(this_c, "WAIT: ") + escape_s(name);
+  printf_col(this_c, prefix + postfix_m + wait_m);
+}
+void queue_print_t::done(bool done, string_t name) const {
   auto this_c = col::blue();
   auto postfix_m = bold(this_c, postfix) + ": ";
   auto done_m = bold(this_c, "work_done: ") + bool_s(done) + ": ";
@@ -148,7 +146,7 @@ void queue_print_t::done(bool done, std::string name) const {
   printf_col(this_c, prefix + postfix_m + done_m + name_m);
 }
 
-void queue_eval_t::wrapper_t::start(std::string js) const {
+void queue_eval_t::wrapper_t::start(string_t js) const {
   auto this_c = col::blue();
   auto postfix_m = bold(this_c, postfix) + ": ";
   auto start_m = bold(this_c, "START") + " js ...\n";
@@ -213,7 +211,7 @@ std::string queue_loop_t::wrapper_t::loop_elapsed() const {
   return std::to_string(elapsed) + "ms";
 }
 
-void queue_notify_t::wrapper_t::on_message(std::string method) const {
+void queue_notify_t::wrapper_t::on_message(string_t method) const {
   auto this_c = col::yellow_dim();
   auto mess_m = bold(this_c, "on_message") + ": ";
   auto method_m = escape_s(method);
@@ -221,7 +219,7 @@ void queue_notify_t::wrapper_t::on_message(std::string method) const {
 }
 
 void queue_enqueue_t::wrapper_t::added(char scp, size_t size,
-                                       std::string name_or_js) const {
+                                       string_t name_or_js) const {
   auto this_c = col::default_c();
   auto ctx_m = get_ctx(scp);
   auto size_m = "queue size: " + num_s(size) + " | ";
@@ -242,39 +240,39 @@ void queue_enqueue_t::wrapper_t::added(char scp, size_t size) const {
 
 namespace base_api {
 
-void base_print_t::start(std::string name) const {
+void base_print_t::start(string_t name) const {
   auto this_c = col::default_c();
   auto name_m = escape_s(name);
   auto got_m = bold(this_c, "got") + ": ";
   printf_col(this_c, prefix + postfix + got_m + name_m);
 }
-void base_print_t::work(std::string name) const {
+void base_print_t::work(string_t name) const {
   auto this_c = col::blue_dark();
   auto work_m = bold(this_c, "do_work: ");
   auto name_m = escape_s(name);
   printf_col(this_c, prefix + postfix + work_m + name_m);
 }
-void base_print_t::done(std::string name) const {
+void base_print_t::done(string_t name) const {
   auto this_c = col::blue();
   auto done_m = bold(this_c, "work done") + ": ";
   auto name_m = escape_s(name);
   printf_col(this_c, prefix + postfix + done_m + name_m);
 }
 
-void base_eval_t::wrapper_t::start(std::string js, bool skip_queue) const {
+void base_eval_t::wrapper_t::start(string_t js, bool skip_queue) const {
   auto this_c = col::default_c();
   auto skip_m = "skip queue: " + bool_s(skip_queue) + " | ";
   auto received_m = bold(this_c, "received js") + " ...\n";
   auto m = prefix + postfix + skip_m + received_m + dim(this_c, js);
   printf_col(this_c, m);
 };
-void base_eval_t::wrapper_t::work(std::string js) const {
+void base_eval_t::wrapper_t::work(string_t js) const {
   auto this_c = col::blue_dark();
   auto work_m = bold(this_c, "do_work") + " js...\n";
   auto m = prefix + postfix + work_m + dim(this_c, js);
   printf_col(this_c, m);
 };
-void base_eval_t::wrapper_t::done(bool done, std::string js) const {
+void base_eval_t::wrapper_t::done(bool done, string_t js) const {
   auto this_c = col::blue();
   auto done_m = bold(this_c, "work done") + ": " + bool_s(done) + " | js ...\n";
   auto js_m = dim(this_c, js);

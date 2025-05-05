@@ -101,20 +101,23 @@ public:
     /// Takes queue action for a resolved promise
     void resolved(str_arg_t id) const;
     /// Sends the native work unit of a promise to a concurrent thread.
-    void resolve(engine_base *wv, str_arg_t name, str_arg_t id,
-                 str_arg_t args) const;
+    void resolve(str_arg_t name, str_arg_t id, str_arg_t args) const;
     /// Relays notifications from the frontend to relevant queue methods.
     bool is_system_message(str_arg_t id, str_arg_t method);
   };
-
+  struct bindings_api_t : nested_api_t<engine_queue> {
+    bindings_api_t(engine_queue *self) : nested_api_t(self) {}
+    /// Sets the bindings map locked state
+    void locked(bool val) const;
+  };
   struct public_api_t : nested_api_t<engine_queue> {
     ~public_api_t() = default;
     public_api_t(engine_queue *self) : nested_api_t{self} {};
-
-    unbind_api_t bind{this->self};
+    bind_api_t bind{this->self};
     unbind_api_t unbind{this->self};
     eval_api_t eval{this->self};
     promise_api_t promises{this->self};
+    bindings_api_t bindings{this->self};
     /// Initialises the user work unit queue thread;
     void init(engine_base *wv);
     /// @brief Cleans up and shuts down the queue thread.
@@ -122,7 +125,6 @@ public:
     /// This is the only instance where we lock the main / app thread.
     /// We do so to prevent segfault before the queue thread joins.
     void shutdown_queue();
-    std::mutex &main_mtx();
   };
 
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
@@ -136,7 +138,7 @@ private:
   /// char 'b' = bind, 'u' = unbind, 'e' = eval
   enum context_t { bind_t = 'b', unbind_t = 'u', eval_t = 'e' };
   struct ctx_t {
-    context_t bind = context_t::unbind_t;
+    context_t bind = context_t::bind_t;
     context_t unbind = context_t::unbind_t;
     context_t eval = context_t::eval_t;
   };
@@ -152,44 +154,35 @@ private:
   /// - JS promises must not be left indefinitely in a waiting state,
   /// - `eval` must wait for potentially included bound JS promises to register.
   /// - `unbind` must wait for resolution of relevant JS promises before rejecting them, and for this we set a sane timeout,
-  void queue_thread_constructor(engine_base *wv);
+  void queue_thread_constructor();
 
   /// @brief Constructs a child thread for each native work unit of a bound JS promise.
   ///
   /// We want native promise work units to run concurrently.
   /// We do not want native promise work to stall execution of the main / app thread.
-  void resolve_thread_constructor(engine_base *wv, str_arg_t name, str_arg_t id,
-                                  str_arg_t args);
+  void resolve_thread_constructor(str_arg_t name, str_arg_t id, str_arg_t args);
 
   /// Adds `bind`, `unbind` or `eval` user work unit to the queue.
   noresult queue_work(str_arg_t name_or_js, do_work_t fn, context_t fn_ctx);
-  /// Sends a native promise work unit to a concurrent thread.
+  /// Sends a native promise work unit to a concurrent detached thread.
   void resolve_work(engine_base *wv, str_arg_t msg, str_arg_t id);
-  /// Atomically flags a `bind`, `unbind` or `eval` user work unit as  done.
-  void set_done(bool val, context_t fn_ctx);
-  /// Flags if `unbind` is referencing a queued `bind` function.
-  bool unbind_awaiting_bind(str_arg_t name);
-  /// Initialises an empty list for potential promises on a bound function name.
-  void promise_list_init(str_arg_t name);
-  /// Removes a resolved promise from all registers.
-  void promise_completed(str_arg_t id);
 
-  struct flags_dom_ready_t : nested_api_t<engine_queue> {
-    flags_dom_ready_t(engine_queue *self) : nested_api_t(self) {}
+  struct atomic_dom_ready_t : nested_api_t<engine_queue> {
+    atomic_dom_ready_t(engine_queue *self) : nested_api_t(self) {}
     /// Query if the backend is ready to do work.
     bool ready() const;
     /// Notify the queue that the backend is ready to receive work.
     void ready(bool flag) const;
   };
-  struct flags_terminate_t : nested_api_t<engine_queue> {
-    flags_terminate_t(engine_queue *self) : nested_api_t(self) {}
+  struct atomic_terminate_t : nested_api_t<engine_queue> {
+    atomic_terminate_t(engine_queue *self) : nested_api_t(self) {}
     /// Query if Webview is in the process of terminating.
     bool terminating() const;
     /// Signal the queue to destroy itself.
     void init() const;
   };
-  struct flags_queue_t : nested_api_t<engine_queue> {
-    flags_queue_t(engine_queue *self) : nested_api_t(self) {}
+  struct atomic_queue_t : nested_api_t<engine_queue> {
+    atomic_queue_t(engine_queue *self) : nested_api_t(self) {}
     /// Decrements the queue list and flags empty state.
     void update() const;
     /// Query if the queue is empty.
@@ -197,8 +190,8 @@ private:
     /// Set the queue_empty flag.
     void empty(bool val) const;
   };
-  struct flags_done_t : nested_api_t<engine_queue> {
-    flags_done_t(engine_queue *self) : nested_api_t(self) {}
+  struct atomic_done_t : nested_api_t<engine_queue> {
+    atomic_done_t(engine_queue *self) : nested_api_t(self) {}
     /// Gets the bind flag state
     bool bind();
     /// Sets the bind flag state
@@ -212,16 +205,33 @@ private:
     /// Sets the eval flag state
     void eval(bool val);
   };
-  struct flags_api_t : nested_api_t<engine_queue> {
-    ~flags_api_t() = default;
-    flags_api_t(engine_queue *self) : nested_api_t(self) {};
-    flags_dom_ready_t dom{this->self};
-    flags_terminate_t terminate{this->self};
-    flags_queue_t queue{this->self};
-    flags_done_t done{this->self};
+  struct atomic_bindings_t : nested_api_t<engine_queue> {
+    atomic_bindings_t(engine_queue *self) : nested_api_t(self) {}
+    /// Gets the bindings map locked state
+    bool locked() const;
+    /// Sets the bindings map locked state
+    void locked(bool val) const;
   };
-  /// API to query and set various flags
-  flags_api_t flags;
+  struct atomic_lists_t : nested_api_t<engine_queue> {
+    atomic_lists_t(engine_queue *self) : nested_api_t(self) {}
+    /// Gets the lists locked state
+    bool locked() const;
+    /// Sets the lists locked state
+    void locked(bool val) const;
+  };
+  struct atomic_api_t : nested_api_t<engine_queue> {
+    ~atomic_api_t() = default;
+    atomic_api_t(engine_queue *self) : nested_api_t(self) {};
+    atomic_dom_ready_t dom{this->self};
+    atomic_terminate_t terminate{this->self};
+    atomic_queue_t queue{this->self};
+    atomic_done_t done{this->self};
+    atomic_bindings_t bindings{this->self};
+    atomic_lists_t lists{this->self};
+    bool and_(std::initializer_list<bool> flags) const;
+  };
+  /// API to query and set various flags atomically
+  atomic_api_t atomic;
 
   /// Structure for the \ref list.queue value
   struct action_t {
@@ -240,7 +250,7 @@ private:
     std::list<std::string> pending_binds;
   };
   /// Grouping of list-like values
-  lists_api_t list;
+  lists_api_t lists;
 
   struct cv_api_t {
     std::condition_variable mutable queue;
@@ -248,17 +258,22 @@ private:
     std::condition_variable mutable eval;
     std::condition_variable mutable unbind;
     std::condition_variable mutable unbind_timeout;
+    std::condition_variable mutable bindings;
+    std::condition_variable mutable lists;
+    std::condition_variable *all[7] = {
+        &queue, &bind, &eval, &unbind, &unbind_timeout, &bindings, &lists};
   };
   /// Grouping of condition variables
   cv_api_t const cv{};
 
   std::atomic_bool is_dom_ready{};
-  std::atomic_bool is_terminating{};
   std::atomic_bool queue_empty{};
   std::atomic_bool unbind_done{};
   std::atomic_bool unbind_can_proceed{};
   std::atomic_bool bind_done{};
   std::atomic_bool eval_done{};
+  std::atomic_bool bindings_locked{};
+  std::atomic_bool lists_locked{};
 
   /// A thread to concurrently choreograph user work queueing.
   std::thread queue_thread;
@@ -266,6 +281,8 @@ private:
   std::mutex main_thread_mtx;
   std::mutex queue_thread_mtx;
   std::mutex resolve_thread_mtx;
+
+  engine_base *wv;
 
   /// Temporary debug tracing utility
   /// @todo remove before merge

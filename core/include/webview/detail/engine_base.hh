@@ -74,7 +74,7 @@ public:
   noresult unbind(str_arg_t name);
   /// Internal API implementation of public \ref webview_return
   noresult resolve(str_arg_t id, int status, str_arg_t result);
-  /// Helper to reject a promise
+  /// Helper to reject a promise through \ref resolve
   noresult reject(str_arg_t id, str_arg_t err);
   /// Internal API implementation of public \ref webview_get_window
   result<void *> window();
@@ -163,11 +163,6 @@ protected:
   void set_default_size_guard(bool guarded);
   /// Gets a flag for whether the Webview window is embedded, or is owned by the user process.
   bool owns_window() const;
-  /// @brief Creates the user work queue thread.
-  ///
-  /// We call this from the backend class to ensure the webview instance reference injection
-  /// order is consistent across C/C++ API instantiation methods.
-  //void queue_init(engine_base &wv);
 
 private:
   friend class engine_queue;
@@ -196,6 +191,8 @@ private:
   static const int m_initial_height = 480;
   /// Flag that indicates if a Webview work unit should skip the user work queue and execute directly
   bool skip_queue{};
+  /// Flag that indicates the shutdown procedure has started.
+  std::atomic_bool is_terminating{};
 
   /// Temporary debug tracing utility
   /// @todo remove before merge

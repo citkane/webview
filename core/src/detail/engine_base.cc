@@ -26,11 +26,10 @@
 #ifndef WEBVIEW_DETAIL_ENGINE_BASE_CC
 #define WEBVIEW_DETAIL_ENGINE_BASE_CC
 
-#include <mutex>
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/engine_base.hh"
+#include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/engine_frontend.hh"
 #include "webview/detail/json.hh"
 #include <algorithm>
@@ -53,7 +52,6 @@ noresult engine_base::navigate(str_arg_t url) {
 }
 
 noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
-  trace.base.bind.print_here(name);
   auto wrapper = [this, fn](str_arg_t id, str_arg_t req, void * /*arg*/) {
     resolve(id, 0, fn(req));
   };
@@ -66,10 +64,11 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
 noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
   trace.base.bind.start(name);
   do_work_t do_work = [this, name, fn, arg] {
-    //std::lock_guard<std::mutex> lock(user_queue.main_mtx());
     trace.base.bind.work(name);
+    user_queue.bindings.locked(true);
     bindings.emplace(name, binding_ctx_t(fn, arg));
     replace_bind_script();
+    user_queue.bindings.locked(false);
     skip_queue = true;
     eval(utility::frontend.js.onbind(name));
     skip_queue = false;
@@ -89,13 +88,14 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
 noresult engine_base::unbind(str_arg_t name) {
   trace.base.unbind.start(name);
   do_work_t do_work = [this, name]() {
-    //std::lock_guard<std::mutex> lock(user_queue.main_mtx());
     trace.base.unbind.work(name);
     skip_queue = true;
     eval(utility::frontend.js.onunbind(name));
     skip_queue = false;
+    user_queue.bindings.locked(true);
     bindings.erase(name);
     replace_bind_script();
+    user_queue.bindings.locked(false);
   };
   auto is_rebind = user_queue.unbind.awaits_bind(name);
   auto const is_error = bindings.count(name) == 0 && !is_rebind;
@@ -133,6 +133,7 @@ webview::result<void *> engine_base::browser_controller() {
 noresult engine_base::run() { return run_impl(); }
 
 noresult engine_base::terminate() {
+  is_terminating.store(true);
   user_queue.shutdown_queue();
   return terminate_impl();
 }
@@ -214,7 +215,6 @@ void engine_base::add_init_script(str_arg_t post_fn) {
 }
 
 std::string engine_base::create_bind_script() {
-  //std::lock_guard<std::mutex> lock(user_queue.main_mtx());
   std::vector<std::string> bound_names;
   bound_names.reserve(bindings.size());
   std::transform(bindings.begin(), bindings.end(),
@@ -243,7 +243,7 @@ void engine_base::on_message(str_arg_t msg) {
   }
   found = bindings.end();
   auto args = json_parse(msg, "params", 0);
-  user_queue.promises.resolve(this, name, id, args);
+  user_queue.promises.resolve(name, id, args);
 }
 
 void engine_base::on_window_created() { inc_window_count(); }
