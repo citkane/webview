@@ -207,10 +207,11 @@ struct front_end_t {
     /// Returns a tokenised JS function string for a promise resolve/reject.
     std::string onreply(std::string id, int status,
                         std::string escaped_result) const {
-      std::string js = tokeniser(ON_REPLY, TOKEN_ID, detail::json_escape(id));
-      js = tokeniser(js, TOKEN_STATUS, std::to_string(status));
-      js = tokeniser(js, TOKEN_RESULT, escaped_result);
-      return js;
+      std::string js_string =
+          tokeniser(ON_REPLY, TOKEN_ID, detail::json_escape(id));
+      js_string = tokeniser(js_string, TOKEN_STATUS, std::to_string(status));
+      js_string = tokeniser(js_string, TOKEN_RESULT, escaped_result);
+      return js_string;
     }
 
     /// Returns a tokenised JS function string for the Webview backend init function.
@@ -221,8 +222,8 @@ struct front_end_t {
     /// Returns a tokenised JS function string for the Webview backend `bind` functions.
     std::string bind(std::vector<std::string> &bound_names) const {
       auto names = json_list(bound_names);
-      auto js = tokeniser(BIND, TOKEN_JS_NAMES, names);
-      return js;
+      auto js_string = tokeniser(BIND, TOKEN_JS_NAMES, names);
+      return js_string;
     }
 
     /// Wraps user JS to notify the native code when eval is ready.

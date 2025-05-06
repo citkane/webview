@@ -239,7 +239,7 @@ noresult engine_queue::queue_work(str_arg_t name_or_js, do_work_t fn,
     lists.pending_binds.push_back(name_or_js);
   }
   lists.queue.push_back({fn_ctx, fn, name_or_js});
-  trace.queue.enqueue.added(fn_ctx, lists.queue.size(), name_or_js);
+  trace.queue.enqueue.added(char(fn_ctx), lists.queue.size(), name_or_js);
   atomic.lists.locked(false);
   atomic.queue.empty(false);
   return {};
@@ -284,8 +284,8 @@ void engine_queue::atomic_terminate_t::init() const {
   self->atomic.done.unbind(true);
   self->atomic.done.eval(true);
   self->atomic.lists.locked(false);
-  for (auto &cv : self->cv.all) {
-    cv->notify_all();
+  for (auto &this_cv : self->cv.all) {
+    this_cv->notify_all();
   }
 };
 void engine_queue::atomic_queue_t::update() const {

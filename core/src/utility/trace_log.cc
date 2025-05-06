@@ -61,8 +61,9 @@ inline std::string get_ctx(char scp) {
 }
 
 inline long elapsed_ms(time_point_t start, time_point_t end) {
-  return std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-      .count();
+  return static_cast<long int>(
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+          .count());
 };
 
 inline std::string bool_s(bool flag) { return flag ? "true" : "false"; }
