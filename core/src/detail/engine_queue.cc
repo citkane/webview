@@ -130,10 +130,21 @@ void public_api_t::init(engine_base *wv_instance) {
       std::thread(&engine_queue::queue_thread_constructor, self);
 };
 
-void public_api_t::shutdown_queue() {
-  std::unique_lock<std::mutex> lock(self->main_thread_mtx);
-  self->atomic.terminate.init();
-  self->cv.queue.wait(lock, [this] { return self->queue_thread.joinable(); });
+void public_api_t::shutdown() {
+  //std::mutex main_thread_mtx;
+  //std::unique_lock<std::mutex> lock(self->main_thread_mtx);
+  //self->atomic.terminate.init();
+  //self->cv.queue.wait(lock, [this] { return self->queue_thread.joinable(); });
+  self->queue_empty.store(false);
+  self->is_dom_ready.store(true);
+  self->atomic.done.bind(true);
+  self->atomic.done.unbind(true);
+  self->atomic.done.eval(true);
+  self->atomic.lists.locked(false);
+  self->atomic.bindings.locked(false);
+  for (auto &this_cv : self->cv.all) {
+    this_cv->notify_all();
+  }
   self->queue_thread.join();
 }
 
@@ -143,6 +154,7 @@ void public_api_t::shutdown_queue() {
 namespace detail {
 
 void engine_queue::queue_thread_constructor() {
+  std::mutex queue_thread_mtx;
   std::unique_lock<std::mutex> lock(queue_thread_mtx);
   while (true) {
     trace.queue.loop.wait(lists.queue.size(), atomic.queue.empty(),
@@ -151,7 +163,7 @@ void engine_queue::queue_thread_constructor() {
       return atomic.and_(
           {atomic.dom.ready(), !atomic.queue.empty(), !atomic.lists.locked()});
     });
-    if (atomic.terminate.terminating()) {
+    if (atomic.terminating()) {
       break;
     }
     trace.queue.loop.start(lists.queue.size());
@@ -215,11 +227,12 @@ void engine_queue::queue_thread_constructor() {
 void engine_queue::resolve_thread_constructor(str_arg_t name, str_arg_t id,
                                               str_arg_t args) {
   if (atomic.bindings.locked()) {
+    std::mutex resolve_thread_mtx;
     std::unique_lock<std::mutex> lock(resolve_thread_mtx);
     cv.bindings.wait(
         lock, [this] { return atomic.and_({!atomic.bindings.locked()}); });
   }
-  if (atomic.terminate.terminating()) {
+  if (atomic.terminating()) {
     return;
   }
   try {
@@ -274,9 +287,8 @@ void engine_queue::atomic_dom_ready_t::ready(bool flag) const {
   self->is_dom_ready.store(flag);
   self->cv.queue.notify_one();
 };
-bool engine_queue::atomic_terminate_t::terminating() const {
-  return self->wv->is_terminating.load();
-};
+
+/*
 void engine_queue::atomic_terminate_t::init() const {
   self->queue_empty.store(false);
   self->is_dom_ready.store(true);
@@ -288,6 +300,7 @@ void engine_queue::atomic_terminate_t::init() const {
     this_cv->notify_all();
   }
 };
+*/
 void engine_queue::atomic_queue_t::update() const {
   self->atomic.lists.locked(true);
   if (self->lists.queue.size() > 1) {
@@ -321,7 +334,7 @@ bool engine_queue::atomic_lists_t::locked() const {
   return self->bindings_locked.load();
 }
 bool engine_queue::atomic_api_t::and_(std::initializer_list<bool> flags) const {
-  if (self->atomic.terminate.terminating()) {
+  if (self->atomic.terminating()) {
     return true;
   };
   auto res = true;
@@ -332,6 +345,9 @@ bool engine_queue::atomic_api_t::and_(std::initializer_list<bool> flags) const {
     }
   }
   return res;
+};
+bool engine_queue::atomic_api_t::terminating() const {
+  return self->wv->is_terminating.load();
 };
 
 } // namespace detail

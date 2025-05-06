@@ -124,7 +124,7 @@ public:
     ///
     /// This is the only instance where we lock the main / app thread.
     /// We do so to prevent segfault before the queue thread joins.
-    void shutdown_queue();
+    void shutdown();
   };
 
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
@@ -175,13 +175,15 @@ private:
     /// Notify the queue that the backend is ready to receive work.
     void ready(bool flag) const;
   };
+  /*
   struct atomic_terminate_t : nested_api_t<engine_queue> {
     atomic_terminate_t(engine_queue *self) : nested_api_t(self) {}
     /// Query if Webview is in the process of terminating.
     bool terminating() const;
     /// Signal the queue to destroy itself.
-    void init() const;
+    //void init() const;
   };
+  */
   struct atomic_queue_t : nested_api_t<engine_queue> {
     atomic_queue_t(engine_queue *self) : nested_api_t(self) {}
     /// Decrements the queue list and flags empty state.
@@ -224,11 +226,12 @@ private:
     ~atomic_api_t() = default;
     atomic_api_t(engine_queue *self) : nested_api_t(self) {}
     atomic_dom_ready_t dom{this->self};
-    atomic_terminate_t terminate{this->self};
+    //atomic_terminate_t terminate{this->self};
     atomic_queue_t queue{this->self};
     atomic_done_t done{this->self};
     atomic_bindings_t bindings{this->self};
     atomic_lists_t lists{this->self};
+    bool terminating() const;
     bool and_(std::initializer_list<bool> flags) const;
   };
   /// API to query and set various flags atomically
@@ -278,10 +281,6 @@ private:
 
   /// A thread to concurrently choreograph user work queueing.
   std::thread queue_thread;
-
-  std::mutex main_thread_mtx;
-  std::mutex queue_thread_mtx;
-  std::mutex resolve_thread_mtx;
 
   engine_base *wv;
 

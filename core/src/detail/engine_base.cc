@@ -134,7 +134,6 @@ noresult engine_base::run() { return run_impl(); }
 
 noresult engine_base::terminate() {
   is_terminating.store(true);
-  user_queue.shutdown_queue();
   return terminate_impl();
 }
 
