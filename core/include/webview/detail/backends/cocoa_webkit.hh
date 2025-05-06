@@ -90,6 +90,7 @@ class cocoa_wkwebview_engine : public engine_base {
 public:
   cocoa_wkwebview_engine(bool debug, void *window)
       : engine_base{!window}, m_app{NSApplication_get_sharedApplication()} {
+    user_queue.init(this);
     window_init(window);
     window_settings(debug);
     dispatch_size_default();

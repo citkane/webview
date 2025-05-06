@@ -160,6 +160,7 @@ private:
   ///
   /// We want native promise work units to run concurrently.
   /// We do not want native promise work to stall execution of the main / app thread.
+  /// @todo hardware concurrency limit queue.
   void resolve_thread_constructor(str_arg_t name, str_arg_t id, str_arg_t args);
 
   /// Adds `bind`, `unbind` or `eval` user work unit to the queue.

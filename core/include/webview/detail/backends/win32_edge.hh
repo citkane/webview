@@ -312,6 +312,7 @@ private:
 class win32_edge_engine : public engine_base {
 public:
   win32_edge_engine(bool debug, void *window) : engine_base{!window} {
+    user_queue.init(this);
     window_init(window);
     window_settings(debug);
     dispatch_size_default();
