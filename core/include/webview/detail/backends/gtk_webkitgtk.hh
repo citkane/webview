@@ -112,7 +112,6 @@ public:
   gtk_webkit_engine &operator=(gtk_webkit_engine &&) = delete;
 
   virtual ~gtk_webkit_engine() {
-    user_queue.shutdown();
     if (m_window) {
       if (owns_window()) {
         // Disconnect handlers to avoid callbacks invoked during destruction.
@@ -131,6 +130,7 @@ public:
       // Needed for the window to close immediately.
       deplete_run_loop_event_queue();
     }
+    user_queue.shutdown();
   }
 
 protected:

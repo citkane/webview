@@ -35,6 +35,7 @@
 #include "webview/utility/trace_log.hh"
 #include <atomic>
 #include <condition_variable>
+#include <deque>
 #include <functional>
 #include <list>
 #include <thread>
@@ -61,7 +62,7 @@ class engine_base;
 namespace detail {
 class engine_queue {
 public:
-  ~engine_queue() = default;
+  ~engine_queue();
   engine_queue();
 
   /* ************************************************************************
@@ -77,15 +78,16 @@ public:
     bind_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `bind` work unit onto the queue.
     noresult enqueue(do_work_t fn, str_arg_t name) const;
+    /// Indicates if adding a `bind` to the queue is an error, eg. duplicate name.
+    bool is_duplicate(str_arg_t name) const;
   };
   struct unbind_api_t : nested_api_t<engine_queue> {
     ~unbind_api_t() = default;
     unbind_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `unbind` work unit onto the queue.
     noresult enqueue(do_work_t fn, str_arg_t name) const;
-    /// Indicates to `unbind` if the name is queued to `bind`,
-    /// in which case the future `unbind` is not an error.
-    bool awaits_bind(str_arg_t name) const;
+    /// Indicates if adding an `unbind` to the queue is an error, eg. bind doesn't exist.
+    bool not_found(str_arg_t name) const;
   };
   struct eval_api_t : nested_api_t<engine_queue> {
     ~eval_api_t() = default;
@@ -120,10 +122,8 @@ public:
     bindings_api_t bindings{this->self};
     /// Initialises the user work unit queue thread;
     void init(engine_base *wv);
-    /// @brief Cleans up and shuts down the queue thread.
-    ///
-    /// This is the only instance where we lock the main / app thread.
-    /// We do so to prevent segfault before the queue thread joins.
+
+    /// Releases and shuts down the queue thread.
     void shutdown();
   };
 
@@ -192,6 +192,8 @@ private:
     bool empty() const;
     /// Set the queue_empty flag.
     void empty(bool val) const;
+    /// Gets the size of the queue.
+    size_t size() const;
   };
   struct atomic_done_t : nested_api_t<engine_queue> {
     atomic_done_t(engine_queue *self) : nested_api_t(self) {}
@@ -237,24 +239,33 @@ private:
   /// API to query and set various flags atomically
   atomic_api_t atomic;
 
-  /// Structure for the \ref list.queue value
+  /// Structure for the \ref lists.queue value type
   struct action_t {
     context_t ctx;
-    do_work_t fn;
-    std::string val;
+    do_work_t work_fn;
+    std::string name_or_js;
   };
-  struct lists_api_t {
+  /// Structure for the \ref lists.is_queued value type
+  struct indices_t {
+    int bind_i;
+    int unbind_i;
+  };
+  struct lists_api_t : nested_api_t<engine_queue> {
+    ~lists_api_t() = default;
+    lists_api_t(engine_queue *self) : nested_api_t(self) {}
     /// A map keyed by bound function name containing a list it's unresolved promise id's
     std::unordered_map<std::string, std::list<std::string>> name_unres_promises;
     /// A map keyed by promise id referencing it's corresponding `bind` name
     std::unordered_map<std::string, std::string> promise_id_name;
     /// The ordered list of user work units to process
     std::list<action_t> queue;
-    /// A list of queued `bind` names;
-    std::list<std::string> pending_binds;
+    /// A sequential list of queued `bind` and `unbind` names;
+    std::deque<std::string> pending_bind_unbind;
+    /// Gets queued `bind` and `unbind` index positions by name.
+    indices_t queued_indices(str_arg_t name) const;
   };
   /// Grouping of list-like values
-  lists_api_t lists;
+  lists_api_t lists{this};
 
   struct cv_api_t {
     std::condition_variable mutable queue;
@@ -272,6 +283,7 @@ private:
 
   std::atomic_bool is_dom_ready{};
   std::atomic_bool queue_empty{};
+  std::atomic_size_t queue_size{};
   std::atomic_bool unbind_done{};
   std::atomic_bool unbind_can_proceed{};
   std::atomic_bool bind_done{};

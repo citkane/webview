@@ -73,8 +73,7 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
     eval(utility::frontend.js.onbind(name));
     skip_queue = false;
   };
-  auto const is_error = bindings.count(name) > 0;
-  if (is_error) {
+  if (user_queue.bind.is_duplicate(name)) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
   }
   user_queue.promises.list_init(name);
@@ -97,15 +96,16 @@ noresult engine_base::unbind(str_arg_t name) {
     replace_bind_script();
     user_queue.bindings.locked(false);
   };
-  auto is_rebind = user_queue.unbind.awaits_bind(name);
-  auto const is_error = bindings.count(name) == 0 && !is_rebind;
-  if (is_error) {
+  if (user_queue.unbind.not_found(name)) {
     return error_info{WEBVIEW_ERROR_NOT_FOUND};
   }
   return user_queue.unbind.enqueue(do_work, name);
 }
 
 noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
+  if (is_terminating.load()) {
+    return {};
+  }
   str_arg_t escaped_result = result.empty() ? "undefined" : json_escape(result);
   str_arg_t promised_js =
       utility::frontend.js.onreply(id, status, escaped_result);

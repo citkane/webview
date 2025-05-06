@@ -48,11 +48,11 @@ namespace templates {
 
 #define TEST_B_UB_CALL                                                         \
   "try {\n"                                                                    \
-  "  window.increment()"                                                       \
+  "  window.increment()\n"                                                     \
   "  .then(r => window.test(" TOKEN_VALUE "))\n"                               \
   "  .catch(() => window.test(" TOKEN_VALUE ",1))\n"                           \
   "} catch {\n"                                                                \
-  "  window.test(" TOKEN_VALUE ",1)"                                           \
+  "  window.test(" TOKEN_VALUE ",1);\n"                                        \
   "}"
 
 } // namespace templates

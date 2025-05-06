@@ -319,7 +319,6 @@ public:
   }
 
   virtual ~win32_edge_engine() {
-    user_queue.shutdown();
     if (m_com_handler) {
       m_com_handler->Release();
       m_com_handler = nullptr;
@@ -366,6 +365,7 @@ public:
       DestroyWindow(m_message_window);
       m_message_window = nullptr;
     }
+    user_queue.shutdown();
   }
 
   win32_edge_engine(const win32_edge_engine &other) = delete;

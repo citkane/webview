@@ -36,6 +36,7 @@
 #include <mutex>
 
 namespace webview {
+detail::engine_queue::~engine_queue() { queue_thread.join(); };
 detail::engine_queue::engine_queue()
     : user_queue{this}, atomic{this}, wv(nullptr) {}
 
@@ -52,19 +53,19 @@ using bindings_api_t = engine_queue::bindings_api_t;
 noresult bind_api_t::enqueue(do_work_t fn, str_arg_t name) const {
   return self->queue_work(name, fn, self->ctx.bind);
 };
+bool bind_api_t::is_duplicate(str_arg_t name) const {
+  auto i = self->lists.queued_indices(name);
+  auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
+  return self->wv->bindings.count(name) > 0 || will_be_bound;
+};
 
 noresult unbind_api_t::enqueue(do_work_t fn, str_arg_t name) const {
   return self->queue_work(name, fn, self->ctx.unbind);
 };
-bool unbind_api_t::awaits_bind(str_arg_t name) const {
-  bool found_name{};
-  for (auto &val : self->lists.pending_binds) {
-    if (val == name) {
-      found_name = true;
-      break;
-    }
-  }
-  return found_name;
+bool unbind_api_t::not_found(str_arg_t name) const {
+  auto i = self->lists.queued_indices(name);
+  auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
+  return self->wv->bindings.count(name) == 0 && !will_be_bound;
 };
 
 noresult eval_api_t::enqueue(do_work_t fn, str_arg_t js) const {
@@ -131,10 +132,6 @@ void public_api_t::init(engine_base *wv_instance) {
 };
 
 void public_api_t::shutdown() {
-  //std::mutex main_thread_mtx;
-  //std::unique_lock<std::mutex> lock(self->main_thread_mtx);
-  //self->atomic.terminate.init();
-  //self->cv.queue.wait(lock, [this] { return self->queue_thread.joinable(); });
   self->queue_empty.store(false);
   self->is_dom_ready.store(true);
   self->atomic.done.bind(true);
@@ -145,7 +142,6 @@ void public_api_t::shutdown() {
   for (auto &this_cv : self->cv.all) {
     this_cv->notify_all();
   }
-  self->queue_thread.join();
 }
 
 } // namespace detail
@@ -157,7 +153,7 @@ void engine_queue::queue_thread_constructor() {
   std::mutex queue_thread_mtx;
   std::unique_lock<std::mutex> lock(queue_thread_mtx);
   while (true) {
-    trace.queue.loop.wait(lists.queue.size(), atomic.queue.empty(),
+    trace.queue.loop.wait(atomic.queue.size(), atomic.queue.empty(),
                           atomic.dom.ready());
     cv.queue.wait(lock, [this] {
       return atomic.and_(
@@ -166,27 +162,32 @@ void engine_queue::queue_thread_constructor() {
     if (atomic.terminating()) {
       break;
     }
-    trace.queue.loop.start(lists.queue.size());
-    auto work = &lists.queue.front();
-    auto val = work->val;
-    auto fn = work->fn;
+    trace.queue.loop.start(atomic.queue.size());
+    context_t work_ctx = lists.queue.front().ctx;
+    std::string name = lists.queue.front().name_or_js;
+    std::string js = lists.queue.front().name_or_js;
 
     // `bind` user work unit
-    if (work->ctx == ctx.bind) {
-      trace.queue.bind.start(val);
-      wv->dispatch(fn);
+    if (work_ctx == ctx.bind) {
+      trace.queue.bind.start(name);
+      auto &work_fn = lists.queue.front().work_fn;
+      wv->dispatch(work_fn);
       cv.bind.wait(lock, [this] { return atomic.and_({atomic.done.bind()}); });
       if (atomic.lists.locked()) {
         cv.lists.wait(lock,
                       [this] { return atomic.and_({!atomic.lists.locked()}); });
       }
-      lists.pending_binds.pop_front();
+      if (atomic.terminating()) {
+        break;
+      }
+      lists.pending_bind_unbind.pop_front();
+      trace.queue.bind.done(atomic.done.bind(), name);
       atomic.done.bind(false);
     }
     // `unbind` user work unit
-    if (work->ctx == ctx.unbind) {
-      trace.queue.unbind.wait(val);
-      auto &list = lists.name_unres_promises[val];
+    if (work_ctx == ctx.unbind) {
+      trace.queue.unbind.wait(name);
+      auto &list = lists.name_unres_promises[name];
       auto timeout = std::chrono::milliseconds(WEBVIEW_UNBIND_TIMEOUT);
       cv.unbind_timeout.wait_for(lock, timeout, [this, list] {
         return atomic.and_({!atomic.lists.locked(), list.empty()});
@@ -195,29 +196,41 @@ void engine_queue::queue_thread_constructor() {
         cv.lists.wait(lock,
                       [this] { return atomic.and_({!atomic.lists.locked()}); });
       }
-      trace.queue.unbind.start(val);
-      auto &promises = lists.name_unres_promises[val];
-      for (auto &id : promises) {
-        wv->reject(id, utility::frontend.err_message.reject_unbound(id, val));
+      if (atomic.terminating()) {
+        break;
       }
-      lists.name_unres_promises.erase(val);
-      wv->dispatch(fn);
+      trace.queue.unbind.start(name);
+      auto &promises = lists.name_unres_promises[name];
+      for (auto &id : promises) {
+        wv->reject(id, utility::frontend.err_message.reject_unbound(id, name));
+      }
+      lists.name_unres_promises.erase(name);
+      auto &work_fn = lists.queue.front().work_fn;
+      wv->dispatch(work_fn);
       cv.unbind.wait(lock,
                      [this] { return atomic.and_({atomic.done.unbind()}); });
-      trace.queue.unbind.done(atomic.done.unbind(), val);
+      lists.pending_bind_unbind.pop_front();
+      trace.queue.unbind.done(atomic.done.unbind(), name);
       atomic.done.unbind(false);
     }
     // `eval` user work unit
-    if (work->ctx == ctx.eval) {
-      trace.queue.eval.start(val);
-      wv->dispatch(fn);
+    if (work_ctx == ctx.eval) {
+      trace.queue.eval.start(js);
+      auto &work_fn = lists.queue.front().work_fn;
+      wv->dispatch(work_fn);
       cv.eval.wait(lock, [this] { return atomic.and_({atomic.done.eval()}); });
+      if (atomic.terminating()) {
+        break;
+      }
       trace.queue.eval.done(atomic.done.eval());
       atomic.done.eval(false);
     }
     if (atomic.lists.locked()) {
       cv.lists.wait(lock,
                     [this] { return atomic.and_({!atomic.lists.locked()}); });
+    }
+    if (atomic.terminating()) {
+      break;
     }
     atomic.queue.update();
     trace.queue.loop.end();
@@ -247,9 +260,13 @@ void engine_queue::resolve_thread_constructor(str_arg_t name, str_arg_t id,
 
 noresult engine_queue::queue_work(str_arg_t name_or_js, do_work_t fn,
                                   context_t fn_ctx) {
+  auto &name = name_or_js;
   atomic.lists.locked(true);
   if (fn_ctx == ctx.bind) {
-    lists.pending_binds.push_back(name_or_js);
+    lists.pending_bind_unbind.push_back("bind-" + name);
+  }
+  if (fn_ctx == ctx.unbind) {
+    lists.pending_bind_unbind.push_back("unbind-" + name);
   }
   lists.queue.push_back({fn_ctx, fn, name_or_js});
   trace.queue.enqueue.added(char(fn_ctx), lists.queue.size(), name_or_js);
@@ -258,26 +275,38 @@ noresult engine_queue::queue_work(str_arg_t name_or_js, do_work_t fn,
   return {};
 };
 
+engine_queue::indices_t
+engine_queue::lists_api_t::queued_indices(str_arg_t name) const {
+  auto &list = self->lists.pending_bind_unbind;
+  auto len = int(list.size());
+  int bind_i = -1;
+  int unbind_i = -1;
+  for (int i = 0; i < len; i++) {
+    auto val = list[i];
+    if (val == "bind-" + name) {
+      bind_i = i;
+    }
+    if (val == "unbind-" + name) {
+      unbind_i = i;
+    }
+  }
+  return {bind_i, unbind_i};
+}
+
 bool engine_queue::atomic_done_t::bind() { return self->bind_done.load(); }
 void engine_queue::atomic_done_t::bind(bool val) {
   self->bind_done.store(val);
-  //if (val) {
   self->cv.bind.notify_one();
-  //}
 }
 bool engine_queue::atomic_done_t::unbind() { return self->unbind_done.load(); }
 void engine_queue::atomic_done_t::unbind(bool val) {
   self->unbind_done.store(val);
-  //if (val) {
   self->cv.unbind.notify_one();
-  //}
 }
 bool engine_queue::atomic_done_t::eval() { return self->eval_done.load(); }
 void engine_queue::atomic_done_t::eval(bool val) {
   self->eval_done.store(val);
-  //if (val) {
   self->cv.eval.notify_one();
-  //}
 }
 
 bool engine_queue::atomic_dom_ready_t::ready() const {
@@ -288,19 +317,6 @@ void engine_queue::atomic_dom_ready_t::ready(bool flag) const {
   self->cv.queue.notify_one();
 };
 
-/*
-void engine_queue::atomic_terminate_t::init() const {
-  self->queue_empty.store(false);
-  self->is_dom_ready.store(true);
-  self->atomic.done.bind(true);
-  self->atomic.done.unbind(true);
-  self->atomic.done.eval(true);
-  self->atomic.lists.locked(false);
-  for (auto &this_cv : self->cv.all) {
-    this_cv->notify_all();
-  }
-};
-*/
 void engine_queue::atomic_queue_t::update() const {
   self->atomic.lists.locked(true);
   if (self->lists.queue.size() > 1) {
@@ -310,6 +326,10 @@ void engine_queue::atomic_queue_t::update() const {
   }
   self->atomic.lists.locked(false);
   self->atomic.queue.empty(self->lists.queue.empty());
+  self->queue_size.store(self->lists.queue.size());
+}
+size_t engine_queue::atomic_queue_t::size() const {
+  return self->queue_size.load();
 }
 bool engine_queue::atomic_queue_t::empty() const {
   return self->queue_empty.load();

@@ -103,7 +103,6 @@ public:
 
   virtual ~cocoa_wkwebview_engine() {
     objc::autoreleasepool arp;
-    user_queue.shutdown();
     if (m_window) {
       if (m_webview) {
         if (auto ui_delegate{WKWebView_get_UIDelegate(m_webview)}) {
@@ -143,6 +142,7 @@ public:
       // Needed for the window to close immediately.
       deplete_run_loop_event_queue();
     }
+    user_queue.shutdown();
     // TODO: Figure out why m_manager is still alive after the autoreleasepool
     // has been drained.
   }
