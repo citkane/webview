@@ -100,7 +100,7 @@ private:
 class gtk_webkit_engine : public engine_base {
 public:
   gtk_webkit_engine(bool debug, void *window) : engine_base{!window} {
-    user_queue.init(this);
+    queue.init(this);
     window_init(window);
     window_settings(debug);
     dispatch_size_default();
@@ -112,6 +112,7 @@ public:
   gtk_webkit_engine &operator=(gtk_webkit_engine &&) = delete;
 
   virtual ~gtk_webkit_engine() {
+    queue.shutdown();
     if (m_window) {
       if (owns_window()) {
         // Disconnect handlers to avoid callbacks invoked during destruction.
@@ -130,7 +131,6 @@ public:
       // Needed for the window to close immediately.
       deplete_run_loop_event_queue();
     }
-    user_queue.shutdown();
   }
 
 protected:

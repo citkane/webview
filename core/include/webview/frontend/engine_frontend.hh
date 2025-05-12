@@ -24,13 +24,12 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_ENGINE_FRONTEND_HH
-#define WEBVIEW_DETAIL_ENGINE_FRONTEND_HH
+#ifndef WEBVIEW_FRONTEND_ENGINE_FRONTEND_HH
+#define WEBVIEW_FRONTEND_ENGINE_FRONTEND_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
+#include "frontend_strings.hh"
 #include "webview/detail/json.hh"
-#include "webview/utility/frontend_strings.hh"
 #include <string>
 #include <vector>
 
@@ -262,4 +261,4 @@ static const front_end_t frontend{};
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_ENGINE_FRONTEND_HH
+#endif // WEBVIEW_FRONTEND_ENGINE_FRONTEND_HH

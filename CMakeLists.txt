@@ -9,6 +9,12 @@ project(
     DESCRIPTION "A tiny cross-platform webview library for C/C++ to build modern cross-platform GUIs."
     HOMEPAGE_URL https://github.com/webview/webview)
 
+if(WEBVIEW_LOG_TRACE)
+    set(WEBVIEW_LOG_TRACE 1)
+else()
+    set(WEBVIEW_LOG_TRACE 0)
+endif()
+
 webview_init()
 
 if(WEBVIEW_BUILD)

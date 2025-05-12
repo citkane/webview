@@ -346,6 +346,8 @@ macro(webview_internal_options)
     cmake_dependent_option(WEBVIEW_PACKAGE_LIB "Package compiled libraries" ON WEBVIEW_ENABLE_PACKAGING OFF)
     option(WEBVIEW_STRICT_CLANG_FORMAT "Make clang-format check strict" ${WEBVIEW_STRICT_CHECKS})
     option(WEBVIEW_STRICT_CLANG_TIDY "Make clang-tidy check strict" ${WEBVIEW_STRICT_CHECKS})
+    option(WEBVIEW_LOG_TRACE "Print a detailed execution trace to stdout" OFF)
+
 endmacro()
 
 macro(webview_set_install_rpath)

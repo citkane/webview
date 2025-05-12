@@ -16,6 +16,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND WEBVIEW_USE_COMPAT_MINGW)
     target_link_libraries(webview_core_headers INTERFACE webview::compat_mingw)
 endif()
 
+target_compile_definitions(webview_core_headers INTERFACE
+    WEBVIEW_LOG_TRACE=$<IF:${WEBVIEW_LOG_TRACE},1,0>
+)
+
+
 # Core shared library
 if(WEBVIEW_BUILD_SHARED_LIBRARY)
     add_library(webview_core_shared SHARED)

@@ -23,37 +23,42 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_UTILITY_TRACE_LOG_HH
-#define WEBVIEW_UTILITY_TRACE_LOG_HH
+#ifndef WEBVIEW_LOG_TRACE_LOG_HH
+#define WEBVIEW_LOG_TRACE_LOG_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
+#include "ansi_colours.hh"
 #include <chrono>
+#include <mutex>
 #include <string>
 
 namespace webview {
-namespace utility {
+namespace log {
+namespace trace_utility {
+using namespace log_utility;
 using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
 using string_t = const std::string &;
 
-inline time_point_t get_now() { return std::chrono::steady_clock::now(); }
+struct trace_tools_t : ansi_t {
+protected:
+  static std::mutex trace_mtx;
 
-class col {
-public:
-  static const std::string &yellow();
-  static const std::string &yellow_dim();
-  static const std::string &green();
-  static const std::string &red();
-  static const std::string &blue();
-  static const std::string &blue_dark();
-  static const std::string &magenta();
-  static const std::string &default_c();
+  time_point_t get_now() const;
+  std::string get_ctx(char scp) const;
+  long elapsed_ms(time_point_t start, time_point_t end) const;
+  std::string bool_s(bool flag) const;
+  std::string escape_s(string_t text) const;
+  std::string num_s(size_t val) const;
+  std::string bold(string_t this_col, string_t text) const;
+  std::string dim(string_t this_col, string_t text) const;
+  void print_ansi(string_t this_col, string_t message) const;
 };
 
-class print_here_t {
+class print_here_t : protected trace_tools_t {
 public:
   ~print_here_t() = default;
-  print_here_t(string_t prefix, string_t postfix);
+  print_here_t(string_t prefix, string_t postfix)
+      : prefix(prefix), postfix(postfix) {};
   void print_here(string_t message) const;
 
 private:
@@ -61,8 +66,10 @@ private:
   std::string postfix;
 };
 
-// NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
+} // namespace trace_utility
+
 namespace queue_api {
+using namespace trace_utility;
 
 struct queue_print_t : public print_here_t {
 public:
@@ -82,6 +89,7 @@ public:
   ~queue_bind_t() = default;
   queue_bind_t(string_t prefix, string_t postfix = "BIND")
       : bind{prefix, postfix} {};
+
   struct wrapper_t : public queue_print_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
@@ -94,6 +102,7 @@ public:
   ~queue_unbind_t() = default;
   queue_unbind_t(string_t prefix, string_t postfix = "UNBIND")
       : unbind{prefix, postfix} {};
+
   struct wrapper_t : public queue_print_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
@@ -106,6 +115,7 @@ public:
   ~queue_eval_t() = default;
   queue_eval_t(string_t prefix, string_t postfix = "EVAL")
       : eval{prefix, postfix} {};
+
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
@@ -124,6 +134,7 @@ public:
   ~queue_loop_t() = default;
   queue_loop_t(string_t prefix, string_t postfix = "loop: ")
       : loop{prefix, postfix} {};
+
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
@@ -139,6 +150,9 @@ public:
     std::string prefix;
     std::string postfix;
     time_point_t process_ts;
+    time_point_t mutable loop_wait_ts;
+    time_point_t mutable loop_start_ts;
+    time_point_t mutable loop_end_ts;
 
     void set_loop_wait_ts() const;
     void set_loop_start_ts() const;
@@ -146,10 +160,6 @@ public:
     std::string total_elapsed() const;
     std::string wait_elapsed() const;
     std::string loop_elapsed() const;
-
-    time_point_t mutable loop_wait_ts;
-    time_point_t mutable loop_start_ts;
-    time_point_t mutable loop_end_ts;
 
   } loop;
 };
@@ -159,6 +169,7 @@ public:
   ~queue_notify_t() = default;
   queue_notify_t(string_t prefix, string_t postfix = "notify: ")
       : notify{prefix, postfix} {};
+
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
@@ -176,6 +187,7 @@ public:
   ~queue_enqueue_t() = default;
   queue_enqueue_t(string_t prefix, string_t postfix = "enqueue: ")
       : enqueue{prefix, postfix} {};
+
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
@@ -189,9 +201,29 @@ public:
   } enqueue;
 };
 
+class queue_t : public queue_bind_t,
+                public queue_unbind_t,
+                public queue_eval_t,
+                public queue_loop_t,
+                public queue_notify_t,
+                public queue_enqueue_t,
+                public print_here_t {
+public:
+  ~queue_t() = default;
+  queue_t(string_t prefix, string_t postfix = "QUEUE: ")
+      : queue_bind_t{prefix + postfix},
+        queue_unbind_t{prefix + postfix},
+        queue_eval_t{prefix + postfix},
+        queue_loop_t{prefix + postfix},
+        queue_notify_t{prefix + postfix},
+        queue_enqueue_t{prefix + postfix},
+        print_here_t{prefix, postfix} {};
+};
+
 } // namespace queue_api
 
 namespace base_api {
+using namespace trace_utility;
 
 struct base_print_t : public print_here_t {
 public:
@@ -211,6 +243,7 @@ public:
   ~base_bind_t() = default;
   base_bind_t(string_t prefix, string_t postfix = "bind: ")
       : bind{prefix, postfix} {};
+
   struct wrapper_t : public base_print_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
@@ -223,6 +256,7 @@ public:
   ~base_unbind_t() = default;
   base_unbind_t(string_t prefix, string_t postfix = "unbind: ")
       : unbind{prefix, postfix} {};
+
   struct wrapper_t : public base_print_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
@@ -235,6 +269,7 @@ public:
   ~base_eval_t() = default;
   base_eval_t(string_t prefix, string_t postfix = "eval: ")
       : eval{prefix, postfix} {};
+
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
@@ -249,64 +284,48 @@ public:
   } eval;
 };
 
-} // namespace base_api
-
-using namespace queue_api;
-using namespace base_api;
-
-class base_t : public print_here_t {
+class base_t : public base_bind_t,
+               public base_unbind_t,
+               public base_eval_t,
+               public print_here_t {
 public:
   ~base_t() = default;
   base_t(string_t prefix, string_t postfix = "BASE: ")
-      : print_here_t{prefix, "root: "}, base{prefix, postfix} {};
-
-  struct wrapper_t : public base_bind_t,
-                     public base_unbind_t,
-                     public base_eval_t,
-                     public print_here_t {
-    ~wrapper_t() = default;
-    wrapper_t(string_t prefix, string_t postfix)
-        : base_bind_t(prefix + postfix),
-          base_unbind_t(prefix + postfix),
-          base_eval_t(prefix + postfix),
-          print_here_t(prefix, postfix) {}
-  } base;
+      : base_bind_t(prefix + postfix),
+        base_unbind_t(prefix + postfix),
+        base_eval_t(prefix + postfix),
+        print_here_t(prefix, postfix) {};
 };
 
-class queue_t : public print_here_t {
+} // namespace base_api
+
+using namespace base_api;
+using namespace queue_api;
+class trace {
 public:
-  ~queue_t() = default;
-  queue_t(string_t prefix, string_t postfix = "QUEUE: ")
-      : print_here_t(prefix, "root: "), queue{prefix, postfix} {};
+  ~trace() = default;
+  trace() = default;
 
-  struct wrapper_t : public queue_bind_t,
-                     public queue_unbind_t,
-                     public queue_eval_t,
-                     public queue_loop_t,
-                     public queue_notify_t,
-                     public queue_enqueue_t,
-                     public print_here_t {
-    ~wrapper_t() = default;
-    wrapper_t(string_t prefix, string_t postfix)
-        : queue_bind_t{prefix + postfix},
-          queue_unbind_t{prefix + postfix},
-          queue_eval_t{prefix + postfix},
-          queue_loop_t{prefix + postfix},
-          queue_notify_t{prefix + postfix},
-          queue_enqueue_t{prefix + postfix},
-          print_here_t{prefix, postfix} {};
-  } queue;
+  static const base_t &base;
+  static const queue_t &queue;
+
+private:
+  static const std::string &prefix() {
+    static const std::string prefix_instance = "WEBVIEW: ";
+    return prefix_instance;
+  };
+  static const base_t &get_base() noexcept {
+    static const base_t base_instance = {prefix()};
+    return base_instance;
+  }
+  static const queue_t &get_queue() noexcept {
+    static const queue_t queue_instance = {prefix()};
+    return queue_instance;
+  }
 };
 
-class trace_t : public base_t, public queue_t {
-public:
-  ~trace_t() = default;
-  trace_t(string_t prefix) : base_t("........ " + prefix), queue_t(prefix) {}
-};
-
-} // namespace utility
+} // namespace log
 } // namespace webview
-// NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_UTILITY_TRACE_LOG_HH
+#endif // WEBVIEW_LOG_TRACE_LOG_HH

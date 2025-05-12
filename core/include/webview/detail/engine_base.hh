@@ -34,18 +34,17 @@
 #include "webview/detail/engine_queue.hh"
 #include <atomic>
 #include <list>
-#include <map>
 
 namespace webview {
 
 // Container: Global header declarations
 namespace detail {
+using str_arg_t = const std::string &;
 
 /// Internally used callback function type for messaging in the promise resolution
 /// native / JS round trip
 using sync_binding_t = std::function<std::string(std::string)>;
-/// Shorthand for the commonly used `string` parameter to improve code readability.
-using str_arg_t = const std::string &;
+
 /// Shorthand type for callback lamda functions ie `bind`, `unbind` and `eval`.
 using do_work_t = std::function<void()>;
 
@@ -100,6 +99,7 @@ public:
   noresult eval(str_arg_t js);
 
 protected:
+  friend struct user_scripts_t;
   /// Platform specific implementation for \ref navigate
   virtual noresult navigate_impl(str_arg_t url) = 0;
   /// Platform specific implementation for \ref window
@@ -125,8 +125,8 @@ protected:
   virtual noresult eval_impl(str_arg_t js) = 0;
 
   /// Adds a bound user function to Webview native code.
-  virtual user_script *add_user_script(str_arg_t js);
-  /// Platform specific implementation of \ref add_user_script to add a bound user JS function.
+  //virtual user_script *add_user_script(str_arg_t js);
+  /// Platform specific implementation to add a bound user JS function.
   virtual user_script add_user_script_impl(str_arg_t js) = 0;
   /// Platform specific implementation to remove all bound JS user functions from the Webview script.
   virtual void
@@ -135,8 +135,8 @@ protected:
   virtual bool are_user_scripts_equal_impl(const user_script &first,
                                            const user_script &second) = 0;
   /// Replaces a bound user script in Webview native code.
-  virtual user_script *replace_user_script(const user_script &old_script,
-                                           str_arg_t new_script_code);
+  //virtual user_script *replace_user_script(const user_script &old_script,
+  //                                        str_arg_t new_script_code);
   /// Updates the JS `bind` script in the frontend window.
   void replace_bind_script();
   /// Adds the JS Webview script to the frontend window
@@ -165,19 +165,14 @@ protected:
   bool owns_window() const;
 
 private:
-  friend class engine_queue;
   /// Keeps track of the number of platform window instances.
   static std::atomic_uint &window_ref_count();
   /// Increments the reference number of platform window instances.
   static unsigned int inc_window_count();
   /// Decrements the reference number of platform window instances.
   static unsigned int dec_window_count();
-  /// A map of bound JS user functions.
-  std::map<std::string, binding_ctx_t> bindings;
   /// A reference to the currently active JS bound script in the platform window.
   user_script *m_bind_script{};
-  /// A list of references to bound user scripts.
-  std::list<user_script> m_user_scripts;
   /// Flags if the JS Webview code has been sent to the platform window yet.
   bool m_is_init_script_sent{};
   /// Flags if the initial platform window size has been set.
@@ -191,12 +186,6 @@ private:
   static const int m_initial_height = 480;
   /// Flag that indicates if a Webview work unit should skip the user work queue and execute directly
   bool skip_queue{};
-  /// Flag that indicates the shutdown procedure has started.
-  std::atomic_bool is_terminating{};
-
-  /// Temporary debug tracing utility
-  /// @todo remove before merge
-  utility::trace_t trace = {"Webview::"};
 };
 
 } // namespace detail

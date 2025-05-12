@@ -27,15 +27,11 @@
 #define WEBVIEW_DETAIL_ENGINE_BASE_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/detail/engine_base.hh"
-#include "webview/../../tests/include/test_helper.hh"
-#include "webview/detail/engine_frontend.hh"
 #include "webview/detail/json.hh"
-#include <algorithm>
-#include <functional>
-#include <iterator>
-#include <string>
+#include "webview/frontend/engine_frontend.hh"
+#include "webview/log/trace_log.hh"
+#include "webview/tests/test_helper.hh"
 
 namespace webview {
 
@@ -62,50 +58,43 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
 }
 
 noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
-  trace.base.bind.start(name);
+  log::trace::base.bind.start(name);
   do_work_t do_work = [this, name, fn, arg] {
-    trace.base.bind.work(name);
-    user_queue.bindings.locked(true);
-    bindings.emplace(name, binding_ctx_t(fn, arg));
+    log::trace::base.bind.work(name);
+    list.bindings.emplace(name, fn, arg);
     replace_bind_script();
-    user_queue.bindings.locked(false);
     skip_queue = true;
     eval(utility::frontend.js.onbind(name));
     skip_queue = false;
   };
-  if (user_queue.bind.is_duplicate(name)) {
+  if (queue.bind.is_duplicate(name)) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
   }
-  user_queue.promises.list_init(name);
+  queue.promises.list_init(name);
   if (!skip_queue) {
-    return user_queue.bind.enqueue(do_work, name);
+    return queue.bind.enqueue(do_work, name);
   }
   do_work();
   return {};
 }
 
 noresult engine_base::unbind(str_arg_t name) {
-  trace.base.unbind.start(name);
+  log::trace::base.unbind.start(name);
   do_work_t do_work = [this, name]() {
-    trace.base.unbind.work(name);
+    log::trace::base.unbind.work(name);
     skip_queue = true;
     eval(utility::frontend.js.onunbind(name));
     skip_queue = false;
-    user_queue.bindings.locked(true);
-    bindings.erase(name);
+    list.bindings.erase(name);
     replace_bind_script();
-    user_queue.bindings.locked(false);
   };
-  if (user_queue.unbind.not_found(name)) {
+  if (queue.unbind.not_found(name)) {
     return error_info{WEBVIEW_ERROR_NOT_FOUND};
   }
-  return user_queue.unbind.enqueue(do_work, name);
+  return queue.unbind.enqueue(do_work, name);
 }
 
 noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
-  if (is_terminating.load()) {
-    return {};
-  }
   str_arg_t escaped_result = result.empty() ? "undefined" : json_escape(result);
   str_arg_t promised_js =
       utility::frontend.js.onreply(id, status, escaped_result);
@@ -114,7 +103,7 @@ noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
     skip_queue = true;
     eval(promised_js);
     skip_queue = false;
-    user_queue.promises.resolved(id);
+    queue.promises.resolved(id);
   });
 }
 
@@ -133,7 +122,7 @@ webview::result<void *> engine_base::browser_controller() {
 noresult engine_base::run() { return run_impl(); }
 
 noresult engine_base::terminate() {
-  is_terminating.store(true);
+  queue.shutting_down(true);
   return terminate_impl();
 }
 
@@ -154,22 +143,22 @@ noresult engine_base::set_size(int width, int height, webview_hint_t hints) {
 noresult engine_base::set_html(str_arg_t html) { return set_html_impl(html); }
 
 noresult engine_base::init(str_arg_t js) {
-  add_user_script(js);
+  list.m_user_scripts.add(js, this);
   return {};
 }
 
 noresult engine_base::eval(str_arg_t js) {
-  trace.base.eval.start(js, skip_queue);
+  log::trace::base.eval.start(js, skip_queue);
   do_work_t do_work = [this, js] {
     auto wrapped_js = utility::frontend.js.eval_wrapper(js);
-    trace.base.eval.work(wrapped_js);
+    log::trace::base.eval.work(wrapped_js);
     eval_impl(wrapped_js);
   };
 
   if (!skip_queue) {
-    return user_queue.eval.enqueue(do_work, js);
+    return queue.eval.enqueue(do_work, js);
   }
-  trace.base.eval.work(js);
+  log::trace::base.eval.work(js);
   eval_impl(js);
   return {};
 }
@@ -178,7 +167,7 @@ noresult engine_base::eval(str_arg_t js) {
 // PROTECTED methods
 namespace detail {
 using namespace webview::test;
-
+/*
 user_script *engine_base::add_user_script(str_arg_t js) {
   return std::addressof(
       *m_user_scripts.emplace(m_user_scripts.end(), add_user_script_impl(js)));
@@ -198,29 +187,26 @@ user_script *engine_base::replace_user_script(const user_script &old_script,
   }
   return old_script_ptr;
 }
-
+*/
 void engine_base::replace_bind_script() {
   auto replacement_js = create_bind_script();
   if (m_bind_script) {
-    m_bind_script = replace_user_script(*m_bind_script, replacement_js);
+    m_bind_script =
+        list.m_user_scripts.replace(*m_bind_script, replacement_js, this);
   } else {
-    m_bind_script = add_user_script(replacement_js);
+    m_bind_script = list.m_user_scripts.add(replacement_js, this);
   }
 }
 
 void engine_base::add_init_script(str_arg_t post_fn) {
-  add_user_script(utility::frontend.js.init(post_fn));
+  auto init_js = utility::frontend.js.init(post_fn);
+  list.m_user_scripts.add(init_js, this);
   m_is_init_script_sent = true;
 }
 
 std::string engine_base::create_bind_script() {
   std::vector<std::string> bound_names;
-  bound_names.reserve(bindings.size());
-  std::transform(bindings.begin(), bindings.end(),
-                 std::back_inserter(bound_names),
-                 [](const std::pair<std::string, binding_ctx_t> &pair) {
-                   return pair.first;
-                 });
+  list.bindings.get_names(bound_names);
   return utility::frontend.js.bind(bound_names);
 }
 
@@ -232,17 +218,16 @@ void engine_base::on_message(str_arg_t msg) {
     return;
   }
   auto name = json_parse(msg, "method", 0);
-  if (user_queue.promises.is_system_message(id, name)) {
+  if (queue.promises.is_system_message(id, name)) {
     return;
   }
-  auto found = bindings.find(name);
-  if (found == bindings.end()) {
-    reject(id, utility::frontend.err_message.reject_unbound(id, name));
+  if (!list.bindings.has_name(name)) {
+    auto message = utility::frontend.err_message.reject_unbound(id, name);
+    reject(id, message);
     return;
   }
-  found = bindings.end();
   auto args = json_parse(msg, "params", 0);
-  user_queue.promises.resolve(name, id, args);
+  queue.promises.resolve(name, id, args, this);
 }
 
 void engine_base::on_window_created() { inc_window_count(); }

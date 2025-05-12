@@ -7,7 +7,7 @@
 #define WEBVIEW_VERSION_PRE_RELEASE "-test"
 #define WEBVIEW_VERSION_BUILD_METADATA "+gaabbccd"
 
-#include "webview/utility/frontend_strings.hh"
+#include "webview/frontend/frontend_strings.hh"
 #include "webview/webview.h"
 
 #include <cassert>
@@ -57,6 +57,14 @@ TEST_CASE("Use C API to create a window, run app and terminate it") {
   webview_destroy(w);
 }
 
+#define TEST_B_UB_CALL                                                         \
+  "try {\n"                                                                    \
+  "  window.increment()\n"                                                     \
+  "  .then(r => window.test(" TOKEN_VALUE "))\n"                               \
+  "  .catch(() => window.test(" TOKEN_VALUE ",1))\n"                           \
+  "} catch {\n"                                                                \
+  "  window.test(" TOKEN_VALUE ",1);\n"                                        \
+  "}"
 TEST_CASE("Use C API to test binding and unbinding") {
   using namespace webview::utility;
   struct context_t {
@@ -120,6 +128,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
 }
 
 TEST_CASE("Test synchronous binding and unbinding") {
+
   using namespace webview::utility;
 
   unsigned int number = 0;
@@ -172,24 +181,20 @@ TEST_CASE("Test synchronous binding and unbinding") {
   w.run();
 }
 
+#define JS_STRING_RETURNS                                                      \
+  "try {\n"                                                                    \
+  "  window.loadData()\n"                                                      \
+  "  .then(() => window.endTest(0))\n"                                         \
+  "  .catch(() => window.endTest(1));\n"                                       \
+  "} catch {\n"                                                                \
+  "  window.endTest(2);\n"                                                     \
+  "}"
 TEST_CASE("The string returned from a binding call must be JSON") {
-  constexpr auto html =
-      R"html(<script>
-  try {
-    window.loadData()
-      .then(() => window.endTest(0))
-      .catch(() => window.endTest(1));
-  } catch {
-    window.endTest(2);
-  }
-</script>)html";
-
   webview::webview w(true, nullptr);
 
   w.bind("loadData", [](const std::string & /*req*/) -> std::string {
     return "\"hello\"";
   });
-
   w.bind("endTest", [&](const std::string &req) -> std::string {
     REQUIRE(req != "[2]");
     REQUIRE(req != "[1]");
@@ -197,30 +202,19 @@ TEST_CASE("The string returned from a binding call must be JSON") {
     w.terminate();
     return "";
   });
+  w.eval(JS_STRING_RETURNS);
 
-  w.set_html(html);
+  w.set_html("The string returned from a binding call must be JSON");
   w.run();
 }
 
 TEST_CASE("The string returned of a binding call must not be JS") {
-  constexpr const auto html =
-      R"html(<script>
-  try {
-    window.loadData()
-      .then(() => window.endTest(0))
-      .catch(() => window.endTest(1));
-  } catch {
-    window.endTest(2);
-  }
-</script>)html";
-
   webview::webview w(true, nullptr);
 
   w.bind("loadData", [](const std::string & /*req*/) -> std::string {
     // Try to load malicious JS code
     return "(()=>{document.body.innerHTML='gotcha';return 'hello';})()";
   });
-
   w.bind("endTest", [&](const std::string &req) -> std::string {
     REQUIRE(req != "[0]");
     REQUIRE(req != "[2]");
@@ -228,8 +222,9 @@ TEST_CASE("The string returned of a binding call must not be JS") {
     w.terminate();
     return "";
   });
+  w.eval(JS_STRING_RETURNS);
 
-  w.set_html(html);
+  w.set_html("The string returned of a binding call must not be JS");
   w.run();
 }
 
@@ -247,49 +242,52 @@ TEST_CASE("webview_version()") {
 }
 
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
-#define TEST_CASE_URL "data:text/html,%3Chtml%3Ehello%3C%2Fhtml%3E"
 #define TEST_CASE_INIT_JS                                                      \
   "window.x = 42;\n"                                                           \
   "window.onload = () => {\n"                                                  \
   " " TOKEN_POST_FN "\n"                                                       \
   "};"
-
-  std::mutex mtx;
-  std::unique_lock<std::mutex> lock(mtx);
   using namespace webview::detail;
   using namespace webview::utility;
 
-  auto on_load_val = tester::post_value("\"loaded\"");
-  auto init_js = tokeniser(TEST_CASE_INIT_JS, TOKEN_POST_FN, on_load_val);
+  std::condition_variable main_cv;
+  std::atomic_bool worker_ready{};
   webview::webview wv{true, nullptr};
-  webview::webview *wv_pointer = &wv;
-  auto async_tests = std::thread(
-      [](webview::webview *wv) {
-        std::mutex mtx;
-        std::unique_lock<std::mutex> lock(mtx);
 
-        tester::worker_thread_ready(true);
-        tester::expect_value("loaded");
-        tester::worker_cv().wait_for(lock, tester::timeout_sec(2),
-                                     []() { return tester::values_match(); });
-        REQUIRE(tester::values_match());
+  auto async_tests = std::thread([&]() {
+    std::mutex worker_mtx;
+    std::unique_lock<std::mutex> lock(worker_mtx);
+    worker_ready.store(true);
+    main_cv.notify_one();
 
-        tester::expect_value("exiting 42");
-        tester::post_value(wv, "\"exiting \" + window.x");
-        tester::worker_cv().wait_for(lock, tester::timeout_sec(),
-                                     [] { return tester::values_match(); });
-        REQUIRE(tester::values_match());
+    tester::expect_value("loaded");
+    tester::cv().wait_for(lock, tester::seconds(2),
+                          []() { return tester::values_match(); });
+    REQUIRE(tester::values_match());
 
-        tester::terminate(wv);
-      },
-      wv_pointer);
+    tester::expect_value("exiting 42");
+    tester::post_value("\"exiting \" + window.x", &wv);
 
-  wv.navigate(TEST_CASE_URL);
-  wv.init(init_js);
-  tester::main_cv().wait(lock, [] { return tester::worker_thread_ready(); });
+    tester::cv().wait_for(lock, tester::seconds(2),
+                          [] { return tester::values_match(); });
+    REQUIRE(tester::values_match());
 
-  wv.run();
-  async_tests.join();
+    tester::terminate(&wv);
+  });
+  {
+    std::mutex main_mtx;
+    std::unique_lock<std::mutex> lock(main_mtx);
+    auto on_load_val = tester::get_value_js("\"loaded\"");
+    auto init_js = tokeniser(TEST_CASE_INIT_JS, TOKEN_POST_FN, on_load_val);
+
+    wv.init(init_js);
+    wv.set_html("Ensure that JS code can call native code and vice versa");
+    //wv.navigate("data:text/html,%3Chtml%3Ehello%3C%2Fhtml%3E");
+
+    main_cv.wait(lock, [&worker_ready] { return worker_ready.load(); });
+    wv.run();
+    async_tests.join();
+  }
 }
 
 #define ASSERT_WEBVIEW_FAILED(expr) REQUIRE(WEBVIEW_FAILED(expr))
