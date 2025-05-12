@@ -90,7 +90,7 @@ class cocoa_wkwebview_engine : public engine_base {
 public:
   cocoa_wkwebview_engine(bool debug, void *window)
       : engine_base{!window}, m_app{NSApplication_get_sharedApplication()} {
-    user_queue.init(this);
+    queue.init(this);
     window_init(window);
     window_settings(debug);
     dispatch_size_default();
@@ -103,6 +103,7 @@ public:
 
   virtual ~cocoa_wkwebview_engine() {
     objc::autoreleasepool arp;
+    queue.shutdown();
     if (m_window) {
       if (m_webview) {
         if (auto ui_delegate{WKWebView_get_UIDelegate(m_webview)}) {
@@ -142,7 +143,6 @@ public:
       // Needed for the window to close immediately.
       deplete_run_loop_event_queue();
     }
-    user_queue.shutdown();
     // TODO: Figure out why m_manager is still alive after the autoreleasepool
     // has been drained.
   }
