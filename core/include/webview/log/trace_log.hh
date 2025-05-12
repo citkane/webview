@@ -58,7 +58,7 @@ class print_here_t : protected trace_tools_t {
 public:
   ~print_here_t() = default;
   print_here_t(string_t prefix, string_t postfix)
-      : prefix(prefix), postfix(postfix) {};
+      : prefix(prefix), postfix(postfix) {}
   void print_here(string_t message) const;
 
 private:
@@ -294,7 +294,7 @@ public:
       : base_bind_t(prefix + postfix),
         base_unbind_t(prefix + postfix),
         base_eval_t(prefix + postfix),
-        print_here_t(prefix, postfix) {};
+        print_here_t(prefix, postfix) {}
 };
 
 } // namespace base_api
