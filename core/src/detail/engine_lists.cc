@@ -124,40 +124,69 @@ bool queue_t::empty() {
 
 void unres_promises_t::set(str_arg_t name, std::list<std::string> ids) {
   std::lock_guard<std::mutex> lock(mtx);
-  name_unres_promises[name] = std::move(ids);
+  unres_promises[name] = std::move(ids);
 }
 std::list<std::string> unres_promises_t::get_copy(str_arg_t name) const {
   std::lock_guard<std::mutex> lock(mtx);
-  return name_unres_promises.at(name);
+  auto found = unres_promises.find(name);
+  if (found == unres_promises.end()) {
+    return {};
+  }
+  std::list<std::string> list_copy = found->second;
+  found = unres_promises.end();
+  return list_copy;
 }
 void unres_promises_t::remove_id(str_arg_t name, str_arg_t id) {
   std::lock_guard<std::mutex> lock(mtx);
-  name_unres_promises.at(name).remove(id);
+  auto found = unres_promises.find(name);
+  if (found == unres_promises.end()) {
+    return;
+  }
+  found->second.remove(id);
+  found = unres_promises.end();
 }
 void unres_promises_t::add_id(str_arg_t name, str_arg_t id) {
   std::lock_guard<std::mutex> lock(mtx);
-  name_unres_promises.at(name).push_back(id);
+  auto found = unres_promises.find(name);
+  if (found == unres_promises.end()) {
+    unres_promises.emplace(name, std::list<std::string>{id});
+  } else {
+    found->second.push_back(id);
+  }
+  found = unres_promises.end();
 }
 void unres_promises_t::erase(str_arg_t name) {
   std::lock_guard<std::mutex> lock(mtx);
-  name_unres_promises.erase(name);
+  unres_promises.erase(name);
 }
 bool unres_promises_t::empty(str_arg_t name) const {
   std::lock_guard<std::mutex> lock(mtx);
-  return name_unres_promises.at(name).empty();
+  auto found = unres_promises.find(name);
+  if (found == unres_promises.end()) {
+    return true;
+  }
+  auto empty = found->second.empty();
+  found = unres_promises.end();
+  return empty;
 }
 
 std::string id_name_map_t::get(str_arg_t id) const {
   std::lock_guard<std::mutex> lock(mtx);
-  return promise_id_name.at(id);
+  auto found = id_name.find(id);
+  if (found == id_name.end()) {
+    return "";
+  }
+  auto name = found->second;
+  found = id_name.end();
+  return name;
 }
 void id_name_map_t::set(str_arg_t id, str_arg_t name) {
   std::lock_guard<std::mutex> lock(mtx);
-  promise_id_name[id] = name;
+  id_name[id] = name;
 }
 void id_name_map_t::erase(str_arg_t id) {
   std::lock_guard<std::mutex> lock(mtx);
-  promise_id_name.erase(id);
+  id_name.erase(id);
 }
 
 void pending_t::pop_front() {

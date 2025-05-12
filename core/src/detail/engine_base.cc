@@ -70,7 +70,6 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
   if (queue.bind.is_duplicate(name)) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
   }
-  queue.promises.list_init(name);
   if (!skip_queue) {
     return queue.bind.enqueue(do_work, name);
   }

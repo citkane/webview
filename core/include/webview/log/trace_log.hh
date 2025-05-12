@@ -32,6 +32,19 @@
 #include <mutex>
 #include <string>
 
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif // WIN32_LEAN_AND_MEAN
+#ifdef _MSC_VER
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501 //Win XP
+#endif                      // _WIN32_WINNT
+#endif                      // _MSC_VER
+#include <io.h>
+#include <windows.h>
+#endif
+
 namespace webview {
 namespace log {
 namespace trace_utility {
@@ -304,7 +317,14 @@ using namespace queue_api;
 class trace {
 public:
   ~trace() = default;
+#if defined(_WIN32)
+  trace() {
+    AttachConsole(ATTACH_PARENT_PROCESS);
+    static_cast<void>(freopen("CONOUT$", "w", stdout));
+  };
+#else
   trace() = default;
+#endif
 
   static const base_t &base;
   static const queue_t &queue;

@@ -70,15 +70,17 @@ noresult eval_api_t::enqueue(do_work_t fn, str_arg_t js) const {
   return self->queue_work(js, fn, self->ctx.eval);
 };
 
-void promise_api_t::list_init(str_arg_t name) const {
-  self->list.unresolved_promises.set(name, {});
-};
-
 void promise_api_t::resolved(str_arg_t id) const {
   auto name = self->list.id_name_map.get(id);
+  if (name == "") {
+    return;
+  };
   self->list.id_name_map.erase(id);
   self->list.unresolved_promises.remove_id(name, id);
-  self->cv.unbind_timeout.notify_one();
+  if (self->list.unresolved_promises.empty(name)) {
+    self->cv.unbind_timeout.notify_one();
+    self->list.unresolved_promises.erase(name);
+  }
 };
 void promise_api_t::resolve(str_arg_t name, str_arg_t id, str_arg_t args,
                             engine_base *wv) const {
@@ -184,7 +186,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
         auto err = utility::frontend.err_message.reject_unbound(id, name);
         wv_instance->reject(id, err);
       }
-      list.unresolved_promises.erase(name);
+
       wv_instance->dispatch(work_fn);
       cv.unbind.wait(lock,
                      [this] { return atomic.AND({atomic.done.unbind()}); });

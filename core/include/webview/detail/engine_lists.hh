@@ -27,6 +27,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "user_script.hh"
+#include "webview/log/trace_log.hh"
 #include <condition_variable>
 #include <deque>
 #include <list>
@@ -54,7 +55,7 @@ struct cv_api_t {
   void notify_all() const;
 };
 enum context_t { bind_t = 'b', unbind_t = 'u', eval_t = 'e' };
-struct ctx_t {
+struct action_ctx_t {
   context_t bind = context_t::bind_t;
   context_t unbind = context_t::unbind_t;
   context_t eval = context_t::eval_t;
@@ -123,7 +124,7 @@ public:
 
 private:
   mutable std::unordered_map<std::string, std::list<std::string>>
-      name_unres_promises;
+      unres_promises;
   mutable std::mutex mtx;
 };
 
@@ -134,7 +135,7 @@ public:
   void erase(str_arg_t id);
 
 private:
-  mutable std::unordered_map<std::string, std::string> promise_id_name;
+  mutable std::unordered_map<std::string, std::string> id_name;
   mutable std::mutex mtx;
 };
 

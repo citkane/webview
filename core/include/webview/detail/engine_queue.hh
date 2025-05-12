@@ -83,7 +83,7 @@ public:
     ~promise_api_t() = default;
     promise_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Initialises an empty list for promise id's of a given bind name
-    void list_init(str_arg_t name) const;
+    //void list_init(str_arg_t name) const;
     /// Takes queue action for a resolved promise
     void resolved(str_arg_t id) const;
     /// Sends the native work unit of a promise to a concurrent thread.
@@ -123,7 +123,7 @@ public:
 
 private:
   /// Container for user work operation tags, ie. `bind`, `unbind`, `eval`
-  ctx_t const ctx{};
+  action_ctx_t const ctx{};
 
   /// @brief Constructs a thread to choreograph execution of `bind`, `unbind` or `eval` user work units.
   ///
