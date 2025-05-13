@@ -47,12 +47,12 @@
 
 namespace webview {
 namespace log {
-namespace trace_utility {
-using namespace log_utility;
+namespace _structs {
+
 using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
 using string_t = const std::string &;
 
-struct trace_tools_t : ansi_t {
+struct trace_tools_t : _classes::ansi_t {
 protected:
   static std::mutex trace_mtx;
 
@@ -78,11 +78,6 @@ private:
   std::string prefix;
   std::string postfix;
 };
-
-} // namespace trace_utility
-
-namespace queue_api {
-using namespace trace_utility;
 
 struct queue_print_t : public print_here_t {
 public:
@@ -233,11 +228,6 @@ public:
         print_here_t{prefix, postfix} {};
 };
 
-} // namespace queue_api
-
-namespace base_api {
-using namespace trace_utility;
-
 struct base_print_t : public print_here_t {
 public:
   base_print_t(string_t prefix, string_t postfix)
@@ -310,12 +300,9 @@ public:
         print_here_t(prefix, postfix) {}
 };
 
-} // namespace base_api
+} // namespace _structs
 
-using namespace base_api;
-using namespace queue_api;
 class trace {
-public:
   ~trace() = default;
 #if defined(_WIN32)
   trace() {
@@ -325,21 +312,21 @@ public:
 #else
   trace() = default;
 #endif
-
-  static const base_t &base;
-  static const queue_t &queue;
+public:
+  static const _structs::base_t &base;
+  static const _structs::queue_t &queue;
 
 private:
   static const std::string &prefix() {
     static const std::string prefix_instance = "WEBVIEW: ";
     return prefix_instance;
   };
-  static const base_t &get_base() noexcept {
-    static const base_t base_instance = {prefix()};
+  static const _structs::base_t &get_base() noexcept {
+    static const _structs::base_t base_instance = {prefix()};
     return base_instance;
   }
-  static const queue_t &get_queue() noexcept {
-    static const queue_t queue_instance = {prefix()};
+  static const _structs::queue_t &get_queue() noexcept {
+    static const _structs::queue_t queue_instance = {prefix()};
     return queue_instance;
   }
 };

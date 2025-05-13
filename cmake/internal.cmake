@@ -203,7 +203,7 @@ function(webview_find_python3 REQUIRED)
 endfunction()
 
 macro(webview_extract_version)
-    file(READ "${WEBVIEW_ROOT_DIR}/core/include/webview/version.h" WEBVIEW_H_CONTENT)
+    file(READ "${WEBVIEW_ROOT_DIR}/core/include/webview/lib/version.h" WEBVIEW_H_CONTENT)
 
     if(NOT DEFINED WEBVIEW_VERSION_MAJOR)
         string(REGEX MATCH "#define WEBVIEW_VERSION_MAJOR ([0-9]+)" WEBVIEW_VERSION_MAJOR_MATCH "${WEBVIEW_H_CONTENT}")

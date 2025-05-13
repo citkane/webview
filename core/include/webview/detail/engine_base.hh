@@ -27,30 +27,19 @@
 #define WEBVIEW_DETAIL_ENGINE_BASE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "../types.h"
-#include "../types.hh"
-#include "user_script.hh"
 #include "webview/detail/engine_queue.hh"
+#include "webview/detail/frontend/user_script.hh"
+#include "webview/types/types.h"
+#include "webview/types/types.hh"
 #include <atomic>
 #include <list>
 
 namespace webview {
-
-// Container: Global header declarations
 namespace detail {
-using str_arg_t = const std::string &;
 
 /// Internally used callback function type for messaging in the promise resolution
 /// native / JS round trip
 using sync_binding_t = std::function<std::string(std::string)>;
-
-/// Shorthand type for callback lamda functions ie `bind`, `unbind` and `eval`.
-using do_work_t = std::function<void()>;
-
-} // namespace detail
-
-// Container: `engine_base` class
-namespace detail {
 
 /// Common internal API methods for all three Webview platform classes:
 /// - cocoa_webkit
@@ -98,7 +87,7 @@ public:
   noresult eval(str_arg_t js);
 
 protected:
-  friend struct user_scripts_t;
+  friend struct _structs::user_scripts_t;
   /// Platform specific implementation for \ref navigate
   virtual noresult navigate_impl(str_arg_t url) = 0;
   /// Platform specific implementation for \ref window

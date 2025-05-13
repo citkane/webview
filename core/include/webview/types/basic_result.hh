@@ -28,8 +28,8 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "exceptions.hh"
 #include "optional.hh"
+#include "webview/errors/exceptions.hh"
 
 #include <utility>
 

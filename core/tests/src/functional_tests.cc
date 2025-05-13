@@ -1,4 +1,4 @@
-#include "webview/api.h"
+#include "webview/api/api.h"
 #include "webview/test_driver.hh"
 
 #define WEBVIEW_VERSION_MAJOR 1
@@ -7,7 +7,7 @@
 #define WEBVIEW_VERSION_PRE_RELEASE "-test"
 #define WEBVIEW_VERSION_BUILD_METADATA "+gaabbccd"
 
-#include "webview/frontend/frontend_strings.hh"
+#include "webview/detail/frontend/frontend_strings.hh"
 #include "webview/webview.h"
 
 #include <cassert>
@@ -27,6 +27,9 @@ TEST_CASE("# Warm-up") {
   w.run();
 }
 #endif
+
+using namespace webview::detail;
+using namespace webview::test;
 
 TEST_CASE("Start app loop and terminate it") {
   webview::webview w(false, nullptr);
@@ -66,7 +69,6 @@ TEST_CASE("Use C API to create a window, run app and terminate it") {
   "  window.test(" TOKEN_VALUE ",1);\n"                                        \
   "}"
 TEST_CASE("Use C API to test binding and unbinding") {
-  using namespace webview::utility;
   struct context_t {
     webview_t w;
     unsigned int number;
@@ -83,8 +85,9 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[0]") {
       REQUIRE(context->number == 0);
       webview_bind(context->w, "increment", increment, context);
-      webview_eval(context->w,
-                   tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "1").c_str());
+      webview_eval(
+          context->w,
+          str::tokenise(TEST_B_UB_CALL, str::token.value, "1").c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -92,8 +95,9 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[1]") {
       REQUIRE(context->number == 1);
       webview_unbind(context->w, "increment");
-      webview_eval(context->w,
-                   tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "2").c_str());
+      webview_eval(
+          context->w,
+          str::tokenise(TEST_B_UB_CALL, str::token.value, "2").c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -101,8 +105,9 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[2,1]") {
       REQUIRE(context->number == 1);
       webview_bind(context->w, "increment", increment, context);
-      webview_eval(context->w,
-                   tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "3").c_str());
+      webview_eval(
+          context->w,
+          str::tokenise(TEST_B_UB_CALL, str::token.value, "3").c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -129,8 +134,6 @@ TEST_CASE("Use C API to test binding and unbinding") {
 
 TEST_CASE("Test synchronous binding and unbinding") {
 
-  using namespace webview::utility;
-
   unsigned int number = 0;
   webview::webview w(true, nullptr);
   auto test = [&](const std::string &req) -> std::string {
@@ -143,14 +146,14 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[0]") {
       REQUIRE(number == 0);
       w.bind("increment", increment);
-      w.eval(tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "1"));
+      w.eval(str::tokenise(TEST_B_UB_CALL, str::token.value, "1"));
       return "";
     }
     // Unbind and make sure that we cannot increment even if we try.
     if (req == "[1]") {
       REQUIRE(number == 1);
       w.unbind("increment");
-      w.eval(tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "2"));
+      w.eval(str::tokenise(TEST_B_UB_CALL, str::token.value, "2"));
       return "";
     }
     // We should have gotten an error on the JS side.
@@ -158,7 +161,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[2,1]") {
       REQUIRE(number == 1);
       w.bind("increment", increment);
-      w.eval(tokeniser(TEST_B_UB_CALL, TOKEN_VALUE, "3"));
+      w.eval(str::tokenise(TEST_B_UB_CALL, str::token.value, "3"));
       return "";
     }
     // Finish test.
@@ -247,8 +250,6 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
   "window.onload = () => {\n"                                                  \
   " " TOKEN_POST_FN "\n"                                                       \
   "};"
-  using namespace webview::detail;
-  using namespace webview::utility;
 
   std::condition_variable main_cv;
   std::atomic_bool worker_ready{};
@@ -278,7 +279,8 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
     std::mutex main_mtx;
     std::unique_lock<std::mutex> lock(main_mtx);
     auto on_load_val = tester::get_value_js("\"loaded\"");
-    auto init_js = tokeniser(TEST_CASE_INIT_JS, TOKEN_POST_FN, on_load_val);
+    auto init_js =
+        str::tokenise(TEST_CASE_INIT_JS, str::token.post_fn, on_load_val);
 
     wv.init(init_js);
     wv.set_html("Ensure that JS code can call native code and vice versa");

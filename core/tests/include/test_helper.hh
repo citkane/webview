@@ -27,15 +27,16 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
-#include "webview/frontend/frontend_strings.hh"
+#include "webview/detail/frontend/frontend_strings.hh"
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
 
 namespace webview {
 using namespace webview::detail;
+
 namespace test {
-namespace templates {
+namespace _templates {
 
 #define TEST_VALUE_WRAPPER                                                     \
   "window.__webview__.post(\n"                                                 \
@@ -45,7 +46,7 @@ namespace templates {
   "  })\n"                                                                     \
   ");"
 
-} // namespace templates
+} // namespace _templates
 
 /// Static test utilities class
 class tester {
@@ -74,7 +75,7 @@ public:
 
   /// Wraps a string value in evaluable JS
   static std::string get_value_js(const std::string &value) {
-    return utility::tokeniser(TEST_VALUE_WRAPPER, TOKEN_VALUE, value);
+    return str::tokenise(TEST_VALUE_WRAPPER, str::token.value, value);
   }
 
   /// dispatch -> wv.eval of a tokenised `window.__webview__.post` string with a test value

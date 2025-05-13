@@ -28,13 +28,13 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "backends.hh"
-#include "errors.h"
-#include "errors.hh"
-#include "json_deprecated.hh"
-#include "macros.h"
-#include "types.h"
-#include "version.h"
+#include "webview/detail/backends/backends.hh"
+#include "webview/errors/errors.h"
+#include "webview/errors/errors.hh"
+#include "webview/lib/json_deprecated.hh"
+#include "webview/lib/macros.h"
+#include "webview/lib/version.h"
+#include "webview/types/types.h"
 
 namespace webview {
 namespace detail {

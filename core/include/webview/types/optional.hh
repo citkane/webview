@@ -28,7 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "exceptions.hh"
+#include "webview/errors/exceptions.hh"
 
 #include <new>
 #include <type_traits>

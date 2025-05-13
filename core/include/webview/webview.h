@@ -26,9 +26,8 @@
 #ifndef WEBVIEW_H
 #define WEBVIEW_H
 
-#include "amalgamate_src_detail.hh"
-#include "amalgamate_src_log.hh"
-#include "api.h"
-#include "c_api_impl.hh"
+#include "../../src/amalgamate_src.hh"
+#include "api/api.h"
+#include "api/c_api_impl.hh"
 
 #endif // WEBVIEW_H

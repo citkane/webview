@@ -23,26 +23,18 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_TYPES_HH
-#define WEBVIEW_TYPES_HH
+#ifndef WEBVIEW_BACKENDS_HH
+#define WEBVIEW_BACKENDS_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "detail/basic_result.hh"
-#include "errors.hh"
-
-#include <functional>
+#include "cocoa_webkit.hh"
+#include "gtk_webkitgtk.hh"
+#include "win32_edge.hh"
 
 namespace webview {
-
-using dispatch_fn_t = std::function<void()>;
-
-template <typename T>
-using result = detail::basic_result<T, error_info, exception>;
-
-using noresult = detail::basic_result<void, error_info, exception>;
-
-} // namespace webview
+using webview = browser_engine;
+}
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_TYPES_HH
+#endif // WEBVIEW_BACKENDS_HH

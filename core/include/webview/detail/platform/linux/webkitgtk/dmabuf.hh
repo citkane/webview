@@ -28,7 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "../../../../macros.h"
+#include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)
 
@@ -86,7 +86,7 @@ static inline void set_env(const std::string &name, const std::string &value) {
 // Checks whether the NVIDIA GPU driver is used based on whether the kernel
 // module is loaded.
 static inline bool is_using_nvidia_driver() {
-  struct ::stat buffer {};
+  struct ::stat buffer{};
   if (::stat("/sys/module/nvidia", &buffer) != 0) {
     return false;
   }

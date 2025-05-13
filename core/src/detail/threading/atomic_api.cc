@@ -1,0 +1,93 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 Michael Jonker
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#ifndef WEBVIEW_DETAIL_ATOMIC_API_CC
+#define WEBVIEW_DETAIL_ATOMIC_API_CC
+
+#if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#include "webview/detail/threading/atomic_api.hh"
+#include "webview/detail/engine_queue.hh"
+
+namespace webview {
+namespace detail {
+namespace _struct {
+
+bool atomic_done_t::bind() const { return self->bind_done.load(); }
+void atomic_done_t::bind(bool val) {
+  self->bind_done.store(val);
+  self->cv.bind.notify_one();
+}
+bool atomic_done_t::unbind() const { return self->unbind_done.load(); }
+void atomic_done_t::unbind(bool val) {
+  self->unbind_done.store(val);
+  self->cv.unbind.notify_one();
+}
+bool atomic_done_t::eval() const { return self->eval_done.load(); }
+void atomic_done_t::eval(bool val) {
+  self->eval_done.store(val);
+  self->cv.eval.notify_one();
+}
+
+bool atomic_dom_ready_t::ready() const { return self->is_dom_ready.load(); };
+void atomic_dom_ready_t::ready(bool flag) {
+  self->is_dom_ready.store(flag);
+  self->cv.queue.notify_one();
+};
+
+void atomic_queue_t::update() {
+  if (self->list.queue.size() > 1) {
+    self->list.queue.pop_front();
+  } else {
+    self->list.queue.clear();
+  }
+  self->atomic.queue.empty(self->list.queue.empty());
+}
+
+bool atomic_queue_t::empty() const { return self->queue_empty.load(); };
+void atomic_queue_t::empty(bool val) {
+  self->queue_empty.store(val);
+  self->cv.queue.notify_one();
+}
+
+bool atomic_api_t::AND(std::initializer_list<bool> flags) const {
+  if (self->atomic.terminating()) {
+    return true;
+  };
+  auto res = true;
+  for (auto &flag : flags) {
+    if (!flag) {
+      res = false;
+      break;
+    }
+  }
+  return res;
+};
+bool atomic_api_t::terminating() const { return self->is_terminating.load(); };
+
+} // namespace _struct
+} // namespace detail
+} // namespace webview
+
+#endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#endif // WEBVIEW_DETAIL_ATOMIC_API_CC

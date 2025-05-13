@@ -27,20 +27,8 @@
 #define WEBVIEW_UTIL_FRONTEND_STRINGS_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
-#include "webview/detail/json.hh"
-#include <string>
-#include <vector>
-
-namespace webview {
-namespace utility {
-
-#define SYSTEM_NOTIFICATION_FLAG "sysop"
-#define TEST_NOTIFICATION_FLAG "tests"
-
-// Containter: Template replacement tokens
-namespace templates {
-
+#define SYSTEM_NOTIFICATION_FLAG "_sysop_"
+#define TEST_NOTIFICATION_FLAG "_tests_"
 #define TOKEN_NAME "_name_"
 #define TOKEN_ID "_id_"
 #define TOKEN_STATUS "_status_"
@@ -51,25 +39,70 @@ namespace templates {
 #define TOKEN_WHAT "_what_"
 #define TOKEN_VALUE "_value_"
 
-} // namespace templates
+#include "webview/lib/json.hh"
+#include "webview/types/types.hh"
+#include <initializer_list>
+#include <string>
+#include <vector>
+
+namespace webview {
+namespace detail {
+
+namespace _structs {
+struct sys_flags_t {
+  sys_flags_t() noexcept = default;
+  std::string sysop = SYSTEM_NOTIFICATION_FLAG;
+  std::string testop = TEST_NOTIFICATION_FLAG;
+};
+
+struct tokens_t {
+  tokens_t() noexcept = default;
+  std::string name = TOKEN_NAME;
+  std::string id = TOKEN_ID;
+  std::string status = TOKEN_STATUS;
+  std::string result = TOKEN_RESULT;
+  std::string post_fn = TOKEN_POST_FN;
+  std::string js_names = TOKEN_JS_NAMES;
+  std::string user_js = TOKEN_USER_JS;
+  std::string what = TOKEN_WHAT;
+  std::string value = TOKEN_VALUE;
+};
+
+struct tokenise_data_t {
+  std::string token;
+  std::string tkn_replcmnt;
+};
+} // namespace _structs
+
+namespace str {
+
+_structs::sys_flags_t const sys_flag{};
+_structs::tokens_t const token{};
 
 /// Performs string replacement for tokens.
 /// @todo REGEX is probably going to be optimal for performance
-std::string tokeniser(const std::string &template_string,
-                      const std::string &token,
-                      const std::string &replacement) {
+std::string tokenise(str_arg_t tmplate, str_arg_t token,
+                     str_arg_t tkn_replcmnt) {
   if (token.empty()) {
-    return template_string;
+    return tmplate;
   }
-  std::string tokenised_string = template_string;
+  std::string tokenised_string = tmplate;
   size_t start_pos = 0;
   while ((start_pos = tokenised_string.find(token, start_pos)) !=
          std::string::npos) {
-    tokenised_string.replace(start_pos, token.length(), replacement);
-    start_pos += replacement.length();
+    tokenised_string.replace(start_pos, token.length(), tkn_replcmnt);
+    start_pos += tkn_replcmnt.length();
   }
 
   return tokenised_string;
+}
+std::string
+tokenise(std::string tmplate,
+         std::initializer_list<_structs::tokenise_data_t> replacements) {
+  for (auto &replacement : replacements) {
+    tmplate = tokenise(tmplate, replacement.token, replacement.tkn_replcmnt);
+  };
+  return tmplate;
 }
 
 /// Parses a vector into a JSON array string.
@@ -89,7 +122,8 @@ std::string json_list(std::vector<std::string> &binding_names) {
   return json;
 }
 
-} // namespace utility
+} // namespace str
+} // namespace detail
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

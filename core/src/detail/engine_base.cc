@@ -28,14 +28,13 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
-#include "webview/detail/json.hh"
-#include "webview/frontend/engine_frontend.hh"
+#include "webview/../../tests/include/test_helper.hh"
+#include "webview/detail/frontend/engine_frontend.hh"
+#include "webview/lib/json.hh"
 #include "webview/log/trace_log.hh"
-#include "webview/tests/test_helper.hh"
 
 namespace webview {
-
-// PUBLIC methods
+using namespace webview::test;
 namespace detail {
 
 engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {}
@@ -64,7 +63,7 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
     skip_queue = true;
-    eval(utility::frontend.js.onbind(name));
+    eval(frontend.js.onbind(name));
     skip_queue = false;
   };
   if (queue.bind.is_duplicate(name)) {
@@ -82,7 +81,7 @@ noresult engine_base::unbind(str_arg_t name) {
   do_work_t do_work = [this, name]() {
     log::trace::base.unbind.work(name);
     skip_queue = true;
-    eval(utility::frontend.js.onunbind(name));
+    eval(frontend.js.onunbind(name));
     skip_queue = false;
     list.bindings.erase(name);
     replace_bind_script();
@@ -94,9 +93,8 @@ noresult engine_base::unbind(str_arg_t name) {
 }
 
 noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
-  str_arg_t escaped_result = result.empty() ? "undefined" : json_escape(result);
-  str_arg_t promised_js =
-      utility::frontend.js.onreply(id, status, escaped_result);
+  auto escaped_result = result.empty() ? "undefined" : json_escape(result);
+  auto promised_js = frontend.js.onreply(id, status, escaped_result);
 
   return dispatch([this, promised_js, id] {
     skip_queue = true;
@@ -120,10 +118,7 @@ webview::result<void *> engine_base::browser_controller() {
 
 noresult engine_base::run() { return run_impl(); }
 
-noresult engine_base::terminate() {
-  queue.shutting_down(true);
-  return terminate_impl();
-}
+noresult engine_base::terminate() { return terminate_impl(); }
 
 noresult engine_base::dispatch(std::function<void()> f) {
   return dispatch_impl(f);
@@ -149,7 +144,10 @@ noresult engine_base::init(str_arg_t js) {
 noresult engine_base::eval(str_arg_t js) {
   log::trace::base.eval.start(js, skip_queue);
   do_work_t do_work = [this, js] {
-    auto wrapped_js = utility::frontend.js.eval_wrapper(js);
+    if (queue.shutting_down()) {
+      return;
+    }
+    auto wrapped_js = frontend.js.eval_wrapper(js);
     log::trace::base.eval.work(wrapped_js);
     eval_impl(wrapped_js);
   };
@@ -161,32 +159,7 @@ noresult engine_base::eval(str_arg_t js) {
   eval_impl(js);
   return {};
 }
-} // namespace detail
 
-// PROTECTED methods
-namespace detail {
-using namespace webview::test;
-/*
-user_script *engine_base::add_user_script(str_arg_t js) {
-  return std::addressof(
-      *m_user_scripts.emplace(m_user_scripts.end(), add_user_script_impl(js)));
-}
-
-user_script *engine_base::replace_user_script(const user_script &old_script,
-                                              str_arg_t new_script_code) {
-  remove_all_user_scripts_impl(m_user_scripts);
-  user_script *old_script_ptr{};
-  for (auto &script : m_user_scripts) {
-    auto is_old_script = are_user_scripts_equal_impl(script, old_script);
-    script = add_user_script_impl(is_old_script ? new_script_code
-                                                : script.get_code());
-    if (is_old_script) {
-      old_script_ptr = std::addressof(script);
-    }
-  }
-  return old_script_ptr;
-}
-*/
 void engine_base::replace_bind_script() {
   auto replacement_js = create_bind_script();
   if (m_bind_script) {
@@ -198,7 +171,7 @@ void engine_base::replace_bind_script() {
 }
 
 void engine_base::add_init_script(str_arg_t post_fn) {
-  auto init_js = utility::frontend.js.init(post_fn);
+  auto init_js = frontend.js.init(post_fn);
   list.m_user_scripts.add(init_js, this);
   m_is_init_script_sent = true;
 }
@@ -206,7 +179,7 @@ void engine_base::add_init_script(str_arg_t post_fn) {
 std::string engine_base::create_bind_script() {
   std::vector<std::string> bound_names;
   list.bindings.get_names(bound_names);
-  return utility::frontend.js.bind(bound_names);
+  return frontend.js.bind(bound_names);
 }
 
 void engine_base::on_message(str_arg_t msg) {
@@ -221,7 +194,7 @@ void engine_base::on_message(str_arg_t msg) {
     return;
   }
   if (!list.bindings.has_name(name)) {
-    auto message = utility::frontend.err_message.reject_unbound(id, name);
+    auto message = frontend.err_message.reject_unbound(id, name);
     reject(id, message);
     return;
   }
@@ -262,10 +235,6 @@ void engine_base::set_default_size_guard(bool guarded) {
 
 bool engine_base::owns_window() const { return m_owns_window; }
 
-} // namespace detail
-
-// PRIVATE methods
-namespace detail {
 std::atomic_uint &engine_base::window_ref_count() {
   static std::atomic_uint ref_count{0};
   return ref_count;

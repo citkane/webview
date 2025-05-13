@@ -23,18 +23,41 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_BACKENDS_HH
-#define WEBVIEW_BACKENDS_HH
+#ifndef WEBVIEW_TYPES_HH
+#define WEBVIEW_TYPES_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "detail/backends/cocoa_webkit.hh"
-#include "detail/backends/gtk_webkitgtk.hh"
-#include "detail/backends/win32_edge.hh"
+#include "webview/errors/errors.hh"
+#include "webview/types/basic_result.hh"
+#include <functional>
 
 namespace webview {
-using webview = browser_engine;
-}
+
+enum context_t { bind_t = 'b', unbind_t = 'u', eval_t = 'e' };
+struct action_ctx_t {
+  context_t bind = context_t::bind_t;
+  context_t unbind = context_t::unbind_t;
+  context_t eval = context_t::eval_t;
+};
+
+template <typename T> struct nested_api_t {
+  T *self;
+  nested_api_t(T *self) : self(self) {}
+};
+
+using str_arg_t = const std::string &;
+
+using do_work_t = std::function<void()>;
+
+using dispatch_fn_t = std::function<void()>;
+
+template <typename T>
+using result = detail::basic_result<T, error_info, exception>;
+
+using noresult = detail::basic_result<void, error_info, exception>;
+
+} // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_BACKENDS_HH
+#endif // WEBVIEW_TYPES_HH

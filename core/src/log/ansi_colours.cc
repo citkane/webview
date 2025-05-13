@@ -30,7 +30,7 @@
 
 namespace webview {
 namespace log {
-namespace log_utility {
+namespace _classes {
 
 std::string ansi_t::to_ansi_string(std::initializer_list<int> codes) noexcept {
   std::string ansi_string;
@@ -91,7 +91,7 @@ const std::string &ansi_t::dim_s() {
   return instance;
 }
 
-} // namespace log_utility
+} // namespace _classes
 } // namespace log
 } // namespace webview
 

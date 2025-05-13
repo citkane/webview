@@ -28,8 +28,8 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "detail/json.hh"
 #include "macros.h"
+#include "webview/lib/json.hh"
 
 namespace webview {
 

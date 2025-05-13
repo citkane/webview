@@ -28,7 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "../../macros.h"
+#include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)
 
@@ -45,13 +45,13 @@
 // ====================================================================
 //
 
-#include "../../errors.hh"
-#include "../../types.hh"
-#include "../engine_base.hh"
-#include "../platform/linux/gtk/compat.hh"
-#include "../platform/linux/webkitgtk/compat.hh"
-#include "../platform/linux/webkitgtk/dmabuf.hh"
-#include "../user_script.hh"
+#include "webview/detail/engine_base.hh"
+#include "webview/detail/frontend/user_script.hh"
+#include "webview/detail/platform/linux/gtk/compat.hh"
+#include "webview/detail/platform/linux/webkitgtk/compat.hh"
+#include "webview/detail/platform/linux/webkitgtk/dmabuf.hh"
+#include "webview/errors/errors.hh"
+#include "webview/types/types.hh"
 
 #include <functional>
 #include <list>

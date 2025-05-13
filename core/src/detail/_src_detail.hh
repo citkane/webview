@@ -3,9 +3,9 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "../../src/detail/engine_base.cc"
-#include "../../src/detail/engine_lists.cc"
-#include "../../src/detail/engine_queue.cc"
+#include "engine_base.cc"
+#include "engine_queue.cc"
+#include "threading/_src_threading.hh"
 
 #endif
 #endif

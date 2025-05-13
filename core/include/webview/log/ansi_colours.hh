@@ -30,7 +30,7 @@
 
 namespace webview {
 namespace log {
-namespace log_utility {
+namespace _classes {
 
 class ansi_t {
 public:
@@ -64,7 +64,7 @@ private:
   static std::string to_ansi_string(std::initializer_list<int> codes) noexcept;
 };
 
-} // namespace log_utility
+} // namespace _classes
 } // namespace log
 } // namespace webview
 

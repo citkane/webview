@@ -1,0 +1,88 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 Michael Jonker
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+#ifndef WEBVIEW_DETAIL_ATOMIC_API_HH
+#define WEBVIEW_DETAIL_ATOMIC_API_HH
+
+#if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#include "webview/types/types.hh"
+
+namespace webview {
+namespace detail {
+
+class engine_queue;
+
+namespace _struct {
+
+struct atomic_dom_ready_t : nested_api_t<engine_queue> {
+  atomic_dom_ready_t(engine_queue *self) : nested_api_t(self) {}
+  /// Query if the backend is ready to do work.
+  bool ready() const;
+  /// Notify the queue that the backend is ready to receive work.
+  void ready(bool flag);
+};
+
+struct atomic_queue_t : nested_api_t<engine_queue> {
+  atomic_queue_t(engine_queue *self) : nested_api_t(self) {}
+  /// Decrements the queue list and flags empty state.
+  void update();
+  /// Query if the queue is empty.
+  bool empty() const;
+  /// Set the queue_empty flag.
+  void empty(bool val);
+};
+
+struct atomic_done_t : nested_api_t<engine_queue> {
+  atomic_done_t(engine_queue *self) : nested_api_t(self) {}
+  /// Gets the bind flag state
+  bool bind() const;
+  /// Sets the bind flag state
+  void bind(bool val);
+  /// Gets the unbind flag state
+  bool unbind() const;
+  /// Sets the unbind flag state
+  void unbind(bool val);
+  /// Gets the eval flag state
+  bool eval() const;
+  /// Sets the eval flag state
+  void eval(bool val);
+};
+
+struct atomic_api_t : nested_api_t<engine_queue> {
+  ~atomic_api_t() = default;
+  atomic_api_t(engine_queue *self) : nested_api_t(self) {}
+
+  atomic_dom_ready_t dom{this->self};
+  atomic_queue_t queue{this->self};
+  atomic_done_t done{this->self};
+  bool terminating() const;
+  bool AND(std::initializer_list<bool> flags) const;
+};
+
+} // namespace _struct
+} // namespace detail
+} // namespace webview
+
+#endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#endif // WEBVIEW_DETAIL_ATOMIC_API_HH

@@ -30,7 +30,7 @@
 
 namespace webview {
 namespace log {
-namespace trace_utility {
+namespace _structs {
 
 std::mutex trace_tools_t::trace_mtx;
 
@@ -78,9 +78,6 @@ void print_here_t::print_here(string_t message) const {
   print_ansi(this_c, prefix + postfix + here_m + message_);
 };
 
-} // namespace trace_utility
-
-namespace queue_api {
 #if WEBVIEW_LOG_TRACE
 void queue_print_t::start(string_t name) const {
 
@@ -253,10 +250,6 @@ void queue_enqueue_t::wrapper_t::added(char scp, size_t size) const {
 void queue_enqueue_t::wrapper_t::added(char /**/, size_t /**/) const {}
 #endif
 
-} // namespace queue_api
-
-namespace base_api {
-
 #if WEBVIEW_LOG_TRACE
 void base_print_t::start(string_t name) const {
   auto this_c = ansi.default_c;
@@ -320,10 +313,10 @@ void base_eval_t::wrapper_t::done(bool done, string_t js) const {
 void base_eval_t::wrapper_t::done(bool /**/, string_t /**/) const {}
 #endif
 
-} // namespace base_api
+} // namespace _structs
 
-const base_t &trace::base = get_base();
-const queue_t &trace::queue = get_queue();
+const _structs::base_t &trace::base = get_base();
+const _structs::queue_t &trace::queue = get_queue();
 
 } // namespace log
 } // namespace webview

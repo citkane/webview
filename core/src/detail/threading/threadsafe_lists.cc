@@ -22,23 +22,24 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_ENGINE_LISTS_CC
-#define WEBVIEW_DETAIL_ENGINE_LISTS_CC
+#ifndef WEBVIEW_DETAIL_THREADSAFE_LISTS_CC
+#define WEBVIEW_DETAIL_THREADSAFE_LISTS_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/engine_lists.hh"
+#include "webview/detail/threading/threadsafe_lists.hh"
 #include "webview/detail/engine_base.hh"
 #include <algorithm>
 #include <iterator>
 
 namespace webview {
 namespace detail {
+namespace _structs {
 
 size_t bindings_t::size() const {
   std::lock_guard<std::mutex> lock(mtx);
   return bindings_map.size();
 }
-void bindings_t::get_names(std::vector<std::string> &bound_names) const {
+void bindings_t::get_names(std::vector<std::string> &bound_names) {
   std::lock_guard<std::mutex> lock(mtx);
   bound_names.reserve(bindings_map.size());
   std::transform(bindings_map.begin(), bindings_map.end(),
@@ -69,19 +70,19 @@ size_t bindings_t::count(str_arg_t name) const {
   std::lock_guard<std::mutex> lock(mtx);
   return bindings_map.count(name);
 }
-binding_ctx_t &bindings_t::at(str_arg_t name) const {
+binding_ctx_t bindings_t::at(str_arg_t name) const {
   std::lock_guard<std::mutex> lock(mtx);
   return bindings_map.at(name);
 }
 
-user_script *user_scripts_t::add(str_arg_t js, engine_base *base) const {
+user_script *user_scripts_t::add(str_arg_t js, engine_base *base) {
   std::lock_guard<std::mutex> lock(mtx);
   return std::addressof(*m_user_scripts.emplace(
       m_user_scripts.end(), base->add_user_script_impl(js)));
 }
 user_script *user_scripts_t::replace(const user_script &old_script,
                                      str_arg_t new_script_code,
-                                     engine_base *base) const {
+                                     engine_base *base) {
   std::lock_guard<std::mutex> lock(mtx);
   base->remove_all_user_scripts_impl(m_user_scripts);
   user_script *old_script_ptr{};
@@ -96,7 +97,7 @@ user_script *user_scripts_t::replace(const user_script &old_script,
   return old_script_ptr;
 }
 
-action_t &queue_t::front() const {
+action_t queue_t::front() const {
   std::lock_guard<std::mutex> lock(mtx);
   return queue.front();
 }
@@ -117,7 +118,7 @@ void queue_t::clear() {
   std::lock_guard<std::mutex> lock(mtx);
   queue.clear();
 }
-bool queue_t::empty() {
+bool queue_t::empty() const {
   std::lock_guard<std::mutex> lock(mtx);
   return queue.empty();
 }
@@ -214,14 +215,15 @@ indices_t pending_t::indices(str_arg_t name) const {
   return {bind_i, unbind_i};
 }
 
-void cv_api_t::notify_all() const {
+void cv_api_t::notify_all() {
   for (auto &this_cv : all) {
     this_cv->notify_all();
   }
 }
 
+} // namespace _structs
 } // namespace detail
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_ENGINE_LISTS_CC
+#endif // WEBVIEW_DETAIL_THREADSAFE_LISTS_CC

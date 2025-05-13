@@ -3,8 +3,8 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "../../src/log/ansi_colours.cc"
-#include "../../src/log/trace_log.cc"
+#include "ansi_colours.cc"
+#include "trace_log.cc"
 
 #endif
 #endif

@@ -1,8 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2017 Serge Zaitsev
- * Copyright (c) 2022 Steffen André Langnes
+ * Copyright (c) 2025 Michael Jonker 
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,38 +22,33 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKWEBVIEWCONFIGURATION_HH
-#define WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKWEBVIEWCONFIGURATION_HH
+#ifndef WEBVIEW_ENGINE_THREAD_RESOLVE_CC
+#define WEBVIEW_ENGINE_THREAD_RESOLVE_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
-#include "webview/lib/macros.h"
-
-#if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
-#include "../objc/objc.hh"
+#include "webview/detail/engine_base.hh"
+#include "webview/detail/engine_queue.hh"
+#include "webview/detail/frontend/engine_frontend.hh"
 
 namespace webview {
 namespace detail {
-namespace webkit {
 
-inline id WKWebViewConfiguration_new() {
-  return objc::msg_send<id>(objc::get_class("WKWebViewConfiguration"),
-                            objc::selector("new"));
+void engine_queue::resolve_thread_constructor(str_arg_t name, str_arg_t id,
+                                              str_arg_t args, engine_base *wv) {
+  if (atomic.terminating()) {
+    return;
+  }
+  try {
+    list.bindings.at(name).call(id, args);
+  } catch (const std::exception &err_) {
+    auto err = frontend.err_message.uncaught_exception(name, err_.what());
+    wv->reject(id, err);
+  } catch (...) {
+    perror(frontend.err_message.webview_terminated(name).c_str());
+  };
 }
 
-inline id WKWebViewConfiguration_get_userContentController(id self) {
-  return objc::msg_send<id>(self, objc::selector("userContentController"));
-}
-
-inline id WKWebViewConfiguration_get_preferences(id self) {
-  return objc::msg_send<id>(self, objc::selector("preferences"));
-}
-
-} // namespace webkit
 } // namespace detail
 } // namespace webview
-
-#endif // defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_DARWIN_WEBKIT_WKWEBVIEWCONFIGURATION_HH
+#endif // WEBVIEW_ENGINE_THREAD_RESOLVE_CC

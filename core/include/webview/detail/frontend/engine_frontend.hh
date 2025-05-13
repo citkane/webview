@@ -29,23 +29,20 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "frontend_strings.hh"
-#include "webview/detail/json.hh"
 #include <string>
 #include <vector>
 
 namespace webview {
-namespace utility {
-namespace signal_strings {
+namespace detail {
 
-#define DOM_READY_M "dom_ready"
-#define BIND_DONE_M "bind_done"
-#define UNBIND_DONE_M "unbind_done"
-#define EVAL_READY_M "js_eval_start"
+namespace _strings_sysop {
+#define FRONTEND_DOM_READY "_dom_ready"
+#define FRONTEND_BIND_DONE "_bind_done"
+#define FRONTEND_UNBIND_DONE "_unbind_done"
+#define FRONTEND_EVAL_READY "_frontend_eval_ready"
+} // namespace _strings_sysop
 
-} // namespace signal_strings
-
-namespace init_js {
-
+namespace _strings_init_js {
 #define WEVBIEW_INIT_JS                                                        \
   "(function() {\n"                                                            \
   "  'use strict';\n"                                                          \
@@ -120,29 +117,27 @@ namespace init_js {
   "    return Webview_;\n"                                                     \
   "  })();\n"                                                                  \
   "  window.__webview__ = new Webview();\n"                                    \
-  "  window.__webview__.sysop(\"" DOM_READY_M "\");\n"                         \
+  "  window.__webview__.sysop(\"" FRONTEND_DOM_READY "\");\n"                  \
   "})()"
+} // namespace _strings_init_js
 
-} // namespace init_js
-
-namespace js_functions {
-
+namespace _strings_js_functions {
 #define ON_BIND                                                                \
   "if (window.__webview__) {\n"                                                \
   "  try {\n"                                                                  \
   "    window.__webview__.onBind(" TOKEN_NAME ");\n"                           \
-  "    window.__webview__.sysop(\"" BIND_DONE_M "\");\n"                       \
+  "    window.__webview__.sysop(\"" FRONTEND_BIND_DONE "\");\n"                \
   "  } catch(err) {\n"                                                         \
-  "    window.__webview__.sysop(\"" BIND_DONE_M "\");\n"                       \
+  "    window.__webview__.sysop(\"" FRONTEND_BIND_DONE "\");\n"                \
   "  }\n"                                                                      \
   "}"
 #define ON_UNBIND                                                              \
   "if (window.__webview__) {\n"                                                \
   "  try {\n"                                                                  \
   "    window.__webview__.onUnbind(" TOKEN_NAME ");\n"                         \
-  "    window.__webview__.sysop(\"" UNBIND_DONE_M "\");\n"                     \
+  "    window.__webview__.sysop(\"" FRONTEND_UNBIND_DONE "\");\n"              \
   "  } catch(err) {\n"                                                         \
-  "    window.__webview__.sysop(\"" UNBIND_DONE_M "\");\n"                     \
+  "    window.__webview__.sysop(\"" FRONTEND_UNBIND_DONE "\");\n"              \
   "  }\n"                                                                      \
   "}"
 #define ON_REPLY                                                               \
@@ -160,18 +155,15 @@ namespace js_functions {
 #define EVAL_WRAPPER                                                           \
   "try {\n"                                                                    \
   "  setTimeout(() => {\n"                                                     \
-  "    window.__webview__.sysop(\"" EVAL_READY_M "\");\n"                      \
+  "    window.__webview__.sysop(\"" FRONTEND_EVAL_READY "\");\n"               \
   "  });\n" TOKEN_USER_JS "\n"                                                 \
   "} catch (err) {\n"                                                          \
-  "  window.__webview__.sysop(\"" EVAL_READY_M "\");\n"                        \
+  "  window.__webview__.sysop(\"" FRONTEND_EVAL_READY "\");\n"                 \
   "  console.error(err);\n"                                                    \
   "}"
+} // namespace _strings_js_functions
 
-} // namespace js_functions
-
-// Container: Templates for JS error messages
-namespace error_messages {
-
+namespace _strings_error_messages {
 #define REJECT_UNBOUND_M                                                       \
   "Promise id " TOKEN_ID " was rejected because function \"" TOKEN_NAME        \
   "\" was unbound."
@@ -183,81 +175,111 @@ namespace error_messages {
 #define WEBVIEW_TERMINATED_M                                                   \
   "\nNative user callback function \"" TOKEN_NAME                              \
   "\" failed because Webview terminated before it could complete.\n\n"
+} // namespace _strings_error_messages
 
-} // namespace error_messages
+namespace _structs {
+struct templates_t {
+  templates_t() noexcept = default;
+  std::string init = WEVBIEW_INIT_JS;
+  std::string onbind = ON_BIND;
+  std::string onunbind = ON_UNBIND;
+  std::string onreply = ON_REPLY;
+  std::string bind = BIND;
+  std::string eval_wrapper = EVAL_WRAPPER;
+};
 
+struct error_messages_t {
+  error_messages_t() noexcept = default;
+  std::string reject_unbound = REJECT_UNBOUND_M;
+  std::string uncaught_exp = UNCAUGHT_EXP_M;
+  std::string terminated = WEBVIEW_TERMINATED_M;
+};
+
+struct sysops_t {
+  sysops_t() noexcept = default;
+  std::string dom_ready = FRONTEND_DOM_READY;
+  std::string bind_done = FRONTEND_BIND_DONE;
+  std::string unbind_done = FRONTEND_UNBIND_DONE;
+  std::string js_eval_start = FRONTEND_EVAL_READY;
+};
+} // namespace _structs
+
+namespace str {
+_structs::templates_t const js{};
+_structs::error_messages_t const error{};
+} // namespace str
+
+namespace _structs {
 struct front_end_t {
-  ~front_end_t() = default;
-  front_end_t() = default;
 
   struct js_string_t {
     /// Returns a tokenised JS function string for `unbind` which notifies that
     /// a binding was destroyed after the init script has already set things up.
-    std::string onunbind(const std::string &name) const {
-      return tokeniser(ON_UNBIND, TOKEN_NAME, detail::json_escape(name));
+    std::string onunbind(str_arg_t name) const {
+      return str::tokenise(str::js.onunbind, str::token.name,
+                           json_escape(name));
     }
 
     /// Returns a tokenised JS function string for `bind` which notifies that
     /// a binding was created after the init script has already set things up.
-    std::string onbind(const std::string &name) const {
-      return tokeniser(ON_BIND, TOKEN_NAME, detail::json_escape(name));
+    std::string onbind(str_arg_t name) const {
+      return str::tokenise(str::js.onbind, str::token.name, json_escape(name));
     }
 
     /// Returns a tokenised JS function string for a promise resolve/reject.
     std::string onreply(std::string id, int status,
                         std::string escaped_result) const {
-      std::string js_string =
-          tokeniser(ON_REPLY, TOKEN_ID, detail::json_escape(id));
-      js_string = tokeniser(js_string, TOKEN_STATUS, std::to_string(status));
-      js_string = tokeniser(js_string, TOKEN_RESULT, escaped_result);
-      return js_string;
+      return str::tokenise(str::js.onreply,
+                           {{str::token.id, json_escape(id)},
+                            {str::token.status, std::to_string(status)},
+                            {str::token.result, escaped_result}});
     }
 
-    /// Returns a tokenised JS function string for the Webview backend init function.
-    std::string init(const std::string &post_fn) const {
-      return tokeniser(WEVBIEW_INIT_JS, TOKEN_POST_FN, post_fn);
+    /// Returns a tokenised JS string for the Webview frontend init function.
+    std::string init(str_arg_t post_fn) const {
+      return str::tokenise(str::js.init, str::token.post_fn, post_fn);
     }
 
-    /// Returns a tokenised JS function string for the Webview backend `bind` functions.
+    /// Returns a tokenised JS string for the Webview frontend `bind` functions.
     std::string bind(std::vector<std::string> &bound_names) const {
-      auto names = json_list(bound_names);
-      auto js_string = tokeniser(BIND, TOKEN_JS_NAMES, names);
-      return js_string;
+      auto js_names = str::json_list(bound_names);
+      return str::tokenise(str::js.bind, str::token.js_names, js_names);
     }
 
     /// Wraps user JS to notify the native code when eval is ready.
     std::string eval_wrapper(std::string user_js) const {
-      return tokeniser(EVAL_WRAPPER, TOKEN_USER_JS, user_js);
+      return str::tokenise(str::js.eval_wrapper, str::token.user_js, user_js);
     }
   } js{};
 
   struct error_message_t {
     /// Returns a tokenised error string for rejecting a promise if a callback binding was unbound.
     std::string reject_unbound(std::string id, std::string name) const {
-      auto message = tokeniser(REJECT_UNBOUND_M, TOKEN_ID, id);
-      message = tokeniser(message, TOKEN_NAME, name);
-      return message;
+      return str::tokenise(str::error.reject_unbound,
+                           {{str::token.id, id}, {str::token.name, name}});
     }
 
     /// Returns a tokenised error string for rejecting a promise if a native callback has an uncaught exception.
     std::string uncaught_exception(std::string name, std::string what) const {
-      auto message = tokeniser(UNCAUGHT_EXP_M, TOKEN_NAME, name);
-      message = tokeniser(message, TOKEN_WHAT, what);
-      return message;
+      return str::tokenise(str::error.uncaught_exp,
+                           {{str::token.name, name}, {str::token.what, what}});
     }
 
     /// Returns a tokenised error string for native callbacks in detached threads after webview terminates.
     std::string webview_terminated(std::string name) const {
-      return tokeniser(WEBVIEW_TERMINATED_M, TOKEN_NAME, name);
+      return str::tokenise(str::error.terminated, str::token.name, name);
     }
 
   } err_message{};
+  /// Frontend to backend system operation signals.
+  _structs::sysops_t sysops;
 };
+} // namespace _structs
 
-/// API for generating HTML and JS related strings.
-static const front_end_t frontend{};
+/// API for HTML and JS related strings.
+static const _structs::front_end_t frontend{};
 
-} // namespace utility
+} // namespace detail
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
