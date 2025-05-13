@@ -108,11 +108,11 @@ noresult engine_base::reject(str_arg_t id, str_arg_t err) {
   return resolve(id, 1, json_escape(err));
 }
 
-webview::result<void *> engine_base::window() { return window_impl(); }
+result<void *> engine_base::window() { return window_impl(); }
 
-webview::result<void *> engine_base::widget() { return widget_impl(); }
+result<void *> engine_base::widget() { return widget_impl(); }
 
-webview::result<void *> engine_base::browser_controller() {
+result<void *> engine_base::browser_controller() {
   return browser_controller_impl();
 }
 
