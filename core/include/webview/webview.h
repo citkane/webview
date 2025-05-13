@@ -27,6 +27,7 @@
 #define WEBVIEW_H
 
 #include "../../src/amalgamate_src.hh"
+#include "../../tests/include/test_helper.hh"
 #include "api/api.h"
 #include "api/c_api_impl.hh"
 
