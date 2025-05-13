@@ -41,19 +41,19 @@
 // ====================================================================
 //
 
-#include "../../errors.hh"
-#include "../../types.hh"
-#include "../engine_base.hh"
-#include "../native_library.hh"
-#include "../platform/windows/com_init_wrapper.hh"
-#include "../platform/windows/dpi.hh"
-#include "../platform/windows/iid.hh"
-#include "../platform/windows/reg_key.hh"
-#include "../platform/windows/theme.hh"
-#include "../platform/windows/version.hh"
-#include "../platform/windows/webview2/loader.hh"
-#include "../user_script.hh"
-#include "../utility/string.hh"
+#include "webview/detail/engine_base.hh"
+#include "webview/detail/frontend/user_script.hh"
+#include "webview/detail/platform/windows/com_init_wrapper.hh"
+#include "webview/detail/platform/windows/dpi.hh"
+#include "webview/detail/platform/windows/iid.hh"
+#include "webview/detail/platform/windows/reg_key.hh"
+#include "webview/detail/platform/windows/theme.hh"
+#include "webview/detail/platform/windows/version.hh"
+#include "webview/detail/platform/windows/webview2/loader.hh"
+#include "webview/errors/errors.hh"
+#include "webview/lib//native_library.hh"
+#include "webview/lib/string.hh"
+#include "webview/types/types.hh"
 
 #include <atomic>
 #include <cstdlib>

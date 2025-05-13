@@ -28,7 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "../webview/lib/macros.h"
+#include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
 
@@ -41,10 +41,10 @@
 // ====================================================================
 //
 
-#include "../../native_library.hh"
 #include "shcore.hh"
 #include "user32.hh"
 #include "version.hh"
+#include "webview/lib/native_library.hh"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

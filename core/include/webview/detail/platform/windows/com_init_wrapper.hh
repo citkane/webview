@@ -28,7 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "../webview/lib/macros.h"
+#include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
 
@@ -41,7 +41,7 @@
 // ====================================================================
 //
 
-#include "../../../errors.hh"
+#include "webview/errors/errors.hh"
 
 #include <utility>
 

@@ -28,7 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "utility/string.hh"
+#include "webview/lib/string.hh"
 
 #include <string>
 

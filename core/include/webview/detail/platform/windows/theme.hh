@@ -28,13 +28,13 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "../webview/lib/macros.h"
+#include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
 
-#include "../../native_library.hh"
 #include "dwmapi.hh"
 #include "reg_key.hh"
+#include "webview/lib/native_library.hh"
 
 namespace webview {
 namespace detail {
