@@ -25,6 +25,7 @@
 /*
  * MIT License
  *
+ * Copyright (c) 2022 Steffen André Langnes
  * Copyright (c) 2025 Michael Jonker
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -48,7 +49,6 @@
 /*
  * MIT License
  *
- * Copyright (c) 2022 Steffen André Langnes
  * Copyright (c) 2025 Michael Jonker
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -1748,7 +1748,9 @@ public:
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(string_t prefix, string_t postfix)
-        : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix),
+        : print_here_t(prefix, postfix),
+          prefix(prefix),
+          postfix(postfix),
           process_ts(get_now()) {}
     void wait(size_t size, bool empty, bool dom_ready) const;
     void start(size_t size) const;
@@ -1819,9 +1821,12 @@ class queue_t : public queue_bind_t,
 public:
   ~queue_t() = default;
   queue_t(string_t prefix, string_t postfix = "QUEUE: ")
-      : queue_bind_t{prefix + postfix}, queue_unbind_t{prefix + postfix},
-        queue_eval_t{prefix + postfix}, queue_loop_t{prefix + postfix},
-        queue_notify_t{prefix + postfix}, queue_enqueue_t{prefix + postfix},
+      : queue_bind_t{prefix + postfix},
+        queue_unbind_t{prefix + postfix},
+        queue_eval_t{prefix + postfix},
+        queue_loop_t{prefix + postfix},
+        queue_notify_t{prefix + postfix},
+        queue_enqueue_t{prefix + postfix},
         print_here_t{prefix, postfix} {};
 };
 
@@ -1891,8 +1896,10 @@ class base_t : public base_bind_t,
 public:
   ~base_t() = default;
   base_t(string_t prefix, string_t postfix = "BASE: ")
-      : base_bind_t(prefix + postfix), base_unbind_t(prefix + postfix),
-        base_eval_t(prefix + postfix), print_here_t(prefix, postfix) {}
+      : base_bind_t(prefix + postfix),
+        base_unbind_t(prefix + postfix),
+        base_eval_t(prefix + postfix),
+        print_here_t(prefix, postfix) {}
 };
 
 } // namespace _structs

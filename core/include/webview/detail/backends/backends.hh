@@ -28,9 +28,9 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-//#include "cocoa_webkit.hh"
+#include "cocoa_webkit.hh"
 #include "gtk_webkitgtk.hh"
-//#include "win32_edge.hh"
+#include "win32_edge.hh"
 
 namespace webview {
 using webview = browser_engine;
