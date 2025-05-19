@@ -117,7 +117,7 @@ public:
 
 private:
   friend struct _struct::atomic_dom_ready_t;
-  friend struct _struct::atomic_queue_t;
+  //friend struct _struct::atomic_queue_t;
   friend struct _struct::atomic_done_t;
   friend struct _struct::atomic_api_t;
 

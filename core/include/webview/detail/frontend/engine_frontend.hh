@@ -117,7 +117,13 @@ namespace _strings_init_js {
   "    return Webview_;\n"                                                     \
   "  })();\n"                                                                  \
   "  window.__webview__ = new Webview();\n"                                    \
-  "  window.__webview__.sysop(\"" FRONTEND_DOM_READY "\");\n"                  \
+  "  const domReadyInterval = setInterval(()=>{\n"                             \
+  "    const ready = document.readyState;\n"                                   \
+  "    if (ready === 'interactive' || ready === 'complete') {\n"               \
+  "      clearInterval(domReadyInterval);\n"                                   \
+  "      window.__webview__.sysop(\"" FRONTEND_DOM_READY "\");\n"              \
+  "    }\n"                                                                    \
+  "  })\n"                                                                     \
   "})()"
 } // namespace _strings_init_js
 
@@ -126,18 +132,24 @@ namespace _strings_js_functions {
   "if (window.__webview__) {\n"                                                \
   "  try {\n"                                                                  \
   "    window.__webview__.onBind(" TOKEN_NAME ");\n"                           \
-  "    window.__webview__.sysop(\"" FRONTEND_BIND_DONE "\");\n"                \
   "  } catch(err) {\n"                                                         \
-  "    window.__webview__.sysop(\"" FRONTEND_BIND_DONE "\");\n"                \
+  "    console.error(err);\n"                                                  \
+  "  } finally {\n"                                                            \
+  "    setTimeout(() => {\n"                                                   \
+  "      window.__webview__.sysop(\"" FRONTEND_BIND_DONE "\");\n"              \
+  "    });\n"                                                                  \
   "  }\n"                                                                      \
   "}"
 #define ON_UNBIND                                                              \
   "if (window.__webview__) {\n"                                                \
   "  try {\n"                                                                  \
   "    window.__webview__.onUnbind(" TOKEN_NAME ");\n"                         \
-  "    window.__webview__.sysop(\"" FRONTEND_UNBIND_DONE "\");\n"              \
-  "  } catch(err) {\n"                                                         \
-  "    window.__webview__.sysop(\"" FRONTEND_UNBIND_DONE "\");\n"              \
+  "  } catch (err) {\n"                                                        \
+  "    console.error(err);\n"                                                  \
+  "  } finally {\n"                                                            \
+  "    setTimeout(() => {\n"                                                   \
+  "      window.__webview__.sysop(\"" FRONTEND_UNBIND_DONE "\");\n"            \
+  "    });\n"                                                                  \
   "  }\n"                                                                      \
   "}"
 #define ON_REPLY                                                               \
@@ -154,12 +166,13 @@ namespace _strings_js_functions {
 
 #define EVAL_WRAPPER                                                           \
   "try {\n"                                                                    \
+  "  " TOKEN_USER_JS "\n"                                                      \
+  "} catch (err) {\n"                                                          \
+  "  console.error(err);\n"                                                    \
+  "} finally {\n"                                                              \
   "  setTimeout(() => {\n"                                                     \
   "    window.__webview__.sysop(\"" FRONTEND_EVAL_READY "\");\n"               \
-  "  });\n" TOKEN_USER_JS "\n"                                                 \
-  "} catch (err) {\n"                                                          \
-  "  window.__webview__.sysop(\"" FRONTEND_EVAL_READY "\");\n"                 \
-  "  console.error(err);\n"                                                    \
+  "  });\n"                                                                    \
   "}"
 } // namespace _strings_js_functions
 

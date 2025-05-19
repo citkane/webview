@@ -141,7 +141,6 @@ TEST_CASE("Test synchronous binding and unbinding") {
       ++number;
       return "";
     };
-    printf("%s\n", req.c_str());
     // Bind and increment number.
     if (req == "[0]") {
       REQUIRE(number == 0);

@@ -97,7 +97,7 @@ user_script *user_scripts_t::replace(const user_script &old_script,
   return old_script_ptr;
 }
 
-action_t queue_t::front() const {
+action_t queue_t::front() {
   std::lock_guard<std::mutex> lock(mtx);
   return queue.front();
 }

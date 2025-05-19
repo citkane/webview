@@ -143,10 +143,7 @@ noresult engine_base::init(str_arg_t js) {
 
 noresult engine_base::eval(str_arg_t js) {
   log::trace::base.eval.start(js, skip_queue);
-  do_work_t do_work = [this, js] {
-    if (queue.shutting_down()) {
-      return;
-    }
+  do_work_t do_work = [&] {
     auto wrapped_js = frontend.js.eval_wrapper(js);
     log::trace::base.eval.work(wrapped_js);
     eval_impl(wrapped_js);

@@ -96,7 +96,7 @@ private:
 struct queue_t {
 public:
   size_t size() const;
-  action_t front() const;
+  action_t front();
   void pop_front();
   void push_back(context_t ctx, do_work_t work_fn, std::string name_or_js);
   void clear();

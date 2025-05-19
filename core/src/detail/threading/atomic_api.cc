@@ -28,6 +28,7 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/threading/atomic_api.hh"
 #include "webview/detail/engine_queue.hh"
+#include "webview/log/trace_log.hh"
 
 namespace webview {
 namespace detail {
@@ -54,21 +55,6 @@ void atomic_dom_ready_t::ready(bool flag) {
   self->is_dom_ready.store(flag);
   self->cv.queue.notify_one();
 };
-
-void atomic_queue_t::update() {
-  if (self->list.queue.size() > 1) {
-    self->list.queue.pop_front();
-  } else {
-    self->list.queue.clear();
-  }
-  self->atomic.queue.empty(self->list.queue.empty());
-}
-
-bool atomic_queue_t::empty() const { return self->queue_empty.load(); };
-void atomic_queue_t::empty(bool val) {
-  self->queue_empty.store(val);
-  self->cv.queue.notify_one();
-}
 
 bool atomic_api_t::AND(std::initializer_list<bool> flags) const {
   if (self->atomic.terminating()) {

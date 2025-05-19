@@ -39,10 +39,10 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
   std::mutex queue_thread_mtx;
   std::unique_lock<std::mutex> lock(queue_thread_mtx);
   while (true) {
-    log::trace::queue.loop.wait(list.queue.size(), atomic.queue.empty(),
+    log::trace::queue.loop.wait(list.queue.size(), list.queue.empty(),
                                 atomic.dom.ready());
     cv.queue.wait(lock, [this] {
-      return atomic.AND({atomic.dom.ready(), !atomic.queue.empty()});
+      return atomic.AND({atomic.dom.ready(), !list.queue.empty()});
     });
     if (atomic.terminating()) {
       break;
@@ -58,6 +58,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
     if (work_ctx == ctx.bind) {
       log::trace::queue.bind.start(name);
       wv_instance->dispatch(work_fn);
+      log::trace::queue.bind.wait(name);
       cv.bind.wait(lock, [this] { return atomic.AND({atomic.done.bind()}); });
       if (atomic.terminating()) {
         break;
@@ -71,7 +72,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
     if (work_ctx == ctx.unbind) {
       log::trace::queue.unbind.wait(name);
       auto timeout = std::chrono::milliseconds(WEBVIEW_UNBIND_TIMEOUT);
-      cv.unbind_timeout.wait_for(lock, timeout, [this, &name] {
+      cv.unbind_timeout.wait_for(lock, timeout, [this, name] {
         return atomic.AND({list.unresolved_promises.empty(name)});
       });
       if (atomic.terminating()) {
@@ -104,8 +105,8 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
       atomic.done.eval(false);
     }
 
-    atomic.queue.update();
     log::trace::queue.loop.end();
+    list.queue.pop_front();
   }
 }
 

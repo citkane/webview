@@ -70,7 +70,7 @@ noresult eval_api_t::enqueue(do_work_t fn, str_arg_t js) const {
 
 void promise_api_t::resolved(str_arg_t id) const {
   auto name = self->list.id_name_map.get(id);
-  if (name == "") {
+  if (name.empty()) {
     return;
   };
   self->list.id_name_map.erase(id);
@@ -85,13 +85,9 @@ void promise_api_t::resolve(str_arg_t name, str_arg_t id, str_arg_t args,
   self->list.id_name_map.set(id, name);
   self->list.unresolved_promises.add_id(name, id);
   self->cv.unbind_timeout.notify_one();
-  {
-    std::mutex mtx;
-    std::lock_guard<std::mutex> lock(mtx);
-    std::thread resolver = std::thread(
-        &engine_queue::resolve_thread_constructor, self, name, id, args, wv);
-    resolver.detach();
-  }
+  std::thread resolver = std::thread(&engine_queue::resolve_thread_constructor,
+                                     self, name, id, args, wv);
+  resolver.detach();
 }
 bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
   if (id != SYSTEM_NOTIFICATION_FLAG) {
@@ -143,7 +139,8 @@ noresult engine_queue::queue_work(str_arg_t name_or_js, do_work_t fn,
   }
   list.queue.push_back(fn_ctx, fn, name_or_js);
   log::trace::queue.enqueue.added(char(fn_ctx), list.queue.size(), name_or_js);
-  atomic.queue.empty(false);
+  //atomic.queue.update();
+  cv.queue.notify_one();
   return {};
 };
 
