@@ -46,6 +46,7 @@
 #include <vector>
 
 using namespace webview::types;
+
 namespace webview {
 namespace strings {
 namespace _structs {
@@ -76,6 +77,7 @@ struct tokenise_data_t {
 
 } // namespace _structs
 
+using replacements_t = std::initializer_list<_structs::tokenise_data_t>;
 _structs::sys_flags_t const sys_flag{};
 _structs::tokens_t const token{};
 
@@ -95,13 +97,12 @@ std::string tokenise(str_arg_t tmplate, str_arg_t token,
   }
   return tokenised_string;
 }
-std::string
-tokenise(str_arg_t tmplate,
-         std::initializer_list<_structs::tokenise_data_t> replacements) {
-  auto tokenised_string = tmplate;
+std::string tokenise(str_arg_t tmplate, replacements_t &replacements) {
+  std::string tokenised_string = tmplate;
   for (auto &replacement : replacements) {
-    tokenised_string =
+    auto string_ =
         tokenise(tokenised_string, replacement.token, replacement.tkn_replcmnt);
+    tokenised_string = string_;
   };
   return tokenised_string;
 }

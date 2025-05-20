@@ -58,9 +58,10 @@ public:
   /// Internal API implementation of public \ref webview_bind (synchronous)
   noresult bind(str_arg_t name, sync_binding_t fn);
   /// Internal API implementation of public \ref webview_bind (asynchronous)
-  noresult bind(str_arg_t name, binding_t fn, void *arg);
+  noresult bind(str_arg_t name, binding_t fn, void *arg,
+                bool skip_queue = false);
   /// Internal API implementation of public \ref webview_unbind
-  noresult unbind(str_arg_t name);
+  noresult unbind(str_arg_t name, bool skip_queue = false);
   /// Internal API implementation of public \ref webview_return
   noresult resolve(str_arg_t id, int status, str_arg_t result);
   /// Helper to reject a promise through \ref resolve
@@ -86,7 +87,7 @@ public:
   /// Internal API implementation of public \ref webview_init
   noresult init(str_arg_t js);
   /// Internal API implementation of public \ref webview_eval
-  noresult eval(str_arg_t js);
+  noresult eval(str_arg_t js, bool skip_queue = false);
 
 protected:
   friend struct _structs::user_scripts_t;
@@ -134,7 +135,7 @@ protected:
   // Creates a `bind` JS script string for the frontend window.
   std::string create_bind_script();
   /// Handler for messages from the frontend window to the native Webview process.
-  virtual void on_message(const std::string &msg);
+  virtual void on_message(str_arg_t msg);
   /// Handler to increment the browser window count
   virtual void on_window_created();
   /// Handler to decrement the browser window count
@@ -174,8 +175,6 @@ private:
   static const int m_initial_width = 640;
   /// The default platform window height
   static const int m_initial_height = 480;
-  /// Flag that indicates if a Webview work unit should skip the user work queue and execute directly
-  bool skip_queue{};
 };
 
 } // namespace backend

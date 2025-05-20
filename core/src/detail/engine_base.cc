@@ -31,9 +31,11 @@
 #include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/frontend/engine_frontend.hh"
 #include "webview/lib/json.hh"
+#include "webview/log/trace_log.hh"
 
 using namespace webview::test;
 using namespace webview::strings;
+using namespace webview::log;
 using namespace webview::detail::frontend;
 
 engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {}
@@ -49,21 +51,18 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
   auto wrapper = [this, fn](str_arg_t id, str_arg_t req, void * /*arg*/) {
     resolve(id, 0, fn(req));
   };
-  skip_queue = true;
-  auto res = bind(name, wrapper, nullptr);
-  skip_queue = false;
+  auto res = bind(name, wrapper, nullptr, true);
   return res;
 }
 
-noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
-  log::trace::base.bind.start(name);
+noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg,
+                           bool skip_queue) {
+  trace::base.bind.start(name);
   dispatch_fn_t do_work = [this, name, fn, arg] {
-    log::trace::base.bind.work(name);
+    trace::base.bind.work(name);
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
-    skip_queue = true;
-    eval(front_end.js.onbind(name));
-    skip_queue = false;
+    eval(front_end.js.onbind(name), true);
   };
   if (queue.bind.is_duplicate(name)) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
@@ -75,32 +74,44 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
   return {};
 }
 
-noresult engine_base::unbind(str_arg_t name) {
-  log::trace::base.unbind.start(name);
+noresult engine_base::unbind(str_arg_t name, bool skip_queue) {
+
   dispatch_fn_t do_work = [this, name]() {
-    log::trace::base.unbind.work(name);
-    skip_queue = true;
-    eval(front_end.js.onunbind(name));
-    skip_queue = false;
+    trace::base.unbind.work(name);
+    eval(front_end.js.onunbind(name), true);
     list.bindings.erase(name);
     replace_bind_script();
   };
   if (queue.unbind.not_found(name)) {
     return error_info{WEBVIEW_ERROR_NOT_FOUND};
   }
-  return queue.unbind.enqueue(do_work, name);
+  trace::base.unbind.start(name);
+  if (!skip_queue) {
+    return queue.unbind.enqueue(do_work, name);
+  }
+  do_work();
+  return {};
 }
 
 noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
-  auto escaped_result = result.empty() ? "undefined" : json_escape(result);
-  auto promised_js = front_end.js.onreply(id, status, escaped_result);
-
-  return dispatch([this, promised_js, id] {
+  // NOLINTNEXTLINE(modernize-avoid-bind): Lambda with move requires C++14
+  return dispatch(std::bind(
+      [id, status, this](std::string escaped_result) {
+        std::string js = front_end.js.onreply(id, status, escaped_result);
+        eval(js, true);
+        //queue.promises.resolved(id);
+      },
+      result.empty() ? "undefined" : json_escape(result)));
+  /*
+  return dispatch([id, status, result, this] {
+    auto escaped_result = result.empty() ? "undefined" : json_escape(result);
+    std::string promised_js = front_end.js.onreply(id, status, escaped_result);
     skip_queue = true;
     eval(promised_js);
     skip_queue = false;
     queue.promises.resolved(id);
   });
+  */
 }
 
 noresult engine_base::reject(str_arg_t id, str_arg_t err) {
@@ -140,18 +151,17 @@ noresult engine_base::init(str_arg_t js) {
   return {};
 }
 
-noresult engine_base::eval(str_arg_t js) {
-  log::trace::base.eval.start(js, skip_queue);
-  dispatch_fn_t do_work = [&] {
-    auto wrapped_js = front_end.js.eval_wrapper(js);
-    log::trace::base.eval.work(wrapped_js);
-    eval_impl(wrapped_js);
-  };
-
+noresult engine_base::eval(str_arg_t js, bool skip_queue) {
+  trace::base.eval.start(js, skip_queue);
   if (!skip_queue) {
+    dispatch_fn_t do_work = [&] {
+      auto wrapped_js = front_end.js.eval_wrapper(js);
+      trace::base.eval.work(wrapped_js);
+      eval_impl(wrapped_js);
+    };
     return queue.eval.enqueue(do_work, js);
   }
-  log::trace::base.eval.work(js);
+  trace::base.eval.work(js);
   eval_impl(js);
   return {};
 }

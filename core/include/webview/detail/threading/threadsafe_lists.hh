@@ -56,17 +56,6 @@ struct indices_t {
   int unbind_i;
 };
 
-struct cv_api_t {
-  std::condition_variable queue;
-  std::condition_variable bind;
-  std::condition_variable eval;
-  std::condition_variable unbind;
-  std::condition_variable unbind_timeout;
-  std::condition_variable *all[5] = {&queue, &bind, &eval, &unbind,
-                                     &unbind_timeout};
-  void notify_all();
-};
-
 struct bindings_t {
 public:
   size_t size() const;
@@ -79,7 +68,7 @@ public:
 
 private:
   std::map<std::string, binding_ctx_t> bindings_map;
-  mutable std::mutex mtx;
+  std::mutex mutable mtx;
 };
 
 struct user_scripts_t {
@@ -93,7 +82,7 @@ public:
 private:
   /// A list of references to bound user scripts.
   std::list<user_script> m_user_scripts;
-  mutable std::mutex mtx;
+  std::mutex mutable mtx;
 };
 
 struct queue_t {
@@ -107,7 +96,7 @@ public:
 
 private:
   std::deque<action_t> queue;
-  mutable std::mutex mtx;
+  std::mutex mutable mtx;
 };
 
 struct unres_promises_t {
@@ -121,7 +110,7 @@ public:
 
 private:
   std::unordered_map<std::string, std::list<std::string>> unres_promises;
-  mutable std::mutex mtx;
+  std::mutex mutable mtx;
 };
 
 struct id_name_map_t {
@@ -132,7 +121,7 @@ public:
 
 private:
   std::unordered_map<std::string, std::string> id_name;
-  mutable std::mutex mtx;
+  std::mutex mutable mtx;
 };
 
 struct pending_t {
@@ -143,11 +132,21 @@ public:
 
 private:
   std::deque<std::string> pending_bind_unbind;
-  mutable std::mutex mtx;
+  std::mutex mutable mtx;
 };
 } // namespace _structs
 
 class engine_lists_t {
+  struct cv_api_t {
+    cv_api_t();
+    std::condition_variable queue;
+    std::condition_variable bind;
+    std::condition_variable eval;
+    std::condition_variable unbind;
+    std::condition_variable unbind_timeout;
+    std::condition_variable *all[5];
+    void notify_all();
+  };
   struct list_t {
     /// Thread safe wrappers for the `std::map` of bindings.
     _structs::bindings_t bindings{};
@@ -165,7 +164,7 @@ class engine_lists_t {
 
 protected:
   /// Grouping of condition variables
-  _structs::cv_api_t cv{};
+  cv_api_t cv{};
   /// Thread safe wrappers for list-like objects.
   list_t list{};
 };

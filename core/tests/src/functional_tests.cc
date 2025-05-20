@@ -139,28 +139,26 @@ TEST_CASE("Test synchronous binding and unbinding") {
   std::string tmplate = TEST_B_UB_CALL;
   webview::webview w(true, nullptr);
 
+  auto increment = [&](str_arg_t /*req*/) -> std::string {
+    ++number;
+    return "";
+  };
   auto test = [&](str_arg_t req) -> std::string {
-    auto increment = [&](str_arg_t /*req*/) -> std::string {
-      ++number;
-      return "";
-    };
     // Bind and increment number.
     if (req == "[0]") {
       REQUIRE(number == 0);
       w.bind("increment", increment);
       auto js = tokenise(tmplate, token.value, "1");
-      trace::base.print_here(tmplate);
-      trace::base.print_here(js);
-      w.eval(js);
+      w.eval(js, true);
       return "";
     }
+
     // Unbind and make sure that we cannot increment even if we try.
     if (req == "[1]") {
       REQUIRE(number == 1);
-      w.unbind("increment");
+      w.unbind("increment", true);
       auto js = tokenise(tmplate, token.value, "2");
-      trace::base.print_here(js);
-      w.eval(js);
+      w.eval(js, true);
       return "";
     }
     // We should have gotten an error on the JS side.
@@ -169,23 +167,22 @@ TEST_CASE("Test synchronous binding and unbinding") {
       REQUIRE(number == 1);
       w.bind("increment", increment);
       auto js = tokenise(tmplate, token.value, "3");
-      trace::base.print_here(js);
-      w.eval(js);
+      w.eval(js, true);
       return "";
     }
     // Finish test.
     if (req == "[3]") {
       REQUIRE(number == 2);
-      //w.dispatch([&] { w.terminate(); });
       w.terminate();
       return "";
     }
     REQUIRE(!"Should not reach here");
+
     return "";
   };
   w.set_html("Test synchronous binding and unbinding");
   // Attempting to remove non-existing binding is OK
-  w.unbind("test");
+  w.unbind("test", true);
   w.bind("test", test);
   // Attempting to bind multiple times only binds once
   w.bind("test", test);
@@ -203,7 +200,9 @@ TEST_CASE("Test synchronous binding and unbinding") {
   "}"
 TEST_CASE("The string returned from a binding call must be JSON") {
   webview::webview w(true, nullptr);
+  std::string js = JS_STRING_RETURNS;
 
+  w.set_html("The string returned from a binding call must be JSON");
   w.bind("loadData",
          [](str_arg_t /*req*/) -> std::string { return "\"hello\""; });
   w.bind("endTest", [&](str_arg_t req) -> std::string {
@@ -213,15 +212,15 @@ TEST_CASE("The string returned from a binding call must be JSON") {
     w.terminate();
     return "";
   });
-  w.eval(JS_STRING_RETURNS);
-
-  w.set_html("The string returned from a binding call must be JSON");
+  w.eval(js);
   w.run();
 }
 
 TEST_CASE("The string returned of a binding call must not be JS") {
   webview::webview w(true, nullptr);
+  std::string js = JS_STRING_RETURNS;
 
+  w.set_html("The string returned of a binding call must not be JS");
   w.bind("loadData", [](str_arg_t /*req*/) -> std::string {
     // Try to load malicious JS code
     return "(()=>{document.body.innerHTML='gotcha';return 'hello';})()";
@@ -233,9 +232,7 @@ TEST_CASE("The string returned of a binding call must not be JS") {
     w.terminate();
     return "";
   });
-  w.eval(JS_STRING_RETURNS);
-
-  w.set_html("The string returned of a binding call must not be JS");
+  w.eval(js);
   w.run();
 }
 

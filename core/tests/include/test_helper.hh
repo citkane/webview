@@ -57,13 +57,13 @@ public:
   }
 
   /// Sets the returned test value.
-  static void set_value(const std::string &val) {
+  static void set_value(str_arg_t val) {
     string_value() = val;
     compare_values();
   };
 
   /// Sets the expected returned test value.
-  static void expect_value(const std::string &value) {
+  static void expect_value(str_arg_t value) {
     string_expected_value() = value;
   };
 

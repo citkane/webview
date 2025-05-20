@@ -214,7 +214,7 @@ WEBVIEW_API webview_error_t webview_bind(webview_t w, const char *name,
   return api_filter([=] {
     return cast_to_webview(w)->bind(
         name,
-        [=](const std::string &seq, const std::string &req, void *arg_) {
+        [=](str_arg_t seq, str_arg_t req, void *arg_) {
           fn(seq.c_str(), req.c_str(), arg_);
         },
         arg);

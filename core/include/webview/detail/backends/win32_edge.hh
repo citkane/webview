@@ -408,7 +408,7 @@ protected:
     return {};
   }
 
-  noresult set_title_impl(const std::string &title) override {
+  noresult set_title_impl(str_arg_t title) override {
     SetWindowTextW(m_window, widen_string(title).c_str());
     return {};
   }
@@ -442,13 +442,13 @@ protected:
     return window_show();
   }
 
-  noresult navigate_impl(const std::string &url) override {
+  noresult navigate_impl(str_arg_t url) override {
     auto wurl = widen_string(url);
     m_webview->Navigate(wurl.c_str());
     return {};
   }
 
-  noresult eval_impl(const std::string &js) override {
+  noresult eval_impl(str_arg_t js) override {
     // TODO: Skip if no content has begun loading yet. Can't check with
     //       ICoreWebView2::get_Source because it returns "about:blank".
     auto wjs = widen_string(js);
@@ -456,12 +456,12 @@ protected:
     return {};
   }
 
-  noresult set_html_impl(const std::string &html) override {
+  noresult set_html_impl(str_arg_t html) override {
     m_webview->NavigateToString(widen_string(html).c_str());
     return {};
   }
 
-  user_script add_user_script_impl(const std::string &js) override {
+  user_script add_user_script_impl(str_arg_t js) override {
     auto wjs = widen_string(js);
     std::wstring script_id;
     bool done{};

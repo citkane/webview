@@ -27,12 +27,13 @@
 #define WEBVIEW_DETAIL_USER_SCRIPT_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
+#include "webview/types/types.hh"
 #include <functional>
 #include <memory>
 #include <string>
 #include <utility>
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
 
@@ -53,7 +54,7 @@ public:
   using impl_deleter = std::function<void(impl *)>;
   using impl_ptr = std::unique_ptr<impl, impl_deleter>;
 
-  user_script(const std::string &code, impl_ptr &&impl_)
+  user_script(str_arg_t code, impl_ptr &&impl_)
       : m_code{code}, m_impl{std::move(impl_)} {}
 
   user_script(const user_script &other) = delete;
@@ -69,7 +70,7 @@ public:
     return *this;
   }
 
-  const std::string &get_code() const { return m_code; }
+  str_arg_t get_code() const { return m_code; }
 
   impl &get_impl() { return *m_impl; }
 

@@ -189,7 +189,7 @@ protected:
     return {};
   }
 
-  noresult set_title_impl(const std::string &title) override {
+  noresult set_title_impl(str_arg_t title) override {
     NSWindow_set_title(m_window, title);
     return {};
   }
@@ -219,7 +219,7 @@ protected:
 
     return window_show();
   }
-  noresult navigate_impl(const std::string &url) override {
+  noresult navigate_impl(str_arg_t url) override {
     objc::autoreleasepool arp;
 
     WKWebView_loadRequest(
@@ -227,13 +227,13 @@ protected:
 
     return {};
   }
-  noresult set_html_impl(const std::string &html) override {
+  noresult set_html_impl(str_arg_t html) override {
     objc::autoreleasepool arp;
     WKWebView_loadHTMLString(m_webview, NSString_stringWithUTF8String(html),
                              nullptr);
     return {};
   }
-  noresult eval_impl(const std::string &js) override {
+  noresult eval_impl(str_arg_t js) override {
     objc::autoreleasepool arp;
     // URI is null before content has begun loading.
     auto nsurl{WKWebView_get_URL(m_webview)};
@@ -245,7 +245,7 @@ protected:
     return {};
   }
 
-  user_script add_user_script_impl(const std::string &js) override {
+  user_script add_user_script_impl(str_arg_t js) override {
     objc::autoreleasepool arp;
     auto wk_script{WKUserScript_withSource(
         NSString_stringWithUTF8String(js),

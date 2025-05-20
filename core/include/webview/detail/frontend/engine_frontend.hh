@@ -222,8 +222,7 @@ struct js_string_t {
   std::string onbind(str_arg_t name) const;
 
   /// Returns a tokenised JS function string for a promise resolve/reject.
-  std::string onreply(std::string id, int status,
-                      std::string escaped_result) const;
+  std::string onreply(str_arg_t id, int status, str_arg_t result) const;
 
   /// Returns a tokenised JS string for the Webview frontend init function.
   std::string init(str_arg_t post_fn) const;
@@ -232,7 +231,7 @@ struct js_string_t {
   std::string bind(std::vector<std::string> &bound_names) const;
 
   /// Wraps user JS to notify the native code when eval is ready.
-  std::string eval_wrapper(std::string user_js) const;
+  std::string eval_wrapper(str_arg_t user_js) const;
 
 private:
   _structs::templates_t const js;
@@ -242,13 +241,13 @@ struct error_message_t {
   error_message_t(_structs::error_messages_t const error) : error(error){};
 
   /// Returns a tokenised error string for rejecting a promise if a callback binding was unbound.
-  std::string reject_unbound(std::string id, std::string name) const;
+  std::string reject_unbound(str_arg_t id, str_arg_t name) const;
 
   /// Returns a tokenised error string for rejecting a promise if a native callback has an uncaught exception.
-  std::string uncaught_exception(std::string name, std::string what) const;
+  std::string uncaught_exception(str_arg_t name, str_arg_t what) const;
 
   /// Returns a tokenised error string for native callbacks in detached threads after webview terminates.
-  std::string webview_terminated(std::string name) const;
+  std::string webview_terminated(str_arg_t name) const;
 
 private:
   _structs::error_messages_t const error;

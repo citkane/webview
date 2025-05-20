@@ -50,43 +50,43 @@ std::string ansi_t::to_ansi_string(std::initializer_list<int> codes) noexcept {
   return ansi_string;
 }
 
-const std::string &ansi_t::yellow_s() {
+str_arg_t ansi_t::yellow_s() {
   static const std::string instance = to_ansi_string({33});
   return instance;
 }
-const std::string &ansi_t::yellow_dim_s() {
+str_arg_t ansi_t::yellow_dim_s() {
   static const std::string instance = to_ansi_string({33, 2});
   return instance;
 }
-const std::string &ansi_t::green_s() {
+str_arg_t ansi_t::green_s() {
   static const std::string instance = to_ansi_string({92});
   return instance;
 }
-const std::string &ansi_t::red_s() {
+str_arg_t ansi_t::red_s() {
   static const std::string instance = to_ansi_string({91});
   return instance;
 }
-const std::string &ansi_t::blue_s() {
+str_arg_t ansi_t::blue_s() {
   static const std::string instance = to_ansi_string({94});
   return instance;
 }
-const std::string &ansi_t::blue_dark_s() {
+str_arg_t ansi_t::blue_dark_s() {
   static const std::string instance = to_ansi_string({34});
   return instance;
 }
-const std::string &ansi_t::magenta_s() {
+str_arg_t ansi_t::magenta_s() {
   static const std::string instance = to_ansi_string({95});
   return instance;
 }
-const std::string &ansi_t::default_c_s() {
+str_arg_t ansi_t::default_c_s() {
   static const std::string instance = to_ansi_string({0});
   return instance;
 }
-const std::string &ansi_t::bold_s() {
+str_arg_t ansi_t::bold_s() {
   static const std::string instance = to_ansi_string({1});
   return instance;
 }
-const std::string &ansi_t::dim_s() {
+str_arg_t ansi_t::dim_s() {
   static const std::string instance = to_ansi_string({2});
   return instance;
 }

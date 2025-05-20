@@ -33,6 +33,7 @@
 
 using namespace webview::types;
 using namespace webview::detail;
+using namespace webview::detail::backend;
 using namespace webview::detail::backend::_structs;
 
 size_t bindings_t::size() const {
@@ -215,7 +216,9 @@ indices_t pending_t::indices(str_arg_t name) const {
   return {bind_i, unbind_i};
 }
 
-void cv_api_t::notify_all() {
+engine_lists_t::cv_api_t::cv_api_t()
+    : all{&queue, &bind, &eval, &unbind, &unbind_timeout} {};
+void engine_lists_t::cv_api_t::notify_all() {
   for (auto &this_cv : all) {
     this_cv->notify_all();
   }

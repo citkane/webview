@@ -26,6 +26,7 @@
 #define WEBVIEW_LOG_ANSI_COLOURS_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#include "webview/types/types.hh"
 #include <string>
 
 namespace webview {
@@ -50,16 +51,16 @@ public:
   } ansi{};
 
 private:
-  static const std::string &yellow_s();
-  static const std::string &yellow_dim_s();
-  static const std::string &green_s();
-  static const std::string &red_s();
-  static const std::string &blue_s();
-  static const std::string &blue_dark_s();
-  static const std::string &magenta_s();
-  static const std::string &default_c_s();
-  static const std::string &bold_s();
-  static const std::string &dim_s();
+  static str_arg_t yellow_s();
+  static str_arg_t yellow_dim_s();
+  static str_arg_t green_s();
+  static str_arg_t red_s();
+  static str_arg_t blue_s();
+  static str_arg_t blue_dark_s();
+  static str_arg_t magenta_s();
+  static str_arg_t default_c_s();
+  static str_arg_t bold_s();
+  static str_arg_t dim_s();
 
   static std::string to_ansi_string(std::initializer_list<int> codes) noexcept;
 };

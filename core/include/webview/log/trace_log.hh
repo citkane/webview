@@ -47,7 +47,7 @@
 
 namespace webview {
 namespace types {
-using str_arg_t = const std::string &;
+using str_arg_t = str_arg_t;
 using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
 } // namespace types
 namespace log {
@@ -318,7 +318,7 @@ public:
   static const queue_trace_t &queue;
 
 private:
-  static const std::string &prefix() {
+  static str_arg_t prefix() {
     static const std::string prefix_instance = "WEBVIEW: ";
     return prefix_instance;
   };

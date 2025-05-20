@@ -29,7 +29,6 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
 #include "webview/errors/errors.hh"
-#include "webview/log/trace_log.hh"
 #include "webview/types/basic_result.hh"
 #include <functional>
 

@@ -40,9 +40,7 @@ inline int json_parse_c(const char *s, size_t sz, const char *key, size_t keysz,
 }
 
 WEBVIEW_DEPRECATED_PRIVATE
-inline std::string json_escape(const std::string &s) {
-  return strings::json_escape(s);
-}
+inline std::string json_escape(str_arg_t s) { return strings::json_escape(s); }
 
 WEBVIEW_DEPRECATED_PRIVATE
 inline int json_unescape(const char *s, size_t n, char *out) {
@@ -50,8 +48,7 @@ inline int json_unescape(const char *s, size_t n, char *out) {
 }
 
 WEBVIEW_DEPRECATED_PRIVATE
-inline std::string json_parse(const std::string &s, const std::string &key,
-                              const int index) {
+inline std::string json_parse(str_arg_t s, str_arg_t key, const int index) {
   return strings::json_parse(s, key, index);
 }
 

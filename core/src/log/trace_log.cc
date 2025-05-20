@@ -48,7 +48,7 @@ long trace_tools_t::elapsed_ms(time_point_t start, time_point_t end) const {
   return static_cast<long int>(
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
           .count());
-};
+}
 std::string trace_tools_t::bool_s(bool flag) const {
   return flag ? "true" : "false";
 }
@@ -68,14 +68,18 @@ void trace_tools_t::print_ansi(str_arg_t this_col, str_arg_t message) const {
   static std::mutex mtx;
   std::lock_guard<std::mutex> lock(mtx);
   printf("%s%s%s\n", this_col.c_str(), message.c_str(), ansi.default_c.c_str());
-};
+}
 
+#if WEBVIEW_LOG_TRACE
 void print_here_t::print_here(str_arg_t message) const {
   auto this_c = ansi.magenta;
   auto here_m = bold(this_c, "here") + ": ";
   auto message_ = ansi.default_c + message;
   print_ansi(this_c, prefix + postfix + here_m + message_);
-};
+}
+#else
+void print_here_t::print_here(str_arg_t /*message*/) const {}
+#endif
 
 #if WEBVIEW_LOG_TRACE
 void queue_print_t::start(str_arg_t name) const {
@@ -117,7 +121,7 @@ void queue_eval_t::wrapper_t::start(str_arg_t js) const {
   auto start_m = bold(this_c, "START") + " js ...\n";
   auto js_m = dim(this_c, js);
   print_ansi(this_c, prefix + postfix_m + start_m + js_m);
-};
+}
 #else
 void queue_eval_t::wrapper_t::start(str_arg_t /**/) const {}
 #endif
@@ -144,7 +148,7 @@ void queue_loop_t::wrapper_t::wait(size_t size, bool empty,
 
   print_ansi(this_col,
              prefix + postfix + waiting + time_m + size_s + empty_s + dom_s);
-};
+}
 #else
 void queue_loop_t::wrapper_t::wait(size_t /**/, bool /**/, bool /**/) const {}
 #endif
@@ -158,7 +162,7 @@ void queue_loop_t::wrapper_t::start(size_t size) const {
   auto size_m = "| queue size: " + std::to_string(size);
 
   print_ansi(this_col, prefix + postfix + start + time_m + size_m + "\n");
-};
+}
 #else
 void queue_loop_t::wrapper_t::start(size_t /**/) const {}
 #endif
@@ -287,7 +291,7 @@ void base_eval_t::wrapper_t::start(str_arg_t js, bool skip_queue) const {
   auto received_m = bold(this_c, "received js") + " ...\n";
   auto m = prefix + postfix + skip_m + received_m + dim(this_c, js);
   print_ansi(this_c, m);
-};
+}
 #else
 void base_eval_t::wrapper_t::start(str_arg_t /**/, bool /**/) const {}
 #endif
@@ -297,7 +301,7 @@ void base_eval_t::wrapper_t::work(str_arg_t js) const {
   auto work_m = bold(this_c, "do_work") + " js...\n";
   auto m = prefix + postfix + work_m + dim(this_c, js);
   print_ansi(this_c, m);
-};
+}
 #else
 void base_eval_t::wrapper_t::work(str_arg_t /**/) const {}
 #endif

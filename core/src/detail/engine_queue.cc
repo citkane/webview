@@ -30,11 +30,13 @@
 #include "webview/detail/engine_queue.hh"
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/frontend/engine_frontend.hh"
+#include "webview/log/trace_log.hh"
 #include <cstdio>
 #include <mutex>
 
 using namespace webview::detail::backend;
 using namespace webview::detail::frontend;
+using namespace webview::log;
 
 using public_api_t = engine_queue::public_api_t;
 using bind_api_t = engine_queue::bind_api_t;
@@ -92,19 +94,19 @@ bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
     return false;
   };
   if (method == front_end.sysops.dom_ready) {
-    log::trace::queue.notify.on_message(method);
+    trace::queue.notify.on_message(method);
     self->atomic.dom.ready(true);
   }
   if (method == front_end.sysops.bind_done) {
-    log::trace::queue.notify.on_message(method);
+    trace::queue.notify.on_message(method);
     self->atomic.done.bind(true);
   }
   if (method == front_end.sysops.unbind_done) {
-    log::trace::queue.notify.on_message(method);
+    trace::queue.notify.on_message(method);
     self->atomic.done.unbind(true);
   }
   if (method == front_end.sysops.js_eval_start) {
-    log::trace::queue.notify.on_message(method);
+    trace::queue.notify.on_message(method);
     self->atomic.done.eval(true);
   }
   return true;
@@ -136,7 +138,7 @@ noresult engine_queue::queue_work(str_arg_t name_or_js, dispatch_fn_t fn,
     list.pending.push_back("unbind-" + name);
   }
   list.queue.push_back(fn_ctx, fn, name_or_js);
-  log::trace::queue.enqueue.added(char(fn_ctx), list.queue.size(), name_or_js);
+  trace::queue.enqueue.added(char(fn_ctx), list.queue.size(), name_or_js);
   cv.queue.notify_one();
   return {};
 };

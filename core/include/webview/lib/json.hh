@@ -27,7 +27,7 @@
 #define WEBVIEW_LIB_JSON_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
+#include "webview/types/types.hh"
 #include <cassert>
 #include <cstring>
 #include <string>
@@ -185,7 +185,7 @@ constexpr bool is_json_special_char(char c) {
 
 constexpr bool is_ascii_control_char(char c) { return c >= 0 && c <= 0x1f; }
 
-inline std::string json_escape(const std::string &s, bool add_quotes = true) {
+inline std::string json_escape(str_arg_t s, bool add_quotes = true) {
   // Calculate the size of the resulting string.
   // Add space for the double quotes.
   size_t required_length = add_quotes ? 2 : 0;
@@ -301,8 +301,7 @@ inline int json_unescape(const char *s, size_t n, char *out) {
   return r;
 }
 
-inline std::string json_parse(const std::string &s, const std::string &key,
-                              const int index) {
+inline std::string json_parse(str_arg_t s, str_arg_t key, const int index) {
   const char *value;
   size_t value_sz;
   if (key.empty()) {
