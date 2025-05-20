@@ -23,12 +23,12 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_NATIVE_LIBRARY_HH
-#define WEBVIEW_DETAIL_NATIVE_LIBRARY_HH
+#ifndef WEBVIEW_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH
+#define WEBVIEW_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "webview/lib/string.hh"
+#include "webview/detail/platform/windows/string.hh"
 
 #include <string>
 
@@ -167,4 +167,4 @@ private:
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_NATIVE_LIBRARY_HH
+#endif // WEBVIEW_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH

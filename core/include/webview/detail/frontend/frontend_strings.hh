@@ -45,6 +45,7 @@
 #include <string>
 #include <vector>
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
 
@@ -93,16 +94,17 @@ std::string tokenise(str_arg_t tmplate, str_arg_t token,
     tokenised_string.replace(start_pos, token.length(), tkn_replcmnt);
     start_pos += tkn_replcmnt.length();
   }
-
   return tokenised_string;
 }
 std::string
-tokenise(std::string tmplate,
+tokenise(str_arg_t tmplate,
          std::initializer_list<_structs::tokenise_data_t> replacements) {
+  auto tokenised_string = tmplate;
   for (auto &replacement : replacements) {
-    tmplate = tokenise(tmplate, replacement.token, replacement.tkn_replcmnt);
+    tokenised_string =
+        tokenise(tokenised_string, replacement.token, replacement.tkn_replcmnt);
   };
-  return tmplate;
+  return tokenised_string;
 }
 
 /// Parses a vector into a JSON array string.

@@ -23,18 +23,17 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_BASIC_RESULT_HH
-#define WEBVIEW_DETAIL_BASIC_RESULT_HH
+#ifndef WEBVIEW_TYPES_BASIC_RESULT_HH
+#define WEBVIEW_TYPES_BASIC_RESULT_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "optional.hh"
 #include "webview/errors/exceptions.hh"
-
 #include <utility>
 
+using namespace webview::errors;
 namespace webview {
-namespace detail {
+namespace types {
 
 template <typename Value, typename Error, typename Exception>
 class basic_result {
@@ -112,8 +111,8 @@ private:
   optional<error_type> m_error;
 };
 
-} // namespace detail
+} // namespace types
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_BASIC_RESULT_HH
+#endif // WEBVIEW_TYPES_BASIC_RESULT_HH

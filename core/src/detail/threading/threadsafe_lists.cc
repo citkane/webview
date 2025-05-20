@@ -109,7 +109,7 @@ void queue_t::pop_front() {
   std::lock_guard<std::mutex> lock(mtx);
   queue.pop_front();
 }
-void queue_t::push_back(context_t ctx, do_work_t work_fn,
+void queue_t::push_back(context_t ctx, dispatch_fn_t work_fn,
                         std::string name_or_js) {
   std::lock_guard<std::mutex> lock(mtx);
   queue.push_back({ctx, work_fn, name_or_js});

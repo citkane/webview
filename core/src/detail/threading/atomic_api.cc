@@ -28,7 +28,6 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/threading/atomic_api.hh"
 #include "webview/detail/engine_queue.hh"
-#include "webview/log/trace_log.hh"
 
 namespace webview {
 namespace detail {

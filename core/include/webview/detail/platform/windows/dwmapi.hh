@@ -32,7 +32,7 @@
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
 
-#include "webview/lib/native_library.hh"
+#include "webview/detail/platform/windows/native_library.hh"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

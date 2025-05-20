@@ -32,9 +32,9 @@
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
 
-#include "dwmapi.hh"
-#include "reg_key.hh"
-#include "webview/lib/native_library.hh"
+#include "webview/detail/platform/windows/dwmapi.hh"
+#include "webview/detail/platform/windows/native_library.hh"
+#include "webview/detail/platform/windows/reg_key.hh"
 
 namespace webview {
 namespace detail {

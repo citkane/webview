@@ -29,7 +29,6 @@
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/engine_queue.hh"
 #include "webview/detail/frontend/engine_frontend.hh"
-#include "webview/log/trace_log.hh"
 #include <mutex>
 
 namespace webview {

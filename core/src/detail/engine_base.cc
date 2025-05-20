@@ -31,7 +31,6 @@
 #include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/frontend/engine_frontend.hh"
 #include "webview/lib/json.hh"
-#include "webview/log/trace_log.hh"
 
 namespace webview {
 using namespace webview::test;
@@ -58,7 +57,7 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
 
 noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
   log::trace::base.bind.start(name);
-  do_work_t do_work = [this, name, fn, arg] {
+  dispatch_fn_t do_work = [this, name, fn, arg] {
     log::trace::base.bind.work(name);
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
@@ -78,7 +77,7 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
 
 noresult engine_base::unbind(str_arg_t name) {
   log::trace::base.unbind.start(name);
-  do_work_t do_work = [this, name]() {
+  dispatch_fn_t do_work = [this, name]() {
     log::trace::base.unbind.work(name);
     skip_queue = true;
     eval(frontend.js.onunbind(name));
@@ -143,7 +142,7 @@ noresult engine_base::init(str_arg_t js) {
 
 noresult engine_base::eval(str_arg_t js) {
   log::trace::base.eval.start(js, skip_queue);
-  do_work_t do_work = [&] {
+  dispatch_fn_t do_work = [&] {
     auto wrapped_js = frontend.js.eval_wrapper(js);
     log::trace::base.eval.work(wrapped_js);
     eval_impl(wrapped_js);

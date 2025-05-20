@@ -30,7 +30,6 @@
 #include "webview/detail/engine_queue.hh"
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/frontend/engine_frontend.hh"
-#include "webview/log/trace_log.hh"
 #include <cstdio>
 #include <mutex>
 
@@ -46,7 +45,7 @@ using unbind_api_t = engine_queue::unbind_api_t;
 using promise_api_t = engine_queue::promise_api_t;
 using eval_api_t = engine_queue::eval_api_t;
 
-noresult bind_api_t::enqueue(do_work_t fn, str_arg_t name) const {
+noresult bind_api_t::enqueue(dispatch_fn_t fn, str_arg_t name) const {
   return self->queue_work(name, fn, self->ctx.bind);
 };
 bool bind_api_t::is_duplicate(str_arg_t name) const {
@@ -55,7 +54,7 @@ bool bind_api_t::is_duplicate(str_arg_t name) const {
   return self->list.bindings.count(name) > 0 || will_be_bound;
 };
 
-noresult unbind_api_t::enqueue(do_work_t fn, str_arg_t name) const {
+noresult unbind_api_t::enqueue(dispatch_fn_t fn, str_arg_t name) const {
   return self->queue_work(name, fn, self->ctx.unbind);
 };
 bool unbind_api_t::not_found(str_arg_t name) const {
@@ -64,7 +63,7 @@ bool unbind_api_t::not_found(str_arg_t name) const {
   return self->list.bindings.count(name) == 0 && !will_be_bound;
 };
 
-noresult eval_api_t::enqueue(do_work_t fn, str_arg_t js) const {
+noresult eval_api_t::enqueue(dispatch_fn_t fn, str_arg_t js) const {
   return self->queue_work(js, fn, self->ctx.eval);
 };
 
@@ -128,7 +127,7 @@ void public_api_t::shutdown() const {
 }
 bool public_api_t::shutting_down() const { return self->is_terminating.load(); }
 
-noresult engine_queue::queue_work(str_arg_t name_or_js, do_work_t fn,
+noresult engine_queue::queue_work(str_arg_t name_or_js, dispatch_fn_t fn,
                                   context_t fn_ctx) {
   const auto &name = name_or_js;
   if (fn_ctx == ctx.bind) {

@@ -34,6 +34,7 @@
 #include <atomic>
 #include <list>
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
 

@@ -46,12 +46,9 @@
 //
 
 #include "webview/detail/engine_base.hh"
-#include "webview/detail/frontend/user_script.hh"
 #include "webview/detail/platform/linux/gtk/compat.hh"
 #include "webview/detail/platform/linux/webkitgtk/compat.hh"
 #include "webview/detail/platform/linux/webkitgtk/dmabuf.hh"
-#include "webview/errors/errors.hh"
-#include "webview/types/types.hh"
 
 #include <functional>
 #include <list>
@@ -75,6 +72,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+using namespace webview::types;
+using namespace webview::errors;
 namespace webview {
 namespace detail {
 

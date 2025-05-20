@@ -36,6 +36,7 @@
 #include <atomic>
 #include <thread>
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
 
@@ -56,7 +57,7 @@ public:
     ~bind_api_t() = default;
     bind_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `bind` work unit onto the queue.
-    noresult enqueue(do_work_t fn, str_arg_t name) const;
+    noresult enqueue(dispatch_fn_t fn, str_arg_t name) const;
     /// Indicates if adding a `bind` to the queue is an error, eg. duplicate name.
     bool is_duplicate(str_arg_t name) const;
   };
@@ -64,7 +65,7 @@ public:
     ~unbind_api_t() = default;
     unbind_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `unbind` work unit onto the queue.
-    noresult enqueue(do_work_t fn, str_arg_t name) const;
+    noresult enqueue(dispatch_fn_t fn, str_arg_t name) const;
     /// Indicates if adding an `unbind` to the queue is an error, eg. bind doesn't exist.
     bool not_found(str_arg_t name) const;
   };
@@ -72,7 +73,7 @@ public:
     ~eval_api_t() = default;
     eval_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `eval` work unit onto the queue.
-    noresult enqueue(do_work_t fn, str_arg_t js) const;
+    noresult enqueue(dispatch_fn_t fn, str_arg_t js) const;
   };
   struct promise_api_t : nested_api_t<engine_queue> {
     ~promise_api_t() = default;
@@ -144,7 +145,7 @@ private:
                                   engine_base *wv);
 
   /// Adds `bind`, `unbind` or `eval` user work unit to the queue.
-  noresult queue_work(str_arg_t name_or_js, do_work_t fn, context_t fn_ctx);
+  noresult queue_work(str_arg_t name_or_js, dispatch_fn_t fn, context_t fn_ctx);
 
   /// Sends a native promise work unit to a concurrent detached thread.
   void resolve_work(engine_base *wv, str_arg_t msg, str_arg_t id);

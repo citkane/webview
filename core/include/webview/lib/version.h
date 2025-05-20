@@ -23,8 +23,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_VERSION_H
-#define WEBVIEW_VERSION_H
+#ifndef WEBVIEW_LIB_VERSION_H
+#define WEBVIEW_LIB_VERSION_H
 
 #include "macros.h"
 
@@ -64,4 +64,4 @@
 
 /// @}
 
-#endif // WEBVIEW_VERSION_H
+#endif // WEBVIEW_LIB_VERSION_H

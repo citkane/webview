@@ -25,6 +25,7 @@
 #ifndef WEBVIEW_TEST_HELPER_HH
 #define WEBVIEW_TEST_HELPER_HH
 
+#include "webview/types/types.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/frontend/frontend_strings.hh"
@@ -74,17 +75,17 @@ public:
   };
 
   /// Wraps a string value in evaluable JS
-  static std::string get_value_js(const std::string &value) {
+  static std::string get_value_js(str_arg_t value) {
     return str::tokenise(TEST_VALUE_WRAPPER, str::token.value, value);
   }
 
+  /*
   /// dispatch -> wv.eval of a tokenised `window.__webview__.post` string with a test value
-  static void post_value(const std::string &value, engine_base *wv) {
+  static void post_value(str_arg_t value, engine_base *wv) {
     auto js = get_value_js(value);
-    auto do_work = [=] { wv->eval(js); };
-    wv->dispatch(do_work);
+    wv->dispatch([&] { wv->eval(js); });
   }
-
+*/
   /// Wraps wv.terminate in dispatch
   static void terminate(engine_base *wv) {
     wv->dispatch([=] { wv->terminate(); });

@@ -37,15 +37,17 @@
 #include <unordered_map>
 #include <vector>
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
+
 class engine_base;
 
 namespace _structs {
 
 struct action_t {
   context_t ctx;
-  do_work_t work_fn;
+  dispatch_fn_t work_fn;
   std::string name_or_js;
 };
 struct indices_t {
@@ -98,7 +100,7 @@ public:
   size_t size() const;
   action_t front();
   void pop_front();
-  void push_back(context_t ctx, do_work_t work_fn, std::string name_or_js);
+  void push_back(context_t ctx, dispatch_fn_t work_fn, std::string name_or_js);
   void clear();
   bool empty() const;
 

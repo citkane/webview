@@ -23,8 +23,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_JSON_HH
-#define WEBVIEW_JSON_HH
+#ifndef WEBVIEW_LIB_JSON_DEPRECATED_HH
+#define WEBVIEW_LIB_JSON_DEPRECATED_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
@@ -58,4 +58,4 @@ inline std::string json_parse(const std::string &s, const std::string &key,
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_JSON_HH
+#endif // WEBVIEW_LIB_JSON_DEPRECATED_HH

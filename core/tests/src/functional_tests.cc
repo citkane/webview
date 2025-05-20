@@ -1,5 +1,6 @@
 #include "webview/api/api.h"
 #include "webview/test_driver.hh"
+#include "webview/types/types.hh"
 
 #define WEBVIEW_VERSION_MAJOR 1
 #define WEBVIEW_VERSION_MINOR 2
@@ -22,7 +23,7 @@
 TEST_CASE("# Warm-up") {
   // Signal to the test runner that this may be a slow test.
   std::cerr << "[[slow]]" << std::endl; // NOLINT(performance-avoid-endl)
-  webview::webview w(false, nullptr);
+  webview w(false, nullptr);
   w.dispatch([&]() { w.terminate(); });
   w.run();
 }
@@ -30,6 +31,8 @@ TEST_CASE("# Warm-up") {
 
 using namespace webview::detail;
 using namespace webview::test;
+using namespace webview::types;
+using namespace webview::log;
 
 TEST_CASE("Start app loop and terminate it") {
   webview::webview w(false, nullptr);
@@ -135,9 +138,11 @@ TEST_CASE("Use C API to test binding and unbinding") {
 TEST_CASE("Test synchronous binding and unbinding") {
 
   unsigned int number = 0;
+  std::string tmplate = TEST_B_UB_CALL;
   webview::webview w(true, nullptr);
-  auto test = [&](const std::string &req) -> std::string {
-    auto increment = [&](const std::string & /*req*/) -> std::string {
+
+  auto test = [&](str_arg_t req) -> std::string {
+    auto increment = [&](str_arg_t /*req*/) -> std::string {
       ++number;
       return "";
     };
@@ -145,14 +150,19 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[0]") {
       REQUIRE(number == 0);
       w.bind("increment", increment);
-      w.eval(str::tokenise(TEST_B_UB_CALL, str::token.value, "1"));
+      auto js = str::tokenise(tmplate, str::token.value, "1");
+      trace::base.print_here(tmplate);
+      trace::base.print_here(js);
+      w.eval(js);
       return "";
     }
     // Unbind and make sure that we cannot increment even if we try.
     if (req == "[1]") {
       REQUIRE(number == 1);
       w.unbind("increment");
-      w.eval(str::tokenise(TEST_B_UB_CALL, str::token.value, "2"));
+      auto js = str::tokenise(tmplate, str::token.value, "2");
+      trace::base.print_here(js);
+      w.eval(js);
       return "";
     }
     // We should have gotten an error on the JS side.
@@ -160,7 +170,9 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[2,1]") {
       REQUIRE(number == 1);
       w.bind("increment", increment);
-      w.eval(str::tokenise(TEST_B_UB_CALL, str::token.value, "3"));
+      auto js = str::tokenise(tmplate, str::token.value, "3");
+      trace::base.print_here(js);
+      w.eval(js);
       return "";
     }
     // Finish test.
@@ -194,10 +206,9 @@ TEST_CASE("Test synchronous binding and unbinding") {
 TEST_CASE("The string returned from a binding call must be JSON") {
   webview::webview w(true, nullptr);
 
-  w.bind("loadData", [](const std::string & /*req*/) -> std::string {
-    return "\"hello\"";
-  });
-  w.bind("endTest", [&](const std::string &req) -> std::string {
+  w.bind("loadData",
+         [](str_arg_t /*req*/) -> std::string { return "\"hello\""; });
+  w.bind("endTest", [&](str_arg_t req) -> std::string {
     REQUIRE(req != "[2]");
     REQUIRE(req != "[1]");
     REQUIRE(req == "[0]");
@@ -213,11 +224,11 @@ TEST_CASE("The string returned from a binding call must be JSON") {
 TEST_CASE("The string returned of a binding call must not be JS") {
   webview::webview w(true, nullptr);
 
-  w.bind("loadData", [](const std::string & /*req*/) -> std::string {
+  w.bind("loadData", [](str_arg_t /*req*/) -> std::string {
     // Try to load malicious JS code
     return "(()=>{document.body.innerHTML='gotcha';return 'hello';})()";
   });
-  w.bind("endTest", [&](const std::string &req) -> std::string {
+  w.bind("endTest", [&](str_arg_t req) -> std::string {
     REQUIRE(req != "[0]");
     REQUIRE(req != "[2]");
     REQUIRE(req == "[1]");
@@ -250,45 +261,43 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
   " " TOKEN_POST_FN "\n"                                                       \
   "};"
 
-  std::condition_variable main_cv;
-  std::atomic_bool worker_ready{};
   webview::webview wv{true, nullptr};
 
-  auto async_tests = std::thread([&]() {
-    std::mutex worker_mtx;
-    std::unique_lock<std::mutex> lock(worker_mtx);
-    worker_ready.store(true);
-    main_cv.notify_one();
+  auto async_tests = std::thread(
+      [](webview::webview *wv) {
+        std::mutex worker_mtx;
+        std::unique_lock<std::mutex> lock(worker_mtx);
 
-    tester::expect_value("loaded");
-    tester::cv().wait_for(lock, tester::seconds(2),
-                          []() { return tester::values_match(); });
-    REQUIRE(tester::values_match());
+        tester::expect_value("loaded");
+        tester::cv().wait_for(lock, tester::seconds(2),
+                              []() { return tester::values_match(); });
 
-    tester::expect_value("exiting 42");
-    tester::post_value("\"exiting \" + window.x", &wv);
+        REQUIRE(tester::values_match());
 
-    tester::cv().wait_for(lock, tester::seconds(2),
-                          [] { return tester::values_match(); });
-    REQUIRE(tester::values_match());
+        tester::expect_value("exiting 42");
+        str_arg_t js = tester::get_value_js("\"exiting \" + window.x");
+        wv->dispatch([=, &js] { wv->eval(js); });
+        //tester::post_value("\"exiting \" + window.x", wv);
 
-    tester::terminate(&wv);
-  });
-  {
-    std::mutex main_mtx;
-    std::unique_lock<std::mutex> lock(main_mtx);
-    auto on_load_val = tester::get_value_js("\"loaded\"");
-    auto init_js =
-        str::tokenise(TEST_CASE_INIT_JS, str::token.post_fn, on_load_val);
+        tester::cv().wait_for(lock, tester::seconds(2),
+                              [] { return tester::values_match(); });
 
-    wv.init(init_js);
-    wv.set_html("Ensure that JS code can call native code and vice versa");
-    //wv.navigate("data:text/html,%3Chtml%3Ehello%3C%2Fhtml%3E");
+        REQUIRE(tester::values_match());
 
-    main_cv.wait(lock, [&worker_ready] { return worker_ready.load(); });
-    wv.run();
-    async_tests.join();
-  }
+        tester::terminate(wv);
+      },
+      &wv);
+
+  auto on_load_val = tester::get_value_js("\"loaded\"");
+  auto init_js =
+      str::tokenise(TEST_CASE_INIT_JS, str::token.post_fn, on_load_val);
+
+  wv.init(init_js);
+  //wv.set_html("Ensure that JS code can call native code and vice versa");
+  wv.navigate("data:text/html,%3Chtml%3Ehello%3C%2Fhtml%3E");
+
+  wv.run();
+  async_tests.join();
 }
 
 #define ASSERT_WEBVIEW_FAILED(expr) REQUIRE(WEBVIEW_FAILED(expr))

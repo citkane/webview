@@ -41,10 +41,10 @@
 // ====================================================================
 //
 
-#include "shcore.hh"
-#include "user32.hh"
-#include "version.hh"
-#include "webview/lib/native_library.hh"
+#include "webview/detail/platform/windows/native_library.hh"
+#include "webview/detail/platform/windows/shcore.hh"
+#include "webview/detail/platform/windows/user32.hh"
+#include "webview/detail/platform/windows/version.hh"
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN

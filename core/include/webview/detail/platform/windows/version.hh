@@ -32,7 +32,7 @@
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
 
-#include "ntdll.hh"
+#include "webview/detail/platform/windows/ntdll.hh"
 
 #include <array>
 #include <string>

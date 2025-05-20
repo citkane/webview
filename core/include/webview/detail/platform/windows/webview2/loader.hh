@@ -35,7 +35,7 @@
 #include "../iid.hh"
 #include "../reg_key.hh"
 #include "../version.hh"
-#include "webview/lib/native_library.hh"
+#include "webview/detail/platform/windows/native_library.hh"
 
 #include <string>
 

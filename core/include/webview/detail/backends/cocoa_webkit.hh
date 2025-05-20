@@ -43,11 +43,9 @@
 //
 
 #include "webview/detail/engine_base.hh"
-#include "webview/detail/frontend/user_script.hh"
 #include "webview/detail/platform/darwin/cocoa/cocoa.hh"
 #include "webview/detail/platform/darwin/objc/objc.hh"
 #include "webview/detail/platform/darwin/webkit/webkit.hh"
-#include "webview/types/types.hh"
 
 #include <atomic>
 #include <functional>
@@ -57,6 +55,8 @@
 
 #include <objc/objc-runtime.h>
 
+using namespace webview::types;
+using namespace webview::errors;
 namespace webview {
 namespace detail {
 

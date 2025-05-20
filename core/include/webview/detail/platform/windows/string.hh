@@ -23,8 +23,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_UTILITY_STRING_HH
-#define WEBVIEW_DETAIL_UTILITY_STRING_HH
+#ifndef WEBVIEW_PLATFORM_WINDOWS_STRING_HH
+#define WEBVIEW_PLATFORM_WINDOWS_STRING_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
@@ -96,4 +96,4 @@ inline std::string narrow_string(const std::wstring &input) {
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_UTILITY_STRING_HH
+#endif // WEBVIEW_PLATFORM_WINDOWS_STRING_HH

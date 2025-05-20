@@ -23,20 +23,20 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_EXCEPTIONS_HH
-#define WEBVIEW_DETAIL_EXCEPTIONS_HH
+#ifndef WEBVIEW_ERRORS_EXCEPTIONS_HH
+#define WEBVIEW_ERRORS_EXCEPTIONS_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
 #include <exception>
 
 namespace webview {
-namespace detail {
+namespace errors {
 
 class bad_access : public std::exception {};
 
-} // namespace detail
+} // namespace errors
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_EXCEPTIONS_HH
+#endif // WEBVIEW_ERRORS_EXCEPTIONS_HH

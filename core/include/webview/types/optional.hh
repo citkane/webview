@@ -23,19 +23,18 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_OPTIONAL_HH
-#define WEBVIEW_DETAIL_OPTIONAL_HH
+#ifndef WEBVIEW_TYPES_OPTIONAL_HH
+#define WEBVIEW_TYPES_OPTIONAL_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/errors/exceptions.hh"
-
 #include <new>
 #include <type_traits>
 #include <utility>
 
+using namespace webview::errors;
 namespace webview {
-namespace detail {
+namespace types {
 
 template <typename T> class optional {
 public:
@@ -111,8 +110,8 @@ private:
 
 template <> class optional<void> {};
 
-} // namespace detail
+} // namespace types
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_OPTIONAL_HH
+#endif // WEBVIEW_TYPES_OPTIONAL_HH

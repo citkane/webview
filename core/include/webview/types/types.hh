@@ -23,16 +23,19 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_TYPES_HH
-#define WEBVIEW_TYPES_HH
+#ifndef WEBVIEW_TYPES_TYPES_HH
+#define WEBVIEW_TYPES_TYPES_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
 #include "webview/errors/errors.hh"
+#include "webview/log/trace_log.hh"
 #include "webview/types/basic_result.hh"
 #include <functional>
 
+using namespace webview::errors;
 namespace webview {
+namespace types {
 
 enum context_t { bind_t = 'b', unbind_t = 'u', eval_t = 'e' };
 struct action_ctx_t {
@@ -48,16 +51,14 @@ template <typename T> struct nested_api_t {
 
 using str_arg_t = const std::string &;
 
-using do_work_t = std::function<void()>;
-
 using dispatch_fn_t = std::function<void()>;
 
-template <typename T>
-using result = detail::basic_result<T, error_info, exception>;
+template <typename T> using result = basic_result<T, error_info, exception>;
 
-using noresult = detail::basic_result<void, error_info, exception>;
+using noresult = basic_result<void, error_info, exception>;
 
+} // namespace types
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_TYPES_HH
+#endif // WEBVIEW_TYPES_TYPES_HH
