@@ -32,9 +32,9 @@
 #include "webview/detail/frontend/engine_frontend.hh"
 #include "webview/lib/json.hh"
 
-namespace webview {
 using namespace webview::test;
-namespace detail {
+using namespace webview::strings;
+using namespace webview::detail::frontend;
 
 engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {}
 
@@ -62,7 +62,7 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg) {
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
     skip_queue = true;
-    eval(frontend.js.onbind(name));
+    eval(front_end.js.onbind(name));
     skip_queue = false;
   };
   if (queue.bind.is_duplicate(name)) {
@@ -80,7 +80,7 @@ noresult engine_base::unbind(str_arg_t name) {
   dispatch_fn_t do_work = [this, name]() {
     log::trace::base.unbind.work(name);
     skip_queue = true;
-    eval(frontend.js.onunbind(name));
+    eval(front_end.js.onunbind(name));
     skip_queue = false;
     list.bindings.erase(name);
     replace_bind_script();
@@ -93,7 +93,7 @@ noresult engine_base::unbind(str_arg_t name) {
 
 noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
   auto escaped_result = result.empty() ? "undefined" : json_escape(result);
-  auto promised_js = frontend.js.onreply(id, status, escaped_result);
+  auto promised_js = front_end.js.onreply(id, status, escaped_result);
 
   return dispatch([this, promised_js, id] {
     skip_queue = true;
@@ -143,7 +143,7 @@ noresult engine_base::init(str_arg_t js) {
 noresult engine_base::eval(str_arg_t js) {
   log::trace::base.eval.start(js, skip_queue);
   dispatch_fn_t do_work = [&] {
-    auto wrapped_js = frontend.js.eval_wrapper(js);
+    auto wrapped_js = front_end.js.eval_wrapper(js);
     log::trace::base.eval.work(wrapped_js);
     eval_impl(wrapped_js);
   };
@@ -167,7 +167,7 @@ void engine_base::replace_bind_script() {
 }
 
 void engine_base::add_init_script(str_arg_t post_fn) {
-  auto init_js = frontend.js.init(post_fn);
+  auto init_js = front_end.js.init(post_fn);
   list.m_user_scripts.add(init_js, this);
   m_is_init_script_sent = true;
 }
@@ -175,7 +175,7 @@ void engine_base::add_init_script(str_arg_t post_fn) {
 std::string engine_base::create_bind_script() {
   std::vector<std::string> bound_names;
   list.bindings.get_names(bound_names);
-  return frontend.js.bind(bound_names);
+  return front_end.js.bind(bound_names);
 }
 
 void engine_base::on_message(str_arg_t msg) {
@@ -190,7 +190,7 @@ void engine_base::on_message(str_arg_t msg) {
     return;
   }
   if (!list.bindings.has_name(name)) {
-    auto message = frontend.err_message.reject_unbound(id, name);
+    auto message = front_end.err_message.reject_unbound(id, name);
     reject(id, message);
     return;
   }
@@ -246,7 +246,5 @@ unsigned int engine_base::dec_window_count() {
   return 0;
 }
 
-} // namespace detail
-} // namespace webview
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_DETAIL_ENGINE_BASE_CC

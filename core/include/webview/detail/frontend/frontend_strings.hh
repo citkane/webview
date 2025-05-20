@@ -47,9 +47,9 @@
 
 using namespace webview::types;
 namespace webview {
-namespace detail {
-
+namespace strings {
 namespace _structs {
+
 struct sys_flags_t {
   sys_flags_t() noexcept = default;
   std::string sysop = SYSTEM_NOTIFICATION_FLAG;
@@ -73,9 +73,8 @@ struct tokenise_data_t {
   std::string token;
   std::string tkn_replcmnt;
 };
-} // namespace _structs
 
-namespace str {
+} // namespace _structs
 
 _structs::sys_flags_t const sys_flag{};
 _structs::tokens_t const token{};
@@ -117,15 +116,14 @@ std::string json_list(std::vector<std::string> &binding_names) {
     } else {
       json += ",";
     }
-    json += webview::detail::json_escape(name);
+    json += json_escape(name);
   }
   json += "]";
 
   return json;
 }
 
-} // namespace str
-} // namespace detail
+} // namespace strings
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

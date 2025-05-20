@@ -33,6 +33,7 @@ using namespace webview::detail;
 using namespace webview::test;
 using namespace webview::types;
 using namespace webview::log;
+using namespace webview::strings;
 
 TEST_CASE("Start app loop and terminate it") {
   webview::webview w(false, nullptr);
@@ -88,9 +89,8 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[0]") {
       REQUIRE(context->number == 0);
       webview_bind(context->w, "increment", increment, context);
-      webview_eval(
-          context->w,
-          str::tokenise(TEST_B_UB_CALL, str::token.value, "1").c_str());
+      webview_eval(context->w,
+                   tokenise(TEST_B_UB_CALL, token.value, "1").c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -98,9 +98,8 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[1]") {
       REQUIRE(context->number == 1);
       webview_unbind(context->w, "increment");
-      webview_eval(
-          context->w,
-          str::tokenise(TEST_B_UB_CALL, str::token.value, "2").c_str());
+      webview_eval(context->w,
+                   tokenise(TEST_B_UB_CALL, token.value, "2").c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -108,9 +107,8 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[2,1]") {
       REQUIRE(context->number == 1);
       webview_bind(context->w, "increment", increment, context);
-      webview_eval(
-          context->w,
-          str::tokenise(TEST_B_UB_CALL, str::token.value, "3").c_str());
+      webview_eval(context->w,
+                   tokenise(TEST_B_UB_CALL, token.value, "3").c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -150,7 +148,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[0]") {
       REQUIRE(number == 0);
       w.bind("increment", increment);
-      auto js = str::tokenise(tmplate, str::token.value, "1");
+      auto js = tokenise(tmplate, token.value, "1");
       trace::base.print_here(tmplate);
       trace::base.print_here(js);
       w.eval(js);
@@ -160,7 +158,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[1]") {
       REQUIRE(number == 1);
       w.unbind("increment");
-      auto js = str::tokenise(tmplate, str::token.value, "2");
+      auto js = tokenise(tmplate, token.value, "2");
       trace::base.print_here(js);
       w.eval(js);
       return "";
@@ -170,7 +168,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[2,1]") {
       REQUIRE(number == 1);
       w.bind("increment", increment);
-      auto js = str::tokenise(tmplate, str::token.value, "3");
+      auto js = tokenise(tmplate, token.value, "3");
       trace::base.print_here(js);
       w.eval(js);
       return "";
@@ -289,8 +287,7 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
       &wv);
 
   auto on_load_val = tester::get_value_js("\"loaded\"");
-  auto init_js =
-      str::tokenise(TEST_CASE_INIT_JS, str::token.post_fn, on_load_val);
+  auto init_js = tokenise(TEST_CASE_INIT_JS, token.post_fn, on_load_val);
 
   wv.init(init_js);
   //wv.set_html("Ensure that JS code can call native code and vice versa");

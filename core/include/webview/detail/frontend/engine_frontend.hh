@@ -28,21 +28,12 @@
 #define WEBVIEW_FRONTEND_ENGINE_FRONTEND_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "frontend_strings.hh"
-#include <string>
-#include <vector>
 
-namespace webview {
-namespace detail {
-
-namespace _strings_sysop {
 #define FRONTEND_DOM_READY "_dom_ready"
 #define FRONTEND_BIND_DONE "_bind_done"
 #define FRONTEND_UNBIND_DONE "_unbind_done"
 #define FRONTEND_EVAL_READY "_frontend_eval_ready"
-} // namespace _strings_sysop
 
-namespace _strings_init_js {
 #define WEVBIEW_INIT_JS                                                        \
   "(function() {\n"                                                            \
   "  'use strict';\n"                                                          \
@@ -125,9 +116,7 @@ namespace _strings_init_js {
   "    }\n"                                                                    \
   "  })\n"                                                                     \
   "})()"
-} // namespace _strings_init_js
 
-namespace _strings_js_functions {
 #define ON_BIND                                                                \
   "if (window.__webview__) {\n"                                                \
   "  try {\n"                                                                  \
@@ -174,9 +163,7 @@ namespace _strings_js_functions {
   "    window.__webview__.sysop(\"" FRONTEND_EVAL_READY "\");\n"               \
   "  });\n"                                                                    \
   "}"
-} // namespace _strings_js_functions
 
-namespace _strings_error_messages {
 #define REJECT_UNBOUND_M                                                       \
   "Promise id " TOKEN_ID " was rejected because function \"" TOKEN_NAME        \
   "\" was unbound."
@@ -188,9 +175,16 @@ namespace _strings_error_messages {
 #define WEBVIEW_TERMINATED_M                                                   \
   "\nNative user callback function \"" TOKEN_NAME                              \
   "\" failed because Webview terminated before it could complete.\n\n"
-} // namespace _strings_error_messages
 
+#include "frontend_strings.hh"
+#include <string>
+#include <vector>
+
+namespace webview {
+namespace detail {
+namespace frontend {
 namespace _structs {
+
 struct templates_t {
   templates_t() noexcept = default;
   std::string init = WEVBIEW_INIT_JS;
@@ -215,83 +209,80 @@ struct sysops_t {
   std::string unbind_done = FRONTEND_UNBIND_DONE;
   std::string js_eval_start = FRONTEND_EVAL_READY;
 };
-} // namespace _structs
 
-namespace str {
-_structs::templates_t const js{};
-_structs::error_messages_t const error{};
-} // namespace str
+struct js_string_t {
+  js_string_t(_structs::templates_t const js) : js(js){};
 
-namespace _structs {
-struct front_end_t {
+  /// Returns a tokenised JS function string for `unbind` which notifies that
+  /// a binding was destroyed after the init script has already set things up.
+  std::string onunbind(str_arg_t name) const;
 
-  struct js_string_t {
-    /// Returns a tokenised JS function string for `unbind` which notifies that
-    /// a binding was destroyed after the init script has already set things up.
-    std::string onunbind(str_arg_t name) const {
-      return str::tokenise(str::js.onunbind, str::token.name,
-                           json_escape(name));
-    }
+  /// Returns a tokenised JS function string for `bind` which notifies that
+  /// a binding was created after the init script has already set things up.
+  std::string onbind(str_arg_t name) const;
 
-    /// Returns a tokenised JS function string for `bind` which notifies that
-    /// a binding was created after the init script has already set things up.
-    std::string onbind(str_arg_t name) const {
-      return str::tokenise(str::js.onbind, str::token.name, json_escape(name));
-    }
+  /// Returns a tokenised JS function string for a promise resolve/reject.
+  std::string onreply(std::string id, int status,
+                      std::string escaped_result) const;
 
-    /// Returns a tokenised JS function string for a promise resolve/reject.
-    std::string onreply(std::string id, int status,
-                        std::string escaped_result) const {
-      return str::tokenise(str::js.onreply,
-                           {{str::token.id, json_escape(id)},
-                            {str::token.status, std::to_string(status)},
-                            {str::token.result, escaped_result}});
-    }
+  /// Returns a tokenised JS string for the Webview frontend init function.
+  std::string init(str_arg_t post_fn) const;
 
-    /// Returns a tokenised JS string for the Webview frontend init function.
-    std::string init(str_arg_t post_fn) const {
-      return str::tokenise(str::js.init, str::token.post_fn, post_fn);
-    }
+  /// Returns a tokenised JS string for the Webview frontend `bind` functions.
+  std::string bind(std::vector<std::string> &bound_names) const;
 
-    /// Returns a tokenised JS string for the Webview frontend `bind` functions.
-    std::string bind(std::vector<std::string> &bound_names) const {
-      auto js_names = str::json_list(bound_names);
-      return str::tokenise(str::js.bind, str::token.js_names, js_names);
-    }
+  /// Wraps user JS to notify the native code when eval is ready.
+  std::string eval_wrapper(std::string user_js) const;
 
-    /// Wraps user JS to notify the native code when eval is ready.
-    std::string eval_wrapper(std::string user_js) const {
-      return str::tokenise(str::js.eval_wrapper, str::token.user_js, user_js);
-    }
-  } js{};
-
-  struct error_message_t {
-    /// Returns a tokenised error string for rejecting a promise if a callback binding was unbound.
-    std::string reject_unbound(std::string id, std::string name) const {
-      return str::tokenise(str::error.reject_unbound,
-                           {{str::token.id, id}, {str::token.name, name}});
-    }
-
-    /// Returns a tokenised error string for rejecting a promise if a native callback has an uncaught exception.
-    std::string uncaught_exception(std::string name, std::string what) const {
-      return str::tokenise(str::error.uncaught_exp,
-                           {{str::token.name, name}, {str::token.what, what}});
-    }
-
-    /// Returns a tokenised error string for native callbacks in detached threads after webview terminates.
-    std::string webview_terminated(std::string name) const {
-      return str::tokenise(str::error.terminated, str::token.name, name);
-    }
-
-  } err_message{};
-  /// Frontend to backend system operation signals.
-  _structs::sysops_t sysops;
+private:
+  _structs::templates_t const js;
 };
+
+struct error_message_t {
+  error_message_t(_structs::error_messages_t const error) : error(error){};
+
+  /// Returns a tokenised error string for rejecting a promise if a callback binding was unbound.
+  std::string reject_unbound(std::string id, std::string name) const;
+
+  /// Returns a tokenised error string for rejecting a promise if a native callback has an uncaught exception.
+  std::string uncaught_exception(std::string name, std::string what) const;
+
+  /// Returns a tokenised error string for native callbacks in detached threads after webview terminates.
+  std::string webview_terminated(std::string name) const;
+
+private:
+  _structs::error_messages_t const error;
+};
+
 } // namespace _structs
+
+namespace _classes {
+
+// NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
+class front_end_t {
+  _structs::templates_t const js_templates{};
+  _structs::error_messages_t const error_messages{};
+
+public:
+  front_end_t() noexcept = default;
+
+  /// Javascript string factory
+  _structs::js_string_t js{js_templates};
+
+  /// Error message string factory
+  _structs::error_message_t err_message{error_messages};
+
+  /// Frontend to backend system operation signals.
+  _structs::sysops_t sysops{};
+};
+
+// NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
+} // namespace _classes
 
 /// API for HTML and JS related strings.
-static const _structs::front_end_t frontend{};
+static const _classes::front_end_t front_end{};
 
+} // namespace frontend
 } // namespace detail
 } // namespace webview
 

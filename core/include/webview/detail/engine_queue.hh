@@ -36,9 +36,9 @@
 #include <atomic>
 #include <thread>
 
-using namespace webview::types;
 namespace webview {
 namespace detail {
+namespace backend {
 
 class engine_queue : protected engine_lists_t {
 public:
@@ -117,10 +117,9 @@ public:
   // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
 private:
-  friend struct _struct::atomic_dom_ready_t;
-  //friend struct _struct::atomic_queue_t;
-  friend struct _struct::atomic_done_t;
-  friend struct _struct::atomic_api_t;
+  friend struct _structs::atomic_dom_ready_t;
+  friend struct _structs::atomic_done_t;
+  friend struct _structs::atomic_api_t;
 
   /// Container for user work operation tags, ie. `bind`, `unbind`, `eval`
   action_ctx_t const ctx{};
@@ -151,7 +150,7 @@ private:
   void resolve_work(engine_base *wv, str_arg_t msg, str_arg_t id);
 
   /// API to query and set various flags atomically
-  _struct::atomic_api_t atomic;
+  _structs::atomic_api_t atomic;
 
   std::atomic_bool is_dom_ready{};
   std::atomic_bool queue_empty{};
@@ -166,6 +165,7 @@ private:
   std::thread queue_thread;
 };
 
+} // namespace backend
 } // namespace detail
 } // namespace webview
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

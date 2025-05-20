@@ -37,6 +37,7 @@
 using namespace webview::types;
 namespace webview {
 namespace detail {
+namespace backend {
 
 /// Internally used callback function type for messaging in the promise resolution
 /// native / JS round trip
@@ -177,6 +178,7 @@ private:
   bool skip_queue{};
 };
 
+} // namespace backend
 } // namespace detail
 } // namespace webview
 

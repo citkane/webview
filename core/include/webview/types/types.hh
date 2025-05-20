@@ -49,8 +49,6 @@ template <typename T> struct nested_api_t {
   nested_api_t(T *self) : self(self) {}
 };
 
-using str_arg_t = const std::string &;
-
 using dispatch_fn_t = std::function<void()>;
 
 template <typename T> using result = basic_result<T, error_info, exception>;

@@ -33,9 +33,8 @@
 #include <chrono>
 #include <condition_variable>
 
+using namespace webview::detail::backend;
 namespace webview {
-using namespace webview::detail;
-
 namespace test {
 namespace _templates {
 
@@ -76,7 +75,7 @@ public:
 
   /// Wraps a string value in evaluable JS
   static std::string get_value_js(str_arg_t value) {
-    return str::tokenise(TEST_VALUE_WRAPPER, str::token.value, value);
+    return strings::tokenise(TEST_VALUE_WRAPPER, strings::token.value, value);
   }
 
   /*

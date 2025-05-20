@@ -2,7 +2,7 @@
 #include "webview/webview.h"
 
 TEST_CASE("Ensure that JSON parsing works") {
-  auto J = webview::detail::json_parse;
+  auto J = webview::strings::json_parse;
   // Valid input with expected output
   REQUIRE(J(R"({"foo":"bar"})", "foo", -1) == "bar");
   REQUIRE(J(R"({"foo":""})", "foo", -1).empty());
@@ -37,7 +37,7 @@ TEST_CASE("Ensure that JSON parsing works") {
 }
 
 TEST_CASE("Ensure that JSON escaping works") {
-  using webview::detail::json_escape;
+  using webview::strings::json_escape;
 
   // Simple case without need for escaping. Quotes added by default.
   REQUIRE(json_escape("hello") == "\"hello\"");

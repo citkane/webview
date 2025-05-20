@@ -31,8 +31,8 @@
 #include "webview/detail/frontend/engine_frontend.hh"
 #include <mutex>
 
-namespace webview {
-namespace detail {
+using namespace webview::detail::backend;
+using namespace webview::detail::frontend;
 
 void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
   std::mutex queue_thread_mtx;
@@ -80,7 +80,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
       log::trace::queue.unbind.start(name);
       auto promises = list.unresolved_promises.get_copy(name);
       for (auto &id : promises) {
-        auto err = frontend.err_message.reject_unbound(id, name);
+        auto err = front_end.err_message.reject_unbound(id, name);
         wv_instance->reject(id, err);
       }
 
@@ -108,9 +108,6 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
     list.queue.pop_front();
   }
 }
-
-} // namespace detail
-} // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_ENGINE_THREAD_QUEUE_CC

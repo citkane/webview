@@ -40,6 +40,7 @@
 using namespace webview::types;
 namespace webview {
 namespace detail {
+namespace backend {
 
 class engine_base;
 
@@ -169,6 +170,7 @@ protected:
   list_t list{};
 };
 
+} // namespace backend
 } // namespace detail
 } // namespace webview
 

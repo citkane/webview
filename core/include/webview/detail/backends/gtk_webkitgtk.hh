@@ -96,6 +96,8 @@ private:
   WebKitUserScript *m_script{};
 };
 
+namespace backend {
+
 class gtk_webkit_engine : public engine_base {
 public:
   gtk_webkit_engine(bool debug, void *window) : engine_base{!window} {
@@ -345,10 +347,9 @@ private:
   bool m_is_window_shown{};
 };
 
+} // namespace backend
 } // namespace detail
-
-using browser_engine = detail::gtk_webkit_engine;
-
+using browser_engine = detail::backend::gtk_webkit_engine;
 } // namespace webview
 
 #endif // defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)

@@ -29,9 +29,7 @@
 #include "webview/detail/threading/atomic_api.hh"
 #include "webview/detail/engine_queue.hh"
 
-namespace webview {
-namespace detail {
-namespace _struct {
+using namespace webview::detail::backend::_structs;
 
 bool atomic_done_t::bind() const { return self->bind_done.load(); }
 void atomic_done_t::bind(bool val) {
@@ -69,10 +67,6 @@ bool atomic_api_t::AND(std::initializer_list<bool> flags) const {
   return res;
 };
 bool atomic_api_t::terminating() const { return self->is_terminating.load(); };
-
-} // namespace _struct
-} // namespace detail
-} // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_DETAIL_ATOMIC_API_CC

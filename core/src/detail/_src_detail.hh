@@ -5,6 +5,7 @@
 
 #include "engine_base.cc"
 #include "engine_queue.cc"
+#include "frontend/_src_frontend.hh"
 #include "threading/_src_threading.hh"
 
 #endif

@@ -33,7 +33,7 @@
 #include <string>
 
 namespace webview {
-namespace detail {
+namespace strings {
 
 inline int json_parse_c(const char *s, size_t sz, const char *key, size_t keysz,
                         const char **value, size_t *valuesz) {
@@ -327,7 +327,7 @@ inline std::string json_parse(const std::string &s, const std::string &key,
   return "";
 }
 
-} // namespace detail
+} // namespace strings
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

@@ -31,9 +31,9 @@
 #include <algorithm>
 #include <iterator>
 
-namespace webview {
-namespace detail {
-namespace _structs {
+using namespace webview::types;
+using namespace webview::detail;
+using namespace webview::detail::backend::_structs;
 
 size_t bindings_t::size() const {
   std::lock_guard<std::mutex> lock(mtx);
@@ -220,10 +220,6 @@ void cv_api_t::notify_all() {
     this_cv->notify_all();
   }
 }
-
-} // namespace _structs
-} // namespace detail
-} // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_DETAIL_THREADSAFE_LISTS_CC

@@ -30,8 +30,8 @@
 #include "webview/detail/engine_queue.hh"
 #include "webview/detail/frontend/engine_frontend.hh"
 
-namespace webview {
-namespace detail {
+using namespace webview::detail::backend;
+using namespace webview::detail::frontend;
 
 void engine_queue::resolve_thread_constructor(str_arg_t name, str_arg_t id,
                                               str_arg_t args, engine_base *wv) {
@@ -41,14 +41,12 @@ void engine_queue::resolve_thread_constructor(str_arg_t name, str_arg_t id,
   try {
     list.bindings.at(name).call(id, args);
   } catch (const std::exception &err_) {
-    auto err = frontend.err_message.uncaught_exception(name, err_.what());
+    auto err = front_end.err_message.uncaught_exception(name, err_.what());
     wv->reject(id, err);
   } catch (...) {
-    perror(frontend.err_message.webview_terminated(name).c_str());
+    perror(front_end.err_message.webview_terminated(name).c_str());
   };
 }
 
-} // namespace detail
-} // namespace webview
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_ENGINE_THREAD_RESOLVE_CC
