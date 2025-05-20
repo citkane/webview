@@ -32,8 +32,6 @@ namespace webview {
 namespace log {
 namespace _structs {
 
-std::mutex trace_tools_t::trace_mtx;
-
 time_point_t trace_tools_t::get_now() const {
   return std::chrono::steady_clock::now();
 }
@@ -67,7 +65,8 @@ std::string trace_tools_t::dim(string_t this_col, string_t text) const {
   return ansi.dim + text + ansi.default_c + this_col;
 }
 void trace_tools_t::print_ansi(string_t this_col, string_t message) const {
-  std::lock_guard<std::mutex> lock(trace_mtx);
+  static std::mutex mtx;
+  std::lock_guard<std::mutex> lock(mtx);
   printf("%s%s%s\n", this_col.c_str(), message.c_str(), ansi.default_c.c_str());
 };
 

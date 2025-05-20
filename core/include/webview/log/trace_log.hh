@@ -54,8 +54,6 @@ using string_t = const std::string &;
 
 struct trace_tools_t : _classes::ansi_t {
 protected:
-  static std::mutex trace_mtx;
-
   time_point_t get_now() const;
   std::string get_ctx(char scp) const;
   long elapsed_ms(time_point_t start, time_point_t end) const;
