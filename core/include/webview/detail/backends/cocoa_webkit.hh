@@ -81,7 +81,7 @@ private:
 // namespace when pulling in commonly-used symbols from other namespaces.
 // Since those commmon symbols are used a lot, this reduces the overall
 // noise in the code.
-namespace cocoa_webkit {
+namespace backend {
 
 using namespace cocoa;
 using namespace webkit;
@@ -616,10 +616,10 @@ private:
   bool m_is_window_shown{};
 };
 
-} // namespace cocoa_webkit
+} // namespace backend
 } // namespace detail
 
-using browser_engine = detail::cocoa_webkit::cocoa_wkwebview_engine;
+using browser_engine = detail::backend::cocoa_wkwebview_engine;
 
 } // namespace webview
 

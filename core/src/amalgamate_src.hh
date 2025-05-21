@@ -3,7 +3,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "../tests/include/test_helper.hh"
+#include "../tests/src/test_helper.cc"
 #include "detail/_src_detail.hh"
 #include "log/_src_log.hh"
 

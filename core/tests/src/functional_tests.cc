@@ -1,6 +1,4 @@
-#include "webview/api/api.h"
 #include "webview/test_driver.hh"
-#include "webview/types/types.hh"
 
 #define WEBVIEW_VERSION_MAJOR 1
 #define WEBVIEW_VERSION_MINOR 2
@@ -8,7 +6,7 @@
 #define WEBVIEW_VERSION_PRE_RELEASE "-test"
 #define WEBVIEW_VERSION_BUILD_METADATA "+gaabbccd"
 
-#include "webview/detail/frontend/frontend_strings.hh"
+#include "../include/test_helper.hh"
 #include "webview/webview.h"
 
 #include <cassert>
@@ -64,33 +62,29 @@ TEST_CASE("Use C API to create a window, run app and terminate it") {
   webview_destroy(w);
 }
 
-#define TEST_B_UB_CALL                                                         \
-  "try {\n"                                                                    \
-  "  window.increment()\n"                                                     \
-  "  .then(r => window.test(" TOKEN_VALUE "))\n"                               \
-  "  .catch(() => window.test(" TOKEN_VALUE ",1))\n"                           \
-  "} catch {\n"                                                                \
-  "  window.test(" TOKEN_VALUE ",1);\n"                                        \
-  "}"
 TEST_CASE("Use C API to test binding and unbinding") {
+
   struct context_t {
     webview_t w;
     unsigned int number;
   } context{};
-  auto test = +[](const char *seq, const char *req, void *arg) {
+
+  auto tests = +[](const char *seq, const char *req, void *arg) {
+    auto context = static_cast<context_t *>(arg);
+    auto js = tester_t::js;
+
     auto increment = +[](const char *seq, const char * /*req*/, void *arg) {
       auto *context = static_cast<context_t *>(arg);
       ++context->number;
       webview_return(context->w, seq, 0, "");
     };
-    auto context = static_cast<context_t *>(arg);
+
     std::string req_(req);
     // Bind and increment number.
     if (req_ == "[0]") {
       REQUIRE(context->number == 0);
       webview_bind(context->w, "increment", increment, context);
-      webview_eval(context->w,
-                   tokenise(TEST_B_UB_CALL, token.value, "1").c_str());
+      webview_eval(context->w, js.make_call_js(1).c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -98,8 +92,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[1]") {
       REQUIRE(context->number == 1);
       webview_unbind(context->w, "increment");
-      webview_eval(context->w,
-                   tokenise(TEST_B_UB_CALL, token.value, "2").c_str());
+      webview_eval(context->w, js.make_call_js(2).c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -107,8 +100,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[2,1]") {
       REQUIRE(context->number == 1);
       webview_bind(context->w, "increment", increment, context);
-      webview_eval(context->w,
-                   tokenise(TEST_B_UB_CALL, token.value, "3").c_str());
+      webview_eval(context->w, js.make_call_js(3).c_str());
       webview_return(context->w, seq, 0, "");
       return;
     }
@@ -120,36 +112,37 @@ TEST_CASE("Use C API to test binding and unbinding") {
     }
     REQUIRE(!"Should not reach here");
   };
+
   auto w = webview_create(1, nullptr);
   context.w = w;
   webview_set_html(w, "Use C API to test binding and unbinding");
   // Attempting to remove non-existing binding is OK
   webview_unbind(w, "test");
-  webview_bind(w, "test", test, &context);
+  webview_bind(w, "test", tests, &context);
   // Attempting to bind multiple times only binds once
-  webview_bind(w, "test", test, &context);
+  webview_bind(w, "test", tests, &context);
   webview_eval(w, "window.test(0);");
   webview_run(w);
   webview_destroy(w);
 }
 
 TEST_CASE("Test synchronous binding and unbinding") {
-
-  unsigned int number = 0;
-  std::string tmplate = TEST_B_UB_CALL;
   webview::webview w(true, nullptr);
+
+  auto js = tester_t::js;
+  auto html = tester_t::html;
+  unsigned int number = 0;
 
   auto increment = [&](str_arg_t /*req*/) -> std::string {
     ++number;
     return "";
   };
-  auto test = [&](str_arg_t req) -> std::string {
+  auto tests = [&](str_arg_t req) -> std::string {
     // Bind and increment number.
     if (req == "[0]") {
       REQUIRE(number == 0);
       w.bind("increment", increment);
-      auto js = tokenise(tmplate, token.value, "1");
-      w.eval(js, true);
+      w.eval(js.make_call_js(1), true);
       return "";
     }
 
@@ -157,8 +150,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[1]") {
       REQUIRE(number == 1);
       w.unbind("increment", true);
-      auto js = tokenise(tmplate, token.value, "2");
-      w.eval(js, true);
+      w.eval(js.make_call_js(2), true);
       return "";
     }
     // We should have gotten an error on the JS side.
@@ -166,8 +158,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[2,1]") {
       REQUIRE(number == 1);
       w.bind("increment", increment);
-      auto js = tokenise(tmplate, token.value, "3");
-      w.eval(js, true);
+      w.eval(js.make_call_js(3), true);
       return "";
     }
     // Finish test.
@@ -180,29 +171,20 @@ TEST_CASE("Test synchronous binding and unbinding") {
 
     return "";
   };
-  w.set_html("Test synchronous binding and unbinding");
+
   // Attempting to remove non-existing binding is OK
   w.unbind("test", true);
-  w.bind("test", test);
+  w.bind("test", tests);
   // Attempting to bind multiple times only binds once
-  w.bind("test", test);
-  w.eval("window.test(0);");
+  w.bind("test", tests);
+  w.set_html(html.bind_unbind);
   w.run();
 }
 
-#define JS_STRING_RETURNS                                                      \
-  "try {\n"                                                                    \
-  "  window.loadData()\n"                                                      \
-  "  .then(() => window.endTest(0))\n"                                         \
-  "  .catch(() => window.endTest(1));\n"                                       \
-  "} catch {\n"                                                                \
-  "  window.endTest(2);\n"                                                     \
-  "}"
 TEST_CASE("The string returned from a binding call must be JSON") {
   webview::webview w(true, nullptr);
-  std::string js = JS_STRING_RETURNS;
+  auto html = tester_t::html;
 
-  w.set_html("The string returned from a binding call must be JSON");
   w.bind("loadData",
          [](str_arg_t /*req*/) -> std::string { return "\"hello\""; });
   w.bind("endTest", [&](str_arg_t req) -> std::string {
@@ -212,15 +194,15 @@ TEST_CASE("The string returned from a binding call must be JSON") {
     w.terminate();
     return "";
   });
-  w.eval(js);
+  w.set_html(html.string_returns(
+      "The string returned from a binding call must be JSON"));
   w.run();
 }
 
 TEST_CASE("The string returned of a binding call must not be JS") {
   webview::webview w(true, nullptr);
-  std::string js = JS_STRING_RETURNS;
+  auto html = tester_t::html;
 
-  w.set_html("The string returned of a binding call must not be JS");
   w.bind("loadData", [](str_arg_t /*req*/) -> std::string {
     // Try to load malicious JS code
     return "(()=>{document.body.innerHTML='gotcha';return 'hello';})()";
@@ -232,7 +214,8 @@ TEST_CASE("The string returned of a binding call must not be JS") {
     w.terminate();
     return "";
   });
-  w.eval(js);
+  w.set_html(html.string_returns(
+      "The string returned of a binding call must not be JS"));
   w.run();
 }
 
@@ -250,46 +233,34 @@ TEST_CASE("webview_version()") {
 }
 
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
-#define TEST_CASE_INIT_JS                                                      \
-  "window.x = 42;\n"                                                           \
-  "window.onload = () => {\n"                                                  \
-  " " TOKEN_POST_FN "\n"                                                       \
-  "};"
-
   webview::webview wv{true, nullptr};
+  tester_t test{&wv};
+  auto tester = test.tester;
+  auto js = tester_t::js;
+  auto html = tester_t::html;
 
-  auto async_tests = std::thread(
-      [](webview::webview *wv) {
-        std::mutex worker_mtx;
-        std::unique_lock<std::mutex> lock(worker_mtx);
+  auto async_tests = std::thread([&]() {
+    std::mutex worker_mtx;
+    std::unique_lock<std::mutex> lock(worker_mtx);
 
-        tester::expect_value("loaded");
-        tester::cv().wait_for(lock, tester::seconds(2),
-                              []() { return tester::values_match(); });
+    tester.expect_value("loaded");
+    tester_t::cv().wait_for(lock, tester.seconds(2),
+                            [&tester] { return tester.values_match(); });
 
-        REQUIRE(tester::values_match());
+    REQUIRE(tester.get_value() == "loaded");
 
-        tester::expect_value("exiting 42");
-        str_arg_t js = tester::get_value_js("\"exiting \" + window.x");
-        wv->dispatch([=, &js] { wv->eval(js); });
-        //tester::post_value("\"exiting \" + window.x", wv);
+    tester.expect_value("exiting 42");
+    tester.ping_value(R"("exiting " + window.x)");
+    tester_t::cv().wait_for(lock, tester.seconds(2),
+                            [&tester] { return tester.values_match(); });
 
-        tester::cv().wait_for(lock, tester::seconds(2),
-                              [] { return tester::values_match(); });
+    REQUIRE(tester.get_value() == "exiting 42");
 
-        REQUIRE(tester::values_match());
+    tester.terminate();
+  });
 
-        tester::terminate(wv);
-      },
-      &wv);
-
-  auto on_load_val = tester::get_value_js("\"loaded\"");
-  auto init_js = tokenise(TEST_CASE_INIT_JS, token.post_fn, on_load_val);
-
-  wv.init(init_js);
-  //wv.set_html("Ensure that JS code can call native code and vice versa");
-  wv.navigate("data:text/html,%3Chtml%3Ehello%3C%2Fhtml%3E");
-
+  wv.init(js.init(R"("loaded")"));
+  wv.navigate(html.navigate_encoded());
   wv.run();
   async_tests.join();
 }

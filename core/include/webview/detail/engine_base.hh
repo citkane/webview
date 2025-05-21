@@ -27,6 +27,7 @@
 #define WEBVIEW_DETAIL_ENGINE_BASE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/engine_queue.hh"
 #include "webview/detail/frontend/user_script.hh"
 #include "webview/types/types.h"
@@ -35,6 +36,7 @@
 #include <list>
 
 using namespace webview::types;
+using namespace webview::test;
 namespace webview {
 namespace detail {
 namespace backend {
@@ -47,7 +49,7 @@ using sync_binding_t = std::function<std::string(std::string)>;
 /// - cocoa_webkit
 /// - gtk_webkitgtk
 /// - win32_edge
-class engine_base : public engine_queue {
+class engine_base : public engine_queue, private tester_t {
 
 public:
   virtual ~engine_base() = default;

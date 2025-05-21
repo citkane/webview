@@ -47,7 +47,6 @@
 
 namespace webview {
 namespace types {
-using str_arg_t = str_arg_t;
 using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
 } // namespace types
 namespace log {

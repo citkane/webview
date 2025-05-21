@@ -50,10 +50,10 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
     }
     trace::queue.loop.start(list.queue.size());
     auto action = list.queue.front();
-    context_t work_ctx = action.ctx;
-    std::string name = action.name_or_js;
-    std::string js = action.name_or_js;
-    auto work_fn = action.work_fn;
+    context_t &work_ctx = action.ctx;
+    str_arg_t name = action.name_or_js;
+    str_arg_t js = action.name_or_js;
+    auto &work_fn = action.work_fn;
 
     // `bind` user work unit
     if (work_ctx == ctx.bind) {

@@ -26,9 +26,9 @@
 #ifndef WEBVIEW_DETAIL_ENGINE_BASE_CC
 #define WEBVIEW_DETAIL_ENGINE_BASE_CC
 
+#include "webview/detail/frontend/frontend_strings.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
-#include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/frontend/engine_frontend.hh"
 #include "webview/lib/json.hh"
 #include "webview/log/trace_log.hh"
@@ -38,7 +38,8 @@ using namespace webview::strings;
 using namespace webview::log;
 using namespace webview::detail::frontend;
 
-engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {}
+engine_base::engine_base(bool owns_window)
+    : tester_t{this}, m_owns_window{owns_window} {}
 
 noresult engine_base::navigate(str_arg_t url) {
   if (url.empty()) {
@@ -58,7 +59,7 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
 noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg,
                            bool skip_queue) {
   trace::base.bind.start(name);
-  dispatch_fn_t do_work = [this, name, fn, arg] {
+  dispatch_fn_t do_work = [=] {
     trace::base.bind.work(name);
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
@@ -76,7 +77,7 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg,
 
 noresult engine_base::unbind(str_arg_t name, bool skip_queue) {
 
-  dispatch_fn_t do_work = [this, name]() {
+  dispatch_fn_t do_work = [=]() {
     trace::base.unbind.work(name);
     eval(front_end.js.onunbind(name), true);
     list.bindings.erase(name);
@@ -154,7 +155,7 @@ noresult engine_base::init(str_arg_t js) {
 noresult engine_base::eval(str_arg_t js, bool skip_queue) {
   trace::base.eval.start(js, skip_queue);
   if (!skip_queue) {
-    dispatch_fn_t do_work = [&] {
+    dispatch_fn_t do_work = [=] {
       auto wrapped_js = front_end.js.eval_wrapper(js);
       trace::base.eval.work(wrapped_js);
       eval_impl(wrapped_js);
@@ -190,9 +191,9 @@ std::string engine_base::create_bind_script() {
 
 void engine_base::on_message(str_arg_t msg) {
   auto id = json_parse(msg, "id", 0);
-  if (id == TEST_NOTIFICATION_FLAG) {
+  if (id == sys_flag.testop) {
     auto test_value = json_parse(msg, "method", 0);
-    tester::set_value(test_value);
+    tester.set_value(test_value);
     return;
   }
   auto name = json_parse(msg, "method", 0);

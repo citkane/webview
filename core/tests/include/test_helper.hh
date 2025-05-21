@@ -25,20 +25,9 @@
 #ifndef WEBVIEW_TEST_HELPER_HH
 #define WEBVIEW_TEST_HELPER_HH
 
-#include "webview/types/types.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/engine_base.hh"
-#include "webview/detail/frontend/frontend_strings.hh"
-#include <atomic>
-#include <chrono>
-#include <condition_variable>
 
-using namespace webview::detail::backend;
-namespace webview {
-namespace test {
-namespace _templates {
-
-#define TEST_VALUE_WRAPPER                                                     \
+#define TEST_VALUE_WRAPPER_JS                                                  \
   "window.__webview__.post(\n"                                                 \
   "  JSON.stringify({\n"                                                       \
   "    id: \"" TEST_NOTIFICATION_FLAG "\",\n"                                  \
@@ -46,74 +35,154 @@ namespace _templates {
   "  })\n"                                                                     \
   ");"
 
-} // namespace _templates
+#define TEST_MAKE_CALL_JS                                                      \
+  "try {\n"                                                                    \
+  "  window.increment()\n"                                                     \
+  "  .then(r => window.test(" TOKEN_VALUE "))\n"                               \
+  "  .catch(() => window.test(" TOKEN_VALUE ",1))\n"                           \
+  "} catch {\n"                                                                \
+  "  window.test(" TOKEN_VALUE ",1);\n"                                        \
+  "}"
 
-/// Static test utilities class
-class tester {
+#define TEST_INIT_JS                                                           \
+  "window.x = 42;\n"                                                           \
+  "window.onload = () => {\n"                                                  \
+  " " TOKEN_POST_FN "\n"                                                       \
+  "};"
+
+#define TEST_BIND_UNBIND_HTML                                                  \
+  "<html><body>\n"                                                             \
+  "  <div>Test synchronous binding and unbinding</div>\n"                      \
+  "  <script>\n"                                                               \
+  "    window.test(0);\n"                                                      \
+  "  </script>\n"                                                              \
+  "</body></html>"
+
+#define TEST_STRING_RETURNS_HTML                                               \
+  "<html><body>\n"                                                             \
+  "  <div>" TOKEN_VALUE "</div>\n"                                             \
+  "  <script>\n"                                                               \
+  "    try {\n"                                                                \
+  "      window.loadData()\n"                                                  \
+  "        .then(() => window.endTest(0))\n"                                   \
+  "        .catch(() => window.endTest(1));\n"                                 \
+  "    } catch {\n"                                                            \
+  "      window.endTest(2);\n"                                                 \
+  "    }\n"                                                                    \
+  "  </script>\n"                                                              \
+  "</body></html>"
+
+#include "webview/detail/frontend/frontend_strings.hh"
+#include "webview/log/trace_log.hh"
+#include "webview/types/types.hh"
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <string>
+
+using namespace webview::strings;
+using namespace webview::log;
+namespace webview {
+namespace detail {
+namespace backend {
+class engine_base;
+}
+} // namespace detail
+namespace test {
+namespace _structs {
+
+struct js_t {
+  js_t() noexcept = default;
+
+  std::string init(str_arg_t init_value) const;
+
+  /// Wraps a string value in evaluable JS
+  std::string post_value(str_arg_t value) const;
+
+  std::string make_call_js(unsigned int result) const;
+};
+
+struct html_t {
+  html_t() noexcept = default;
+
+  std::string bind_unbind = TEST_BIND_UNBIND_HTML;
+  std::string string_returns(str_arg_t title) const;
+
+  std::string navigate_encoded() const;
+};
+
+} // namespace _structs
+using namespace webview::detail::backend;
+
+/// Test utilities class
+class tester_t {
+  engine_base *wv;
+
 public:
+  tester_t(engine_base *wv) : wv(wv){};
+
+  static const _structs::js_t js;
+  static const _structs::html_t html;
   static std::condition_variable &cv() {
     static std::condition_variable cv_;
     return cv_;
   }
 
-  /// Sets the returned test value.
-  static void set_value(str_arg_t val) {
-    string_value() = val;
-    compare_values();
-  };
+  // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 
-  /// Sets the expected returned test value.
-  static void expect_value(str_arg_t value) {
-    string_expected_value() = value;
-  };
+  struct public_api_t {
+    public_api_t(engine_base *wv) : wv(wv){};
 
-  /// Flag for evaluating if the returned value matches the expected value.
-  static bool values_match() {
-    compare_values();
-    return worker_proceed().load();
-  };
+    /// Sets the returned test value.
+    void set_value(str_arg_t val);
 
-  /// Wraps a string value in evaluable JS
-  static std::string get_value_js(str_arg_t value) {
-    return strings::tokenise(TEST_VALUE_WRAPPER, strings::token.value, value);
-  }
+    /// Sets the expected returned test value.
+    void expect_value(str_arg_t value);
 
-  /*
-  /// dispatch -> wv.eval of a tokenised `window.__webview__.post` string with a test value
-  static void post_value(str_arg_t value, engine_base *wv) {
-    auto js = get_value_js(value);
-    wv->dispatch([&] { wv->eval(js); });
-  }
-*/
-  /// Wraps wv.terminate in dispatch
-  static void terminate(engine_base *wv) {
-    wv->dispatch([=] { wv->terminate(); });
-  }
+    /// Gets the returned test value.
+    std::string get_value() const;
 
-  /// Returns the given timespan in std::chrono::seconds
-  static std::chrono::seconds seconds(int seconds = 1) {
-    return std::chrono::seconds(seconds);
-  };
+    /// Flag for evaluating if the returned value matches the expected value.
+    bool values_match() const;
+
+    /// dispatch -> wv->eval of a tokenised `window.__webview__.post` string with a test value
+    void ping_value(str_arg_t value);
+
+    /// Wraps wv->terminate in dispatch
+    void terminate();
+
+    /// Returns the given timespan in std::chrono::seconds
+    std::chrono::seconds seconds(int seconds) const;
+
+  private:
+    engine_base *wv;
+
+  } tester{wv};
+
+  // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
 private:
   static std::string &string_value() {
     static std::string val;
     return val;
-  };
+  }
   static std::string &string_expected_value() {
     static std::string val;
     return val;
-  };
+  }
   static std::atomic_bool &worker_proceed() {
     static std::atomic_bool val{};
     return val;
   }
-
   static void compare_values() {
     worker_proceed().store(string_expected_value() == string_value());
     cv().notify_one();
   }
 };
+
+const _structs::js_t tester_t::js{};
+const _structs::html_t tester_t::html{};
+
 } // namespace test
 } // namespace webview
 

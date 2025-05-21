@@ -308,6 +308,8 @@ private:
   std::wstring m_code;
 };
 
+namespace backend {
+
 class win32_edge_engine : public engine_base {
 public:
   win32_edge_engine(bool debug, void *window) : engine_base{!window} {
@@ -899,9 +901,10 @@ private:
   bool m_is_window_shown{};
 };
 
+} // namespace backend
 } // namespace detail
 
-using browser_engine = detail::win32_edge_engine;
+using browser_engine = detail::backend::win32_edge_engine;
 
 } // namespace webview
 
