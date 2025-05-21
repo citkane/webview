@@ -21,7 +21,7 @@
 TEST_CASE("# Warm-up") {
   // Signal to the test runner that this may be a slow test.
   std::cerr << "[[slow]]" << std::endl; // NOLINT(performance-avoid-endl)
-  webview w(false, nullptr);
+  webview::webview w(false, nullptr);
   w.dispatch([&]() { w.terminate(); });
   w.run();
 }
