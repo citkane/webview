@@ -75,7 +75,7 @@ int main() {
 
     w.set_html(html);
     w.run();
-  } catch (const webview::exception &e) {
+  } catch (const webview::errors::exception &e) {
     std::cerr << e.what() << '\n';
     return 1;
   }

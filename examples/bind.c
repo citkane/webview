@@ -13,6 +13,8 @@
 // Only used to suppress warnings caused by unused parameters.
 #define UNUSED(x) (void)x
 
+namespace example {
+
 typedef struct {
   void *arg;
   void (*next_fn)(void *);
@@ -163,6 +165,8 @@ void compute(const char *id, const char *req, void *arg) {
   }
 }
 
+} // namespace example
+
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine,
                    int nCmdShow) {
@@ -174,17 +178,17 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine,
 int main(void) {
 #endif
   webview_t w = webview_create(0, NULL);
-  context_t context = {.w = w, .count = 0};
+  example::context_t context = {.w = w, .count = 0};
   webview_set_title(w, "Bind Example");
   webview_set_size(w, 480, 320, WEBVIEW_HINT_NONE);
 
   // A binding that counts up or down and immediately returns the new value.
-  webview_bind(w, "count", count, &context);
+  webview_bind(w, "count", example::count, &context);
 
   // A binding that creates a new thread and returns the result at a later time.
-  webview_bind(w, "compute", compute, &context);
+  webview_bind(w, "compute", example::compute, &context);
 
-  webview_set_html(w, html);
+  webview_set_html(w, example::html);
   webview_run(w);
   webview_destroy(w);
   return 0;
