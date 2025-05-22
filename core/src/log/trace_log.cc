@@ -122,7 +122,7 @@ void queue_eval_t::wrapper_t::start() const {
   print_ansi(this_c, prefix + postfix_m + start_m);
 }
 #else
-void queue_eval_t::wrapper_t::start(str_arg_t /**/) const {}
+void queue_eval_t::wrapper_t::start() const {}
 #endif
 #if WEBVIEW_LOG_TRACE
 void queue_eval_t::wrapper_t::done(bool done) const {

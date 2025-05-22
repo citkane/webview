@@ -52,7 +52,6 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
     auto action = list.queue.front();
     context_t &work_ctx = action.ctx;
     str_arg_t name = action.name_or_js;
-    str_arg_t js = action.name_or_js;
     auto &work_fn = action.work_fn;
 
     // `bind` user work unit
