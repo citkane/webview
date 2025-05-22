@@ -206,6 +206,12 @@ void engine_base::on_message(str_arg_t msg) {
     return;
   }
   auto args = json_parse(msg, "params", 0);
+  // Keep the user defined native callback work on the main thread.
+  // Used for synchronous testing purposes
+  if (tester_t::resolve_on_main_thread()) {
+    dispatch([this, name, id, args] { list.bindings.at(name).call(id, args); });
+    return;
+  }
   queue.promises.resolve(name, id, args, this);
 }
 

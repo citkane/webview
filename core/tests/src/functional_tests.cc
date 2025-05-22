@@ -159,7 +159,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
 }
 
 TEST_CASE("Test synchronous binding and unbinding") {
-
+  tester_t::resolve_on_main_thread(true);
   webview::webview w(true, nullptr);
 
   auto js = tester_t::js;
@@ -171,8 +171,6 @@ TEST_CASE("Test synchronous binding and unbinding") {
     return "";
   };
   auto tests = [&](str_arg_t req) -> std::string {
-    tester_t::resolve_on_main_thread(true);
-
     // Bind and increment number.
     if (req == "[0]") {
       REQUIRE(number == 0);
@@ -196,7 +194,6 @@ TEST_CASE("Test synchronous binding and unbinding") {
       w.eval(js.make_call_js(3), true);
       return "";
     }
-    tester_t::resolve_on_main_thread(false);
     // Finish test.
     if (req == "[3]") {
       REQUIRE(number == 2);

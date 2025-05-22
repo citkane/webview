@@ -63,44 +63,10 @@ noresult bind_api_t::enqueue(dispatch_fn_t fn, str_arg_t name) const {
 };
 bool bind_api_t::is_duplicate(str_arg_t name) const {
   return self->will_be_bound(name);
-  /*
-  auto i = self->list.pending.indices(name);
-  
-  trace::queue.print_here(
-      "BIND: bind_i: " + std::to_string(i.bind_i) +
-      " | unbind_i: " + std::to_string(i.unbind_i) +
-      " | count: " + std::to_string(self->list.bindings.count(name)));
-     
-  auto is_bound = self->list.bindings.count(name) > 0;
-  if (is_bound) {
-    auto will_be_unbound = i.unbind_i > -1 && i.unbind_i > i.bind_i;
-    return !will_be_unbound;
-  } else {
-    auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
-    return will_be_bound;
-  };
-   */
 };
 
 bool unbind_api_t::not_found(str_arg_t name) const {
   return !self->will_be_bound(name);
-  /*
-  auto i = self->list.pending.indices(name);
-  
-  trace::queue.print_here(
-      "UNBIND: bind_i: " + std::to_string(i.bind_i) +
-      " | unbind_i: " + std::to_string(i.unbind_i) +
-      " | count: " + std::to_string(self->list.bindings.count(name)));
-      
-  auto is_bound = self->list.bindings.count(name) > 0;
-  if (is_bound) {
-    auto will_be_unbound = i.unbind_i > -1 && i.unbind_i > i.bind_i;
-    return will_be_unbound;
-  } else {
-    auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
-    return !will_be_bound;
-  };
-  */
 };
 noresult unbind_api_t::enqueue(dispatch_fn_t fn, str_arg_t name) const {
   return self->queue_work(name, fn, self->ctx.unbind);
@@ -119,12 +85,6 @@ void promise_api_t::resolving(str_arg_t name, str_arg_t id) const {
 };
 void promise_api_t::resolve(str_arg_t name, str_arg_t id, str_arg_t args,
                             engine_base *wv) const {
-  // Keep the user defined native callback work on the main thread.
-  // Primarily used for synchronous testing purposes
-  if (tester_t::resolve_on_main_thread()) {
-    self->list.bindings.at(name).call(id, args);
-    return;
-  }
   self->list.id_name_map.set(id, name);
   self->list.unresolved_promises.add_id(name, id);
   self->cv.unbind_timeout.notify_one();
