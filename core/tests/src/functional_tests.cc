@@ -1,4 +1,5 @@
 #include "webview/test_driver.hh"
+#include "webview/types/types.hh"
 
 #define WEBVIEW_VERSION_MAJOR 1
 #define WEBVIEW_VERSION_MINOR 2
@@ -62,51 +63,82 @@ TEST_CASE("Use C API to create a window, run app and terminate it") {
   webview_destroy(w);
 }
 
+struct c_context_t {
+  webview_t w;
+  unsigned int number;
+  void (*increment)(const char *, const char *, void *);
+};
+void cb_increment(const char *seq, const char * /*req*/, void *arg) {
+  auto *ctx = static_cast<c_context_t *>(arg);
+  ++ctx->number;
+  webview_return(ctx->w, seq, 0, "");
+}
+void cb_bind_increment(void *w, void *arg) {
+  auto ctx = static_cast<context_t *>(arg);
+  webview_bind(w, "increment", cb_increment, ctx);
+};
+void cb_unbind_increment(void *w, void * /*arg*/) {
+  webview_unbind(w, "increment");
+};
+void cb_eval_value1(void *w, void * /*arg*/) {
+  webview_eval(w, tester_t::js.make_call_js(1).c_str());
+};
+void cb_eval_value2(void *w, void * /*arg*/) {
+  webview_eval(w, tester_t::js.make_call_js(2).c_str());
+};
+void cb_eval_value3(void *w, void * /*arg*/) {
+  webview_eval(w, tester_t::js.make_call_js(3).c_str());
+};
 TEST_CASE("Use C API to test binding and unbinding") {
 
-  struct context_t {
-    webview_t w;
-    unsigned int number;
-  } context{};
+  c_context_t context{};
+
+  //  context.increment = +[](const char *seq, const char * /*req*/, void *arg) {
+  //    auto *ctx = static_cast<context_t *>(arg);
+  //    ++ctx->number;
+  //    webview_return(ctx->w, seq, 0, "");
+  //  };
 
   auto tests = +[](const char *seq, const char *req, void *arg) {
-    auto context = static_cast<context_t *>(arg);
-    auto js = tester_t::js;
-
-    auto increment = +[](const char *seq, const char * /*req*/, void *arg) {
-      auto *context = static_cast<context_t *>(arg);
-      ++context->number;
-      webview_return(context->w, seq, 0, "");
-    };
-
+    auto context = static_cast<c_context_t *>(arg);
     std::string req_(req);
+
+    // User defined native callback functions are called from a child thread,
+    // so we use dispatch to get back on the main thread.
+    // @todo Guarantee thread safety
+
     // Bind and increment number.
     if (req_ == "[0]") {
       REQUIRE(context->number == 0);
-      webview_bind(context->w, "increment", increment, context);
-      webview_eval(context->w, js.make_call_js(1).c_str());
+
+      webview_dispatch(context->w, cb_bind_increment, arg);
+      webview_dispatch(context->w, cb_eval_value1, nullptr);
       webview_return(context->w, seq, 0, "");
       return;
     }
     // Unbind and make sure that we cannot increment even if we try.
     if (req_ == "[1]") {
       REQUIRE(context->number == 1);
-      webview_unbind(context->w, "increment");
-      webview_eval(context->w, js.make_call_js(2).c_str());
+
+      webview_dispatch(context->w, cb_unbind_increment, nullptr);
+      webview_dispatch(context->w, cb_eval_value2, nullptr);
       webview_return(context->w, seq, 0, "");
       return;
     }
     // Number should not have changed but we can bind again and change the number.
     if (req_ == "[2,1]") {
       REQUIRE(context->number == 1);
-      webview_bind(context->w, "increment", increment, context);
-      webview_eval(context->w, js.make_call_js(3).c_str());
+
+      webview_dispatch(context->w, cb_bind_increment, arg);
+      webview_dispatch(context->w, cb_eval_value3, nullptr);
+
       webview_return(context->w, seq, 0, "");
       return;
     }
     // Finish test.
     if (req_ == "[3]") {
       REQUIRE(context->number == 2);
+
       webview_terminate(context->w);
       return;
     }
@@ -127,6 +159,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
 }
 
 TEST_CASE("Test synchronous binding and unbinding") {
+
   webview::webview w(true, nullptr);
 
   auto js = tester_t::js;
@@ -138,6 +171,8 @@ TEST_CASE("Test synchronous binding and unbinding") {
     return "";
   };
   auto tests = [&](str_arg_t req) -> std::string {
+    tester_t::resolve_on_main_thread(true);
+
     // Bind and increment number.
     if (req == "[0]") {
       REQUIRE(number == 0);
@@ -161,6 +196,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
       w.eval(js.make_call_js(3), true);
       return "";
     }
+    tester_t::resolve_on_main_thread(false);
     // Finish test.
     if (req == "[3]") {
       REQUIRE(number == 2);

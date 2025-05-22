@@ -127,6 +127,8 @@ public:
     static std::condition_variable cv_;
     return cv_;
   }
+  static bool resolve_on_main_thread();
+  static void resolve_on_main_thread(bool val);
 
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 
@@ -171,6 +173,10 @@ private:
     return val;
   }
   static std::atomic_bool &worker_proceed() {
+    static std::atomic_bool val{};
+    return val;
+  }
+  static std::atomic_bool &resolve_on_main_thread_() {
     static std::atomic_bool val{};
     return val;
   }

@@ -26,8 +26,6 @@
 #ifndef WEBVIEW_DETAIL_ENGINE_BASE_CC
 #define WEBVIEW_DETAIL_ENGINE_BASE_CC
 
-#include "webview/detail/frontend/frontend_strings.hh"
-#include "webview/types/types.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/frontend/engine_frontend.hh"
@@ -37,6 +35,10 @@
 using namespace webview::test;
 using namespace webview::strings;
 using namespace webview::log;
+using namespace webview::types;
+using namespace webview::errors;
+using namespace webview::detail::user;
+using namespace webview::detail::backend;
 using namespace webview::detail::frontend;
 
 engine_base::engine_base(bool owns_window)
@@ -60,7 +62,7 @@ noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
 noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg,
                            bool skip_queue) {
   trace::base.bind.start(name);
-  dispatch_fn_t do_work = [=] {
+  dispatch_fn_t do_work = [this, name, fn, arg] {
     trace::base.bind.work(name);
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
@@ -78,7 +80,7 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg,
 
 noresult engine_base::unbind(str_arg_t name, bool skip_queue) {
   trace::base.unbind.start(name);
-  dispatch_fn_t do_work = [=]() {
+  dispatch_fn_t do_work = [this, name]() {
     trace::base.unbind.work(name);
     eval(front_end.js.onunbind(name), true);
     list.bindings.erase(name);
@@ -100,7 +102,7 @@ noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
   queue.promises.resolving(name, id);
   list.id_name_map.erase(id);
 
-  dispatch_fn_t do_work = [=] {
+  dispatch_fn_t do_work = [this, id, status, result] {
     auto res = result.empty() ? "undefined" : json_escape(result);
     auto js = front_end.js.onreply(id, status, res);
     const char *escaped_js = js.c_str();
@@ -123,7 +125,11 @@ result<void *> engine_base::browser_controller() {
 
 noresult engine_base::run() { return run_impl(); }
 
-noresult engine_base::terminate() { return terminate_impl(); }
+noresult engine_base::terminate() {
+  // terminate should be called from a child thread, so we dispatch it to the main thread.
+  dispatch([&] { terminate_impl(); });
+  return {};
+}
 
 noresult engine_base::dispatch(std::function<void()> f) {
   return dispatch_impl(f);
@@ -149,7 +155,7 @@ noresult engine_base::init(str_arg_t js) {
 noresult engine_base::eval(str_arg_t js, bool skip_queue) {
   trace::base.eval.start(js, skip_queue);
   if (!skip_queue) {
-    dispatch_fn_t do_work = [=] {
+    dispatch_fn_t do_work = [this, js] {
       auto wrapped_js = front_end.js.eval_wrapper(js);
       trace::base.eval.work(wrapped_js);
       eval_impl(wrapped_js);
@@ -191,7 +197,7 @@ void engine_base::on_message(str_arg_t msg) {
     return;
   }
   auto name = json_parse(msg, "method", 0);
-  if (queue.promises.is_system_message(id, name)) {
+  if (queue.promises.exec_system_message(id, name)) {
     return;
   }
   if (!list.bindings.has_name(name)) {

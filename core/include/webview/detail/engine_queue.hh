@@ -85,7 +85,7 @@ public:
     void resolve(str_arg_t name, str_arg_t id, str_arg_t args,
                  engine_base *wv) const;
     /// Relays notifications from the frontend to relevant queue methods.
-    bool is_system_message(str_arg_t id, str_arg_t method);
+    bool exec_system_message(str_arg_t id, str_arg_t method);
   };
   struct bindings_api_t : nested_api_t<engine_queue> {
     bindings_api_t(engine_queue *self) : nested_api_t(self) {}

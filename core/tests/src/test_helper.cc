@@ -56,6 +56,13 @@ std::string html_t::navigate_encoded() const {
   return encoding + html;
 }
 
+bool tester_t::resolve_on_main_thread() {
+  return resolve_on_main_thread_().load();
+}
+void tester_t::resolve_on_main_thread(bool val) {
+  resolve_on_main_thread_().store(val);
+}
+
 void tester_t::public_api_t::set_value(str_arg_t val) {
   string_value() = val;
   compare_values();

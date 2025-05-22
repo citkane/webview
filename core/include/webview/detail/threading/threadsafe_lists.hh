@@ -38,6 +38,7 @@
 #include <vector>
 
 using namespace webview::types;
+using namespace webview::detail::user;
 namespace webview {
 namespace detail {
 namespace backend {

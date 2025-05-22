@@ -119,14 +119,22 @@ void promise_api_t::resolving(str_arg_t name, str_arg_t id) const {
 };
 void promise_api_t::resolve(str_arg_t name, str_arg_t id, str_arg_t args,
                             engine_base *wv) const {
+  // Keep the user defined native callback work on the main thread.
+  // Primarily used for synchronous testing purposes
+  if (tester_t::resolve_on_main_thread()) {
+    self->list.bindings.at(name).call(id, args);
+    return;
+  }
   self->list.id_name_map.set(id, name);
   self->list.unresolved_promises.add_id(name, id);
   self->cv.unbind_timeout.notify_one();
+  // Send the user defined native callback work to a detached thread.
+  // @todo Thread pooling and resource management.
   std::thread resolver = std::thread(&engine_queue::resolve_thread_constructor,
                                      self, name, id, args, wv);
   resolver.detach();
 }
-bool promise_api_t::is_system_message(str_arg_t id, str_arg_t method) {
+bool promise_api_t::exec_system_message(str_arg_t id, str_arg_t method) {
   if (id != SYSTEM_NOTIFICATION_FLAG) {
     return false;
   };

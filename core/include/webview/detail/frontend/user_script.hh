@@ -36,6 +36,7 @@
 using namespace webview::types;
 namespace webview {
 namespace detail {
+namespace user {
 
 /* ************************************************************************
  * Handlers and types for managing the Webview
@@ -101,6 +102,7 @@ private:
   void *m_arg;
 };
 
+} // namespace user
 } // namespace detail
 } // namespace webview
 
