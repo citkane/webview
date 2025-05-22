@@ -25,12 +25,12 @@
 #ifndef WEBVIEW_TEST_HELPER_CC
 #define WEBVIEW_TEST_HELPER_CC
 
-#include "webview/log/trace_log.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "../include/test_helper.hh"
 #include "webview/detail/engine_base.hh"
 
 using namespace webview::test;
+using namespace webview::strings;
 using namespace webview::test::_structs;
 
 std::string js_t::init(str_arg_t init_value) const {

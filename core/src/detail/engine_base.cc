@@ -27,6 +27,7 @@
 #define WEBVIEW_DETAIL_ENGINE_BASE_CC
 
 #include "webview/detail/frontend/frontend_strings.hh"
+#include "webview/types/types.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/frontend/engine_frontend.hh"
@@ -76,7 +77,7 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg,
 }
 
 noresult engine_base::unbind(str_arg_t name, bool skip_queue) {
-
+  trace::base.unbind.start(name);
   dispatch_fn_t do_work = [=]() {
     trace::base.unbind.work(name);
     eval(front_end.js.onunbind(name), true);
@@ -86,7 +87,6 @@ noresult engine_base::unbind(str_arg_t name, bool skip_queue) {
   if (queue.unbind.not_found(name)) {
     return error_info{WEBVIEW_ERROR_NOT_FOUND};
   }
-  trace::base.unbind.start(name);
   if (!skip_queue) {
     return queue.unbind.enqueue(do_work, name);
   }
@@ -95,24 +95,18 @@ noresult engine_base::unbind(str_arg_t name, bool skip_queue) {
 }
 
 noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
-  // NOLINTNEXTLINE(modernize-avoid-bind): Lambda with move requires C++14
-  return dispatch(std::bind(
-      [id, status, this](std::string escaped_result) {
-        std::string js = front_end.js.onreply(id, status, escaped_result);
-        eval(js, true);
-        //queue.promises.resolved(id);
-      },
-      result.empty() ? "undefined" : json_escape(result)));
-  /*
-  return dispatch([id, status, result, this] {
-    auto escaped_result = result.empty() ? "undefined" : json_escape(result);
-    std::string promised_js = front_end.js.onreply(id, status, escaped_result);
-    skip_queue = true;
-    eval(promised_js);
-    skip_queue = false;
-    queue.promises.resolved(id);
-  });
-  */
+  // Firstly notify the queue that the promise is resolving.
+  std::string name = list.id_name_map.get(id);
+  queue.promises.resolving(name, id);
+  list.id_name_map.erase(id);
+
+  dispatch_fn_t do_work = [=] {
+    auto res = result.empty() ? "undefined" : json_escape(result);
+    auto js = front_end.js.onreply(id, status, res);
+    const char *escaped_js = js.c_str();
+    eval(escaped_js, true);
+  };
+  return dispatch(do_work);
 }
 
 noresult engine_base::reject(str_arg_t id, str_arg_t err) {

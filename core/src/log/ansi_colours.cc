@@ -87,7 +87,7 @@ str_arg_t ansi_t::bold_s() {
   return instance;
 }
 str_arg_t ansi_t::dim_s() {
-  static const std::string instance = to_ansi_string({2});
+  static const std::string instance = to_ansi_string({90});
   return instance;
 }
 

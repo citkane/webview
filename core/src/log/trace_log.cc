@@ -37,12 +37,12 @@ time_point_t trace_tools_t::get_now() const {
 }
 std::string trace_tools_t::get_ctx(char scp) const {
   if (scp == 'b') {
-    return "bind";
+    return "bind   ";
   }
   if (scp == 'u') {
-    return "unbind";
+    return "unbind ";
   }
-  return "eval";
+  return "eval   ";
 }
 long trace_tools_t::elapsed_ms(time_point_t start, time_point_t end) const {
   return static_cast<long int>(
@@ -115,12 +115,11 @@ void queue_print_t::done(bool /**/, str_arg_t /**/) const {}
 #endif
 
 #if WEBVIEW_LOG_TRACE
-void queue_eval_t::wrapper_t::start(str_arg_t js) const {
+void queue_eval_t::wrapper_t::start() const {
   auto this_c = ansi.blue;
   auto postfix_m = bold(this_c, postfix) + ": ";
-  auto start_m = bold(this_c, "START") + " js ...\n";
-  auto js_m = dim(this_c, js);
-  print_ansi(this_c, prefix + postfix_m + start_m + js_m);
+  auto start_m = bold(this_c, "START") + " js ...";
+  print_ansi(this_c, prefix + postfix_m + start_m);
 }
 #else
 void queue_eval_t::wrapper_t::start(str_arg_t /**/) const {}
@@ -230,11 +229,10 @@ void queue_notify_t::wrapper_t::on_message(str_arg_t /**/) const {}
 void queue_enqueue_t::wrapper_t::added(char scp, size_t size,
                                        str_arg_t name_or_js) const {
   auto this_c = ansi.default_c;
-  auto ctx_m = get_ctx(scp);
   auto size_m = "queue size: " + num_s(size) + " | ";
-  auto queued_m = bold(this_c, "queueing " + ctx_m) + " | ";
-  auto name_or_js_m = scp == 'e' ? "got js ...\n" + dim(this_c, name_or_js)
-                                 : escape_s(name_or_js);
+  auto queued_m = get_ctx(scp) + " | ";
+  auto name_or_js_m =
+      scp == 'e' ? "js ...\n" : bold(this_c, escape_s(name_or_js));
   print_ansi(this_c, prefix + postfix + queued_m + size_m + name_or_js_m);
 }
 #else
@@ -256,8 +254,8 @@ void queue_enqueue_t::wrapper_t::added(char /**/, size_t /**/) const {}
 #if WEBVIEW_LOG_TRACE
 void base_print_t::start(str_arg_t name) const {
   auto this_c = ansi.default_c;
-  auto name_m = escape_s(name);
-  auto got_m = bold(this_c, "got") + ": ";
+  auto got_m = "got     | ";
+  auto name_m = bold(this_c, escape_s(name));
   print_ansi(this_c, prefix + postfix + got_m + name_m);
 }
 #else
@@ -287,9 +285,10 @@ void base_print_t::done(str_arg_t /**/) const {}
 #if WEBVIEW_LOG_TRACE
 void base_eval_t::wrapper_t::start(str_arg_t js, bool skip_queue) const {
   auto this_c = ansi.default_c;
-  auto skip_m = "skip queue: " + bool_s(skip_queue) + " | ";
-  auto received_m = bold(this_c, "received js") + " ...\n";
-  auto m = prefix + postfix + skip_m + received_m + dim(this_c, js);
+  auto skip_m = "skip queue: " + bool_s(skip_queue);
+  auto got_m = "got js  | ";
+  auto js_string = skip_queue ? "" : "\n" + dim(this_c, js);
+  auto m = prefix + postfix + got_m + skip_m + js_string;
   print_ansi(this_c, m);
 }
 #else

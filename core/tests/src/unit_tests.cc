@@ -1,6 +1,10 @@
 #include "webview/test_driver.hh"
 #include "webview/webview.h"
 
+using namespace webview::detail;
+using namespace webview::types;
+using namespace webview::errors;
+
 TEST_CASE("Ensure that JSON parsing works") {
   auto J = webview::strings::json_parse;
   // Valid input with expected output

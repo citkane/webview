@@ -94,7 +94,7 @@ private:
 class queue_bind_t {
 public:
   ~queue_bind_t() = default;
-  queue_bind_t(str_arg_t prefix, str_arg_t postfix = "BIND")
+  queue_bind_t(str_arg_t prefix, str_arg_t postfix = "   BIND")
       : bind{prefix, postfix} {};
 
   struct wrapper_t : public queue_print_t {
@@ -107,7 +107,7 @@ public:
 class queue_unbind_t {
 public:
   ~queue_unbind_t() = default;
-  queue_unbind_t(str_arg_t prefix, str_arg_t postfix = "UNBIND")
+  queue_unbind_t(str_arg_t prefix, str_arg_t postfix = " UNBIND")
       : unbind{prefix, postfix} {};
 
   struct wrapper_t : public queue_print_t {
@@ -120,14 +120,14 @@ public:
 class queue_eval_t {
 public:
   ~queue_eval_t() = default;
-  queue_eval_t(str_arg_t prefix, str_arg_t postfix = "EVAL")
+  queue_eval_t(str_arg_t prefix, str_arg_t postfix = "   EVAL")
       : eval{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
     ~wrapper_t() = default;
     wrapper_t(str_arg_t prefix, str_arg_t postfix)
         : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {}
-    void start(str_arg_t js) const;
+    void start() const;
     void done(bool done) const;
 
   private:
@@ -139,7 +139,7 @@ public:
 class queue_loop_t {
 public:
   ~queue_loop_t() = default;
-  queue_loop_t(str_arg_t prefix, str_arg_t postfix = "loop: ")
+  queue_loop_t(str_arg_t prefix, str_arg_t postfix = "   LOOP: ")
       : loop{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
@@ -174,7 +174,7 @@ public:
 class queue_notify_t {
 public:
   ~queue_notify_t() = default;
-  queue_notify_t(str_arg_t prefix, str_arg_t postfix = "notify: ")
+  queue_notify_t(str_arg_t prefix, str_arg_t postfix = " NOTIFY: ")
       : notify{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
@@ -192,7 +192,7 @@ public:
 class queue_enqueue_t {
 public:
   ~queue_enqueue_t() = default;
-  queue_enqueue_t(str_arg_t prefix, str_arg_t postfix = "enqueue: ")
+  queue_enqueue_t(str_arg_t prefix, str_arg_t postfix = "ENQUEUE: ")
       : enqueue{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
@@ -243,7 +243,7 @@ private:
 class base_bind_t {
 public:
   ~base_bind_t() = default;
-  base_bind_t(str_arg_t prefix, str_arg_t postfix = "bind: ")
+  base_bind_t(str_arg_t prefix, str_arg_t postfix = "   BIND: ")
       : bind{prefix, postfix} {};
 
   struct wrapper_t : public base_print_t {
@@ -256,7 +256,7 @@ public:
 class base_unbind_t {
 public:
   ~base_unbind_t() = default;
-  base_unbind_t(str_arg_t prefix, str_arg_t postfix = "unbind: ")
+  base_unbind_t(str_arg_t prefix, str_arg_t postfix = " UNBIND: ")
       : unbind{prefix, postfix} {};
 
   struct wrapper_t : public base_print_t {
@@ -269,7 +269,7 @@ public:
 class base_eval_t {
 public:
   ~base_eval_t() = default;
-  base_eval_t(str_arg_t prefix, str_arg_t postfix = "eval: ")
+  base_eval_t(str_arg_t prefix, str_arg_t postfix = "   EVAL: ")
       : eval{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
@@ -292,7 +292,7 @@ class base_trace_t : public base_bind_t,
                      public print_here_t {
 public:
   ~base_trace_t() = default;
-  base_trace_t(str_arg_t prefix, str_arg_t postfix = "BASE: ")
+  base_trace_t(str_arg_t prefix, str_arg_t postfix = " BASE: ")
       : base_bind_t(prefix + postfix),
         base_unbind_t(prefix + postfix),
         base_eval_t(prefix + postfix),

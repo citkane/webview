@@ -32,11 +32,11 @@
 #include "webview/detail/frontend/engine_frontend.hh"
 #include "webview/log/trace_log.hh"
 #include <cstdio>
-#include <mutex>
 
 using namespace webview::detail::backend;
 using namespace webview::detail::frontend;
 using namespace webview::log;
+using namespace webview::types;
 
 using public_api_t = engine_queue::public_api_t;
 using bind_api_t = engine_queue::bind_api_t;
@@ -46,34 +46,71 @@ using eval_api_t = engine_queue::eval_api_t;
 
 engine_queue::engine_queue() : queue{this}, atomic{this} {}
 
+bool engine_queue::will_be_bound(str_arg_t name) const {
+  auto i = list.pending.indices(name);
+  auto is_bound = list.bindings.count(name) > 0;
+  if (is_bound) {
+    auto will_be_unbound = i.unbind_i > -1 && i.unbind_i > i.bind_i;
+    return !will_be_unbound;
+  } else {
+    auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
+    return will_be_bound;
+  };
+};
+
 noresult bind_api_t::enqueue(dispatch_fn_t fn, str_arg_t name) const {
   return self->queue_work(name, fn, self->ctx.bind);
 };
 bool bind_api_t::is_duplicate(str_arg_t name) const {
+  return self->will_be_bound(name);
+  /*
   auto i = self->list.pending.indices(name);
-  auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
-  return self->list.bindings.count(name) > 0 || will_be_bound;
+  
+  trace::queue.print_here(
+      "BIND: bind_i: " + std::to_string(i.bind_i) +
+      " | unbind_i: " + std::to_string(i.unbind_i) +
+      " | count: " + std::to_string(self->list.bindings.count(name)));
+     
+  auto is_bound = self->list.bindings.count(name) > 0;
+  if (is_bound) {
+    auto will_be_unbound = i.unbind_i > -1 && i.unbind_i > i.bind_i;
+    return !will_be_unbound;
+  } else {
+    auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
+    return will_be_bound;
+  };
+   */
 };
 
+bool unbind_api_t::not_found(str_arg_t name) const {
+  return !self->will_be_bound(name);
+  /*
+  auto i = self->list.pending.indices(name);
+  
+  trace::queue.print_here(
+      "UNBIND: bind_i: " + std::to_string(i.bind_i) +
+      " | unbind_i: " + std::to_string(i.unbind_i) +
+      " | count: " + std::to_string(self->list.bindings.count(name)));
+      
+  auto is_bound = self->list.bindings.count(name) > 0;
+  if (is_bound) {
+    auto will_be_unbound = i.unbind_i > -1 && i.unbind_i > i.bind_i;
+    return will_be_unbound;
+  } else {
+    auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
+    return !will_be_bound;
+  };
+  */
+};
 noresult unbind_api_t::enqueue(dispatch_fn_t fn, str_arg_t name) const {
   return self->queue_work(name, fn, self->ctx.unbind);
-};
-bool unbind_api_t::not_found(str_arg_t name) const {
-  auto i = self->list.pending.indices(name);
-  auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
-  return self->list.bindings.count(name) == 0 && !will_be_bound;
 };
 
 noresult eval_api_t::enqueue(dispatch_fn_t fn, str_arg_t js) const {
   return self->queue_work(js, fn, self->ctx.eval);
 };
 
-void promise_api_t::resolved(str_arg_t id) const {
-  auto name = self->list.id_name_map.get(id);
-  if (name.empty()) {
-    return;
-  };
-  self->list.id_name_map.erase(id);
+void promise_api_t::resolving(str_arg_t name, str_arg_t id) const {
   self->list.unresolved_promises.remove_id(name, id);
   if (self->list.unresolved_promises.empty(name)) {
     self->cv.unbind_timeout.notify_one();

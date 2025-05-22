@@ -80,7 +80,7 @@ public:
     promise_api_t(engine_queue *self) : nested_api_t(self) {}
 
     /// Takes queue action for a resolved promise
-    void resolved(str_arg_t id) const;
+    void resolving(str_arg_t name, str_arg_t id) const;
     /// Sends the native work unit of a promise to a concurrent thread.
     void resolve(str_arg_t name, str_arg_t id, str_arg_t args,
                  engine_base *wv) const;
@@ -141,6 +141,9 @@ private:
   /// @todo hardware concurrency limit queue.
   void resolve_thread_constructor(str_arg_t name, str_arg_t id, str_arg_t args,
                                   engine_base *wv);
+
+  /// Determines if a given binding name will be bound at the time of queue execution.
+  bool will_be_bound(str_arg_t name) const;
 
   /// Adds `bind`, `unbind` or `eval` user work unit to the queue.
   noresult queue_work(str_arg_t name_or_js, dispatch_fn_t fn, context_t fn_ctx);

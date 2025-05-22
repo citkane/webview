@@ -64,8 +64,9 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
       if (atomic.terminating()) {
         break;
       }
-      list.pending.pop_front();
+
       trace::queue.bind.done(atomic.done.bind(), name);
+      list.pending.pop_front();
       atomic.done.bind(false);
     }
 
@@ -89,14 +90,15 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
       wv_instance->dispatch(work_fn);
       cv.unbind.wait(lock,
                      [this] { return atomic.AND({atomic.done.unbind()}); });
-      list.pending.pop_front();
+
       trace::queue.unbind.done(atomic.done.unbind(), name);
+      list.pending.pop_front();
       atomic.done.unbind(false);
     }
 
     // `eval` user work unit
     if (work_ctx == ctx.eval) {
-      trace::queue.eval.start(js);
+      trace::queue.eval.start();
       wv_instance->dispatch(work_fn);
       cv.eval.wait(lock, [this] { return atomic.AND({atomic.done.eval()}); });
       if (atomic.terminating()) {
