@@ -88,6 +88,7 @@ void cb_eval_value3(void *w, void * /*arg*/) {
   webview_eval(w, tester::js.make_call_js(3).c_str());
 };
 TEST_CASE("Use C API to test binding and unbinding") {
+  tester::resolve_on_main_thread(false);
   c_context_t context{};
 
   auto tests = +[](const char *seq, const char *req, void *arg) {
