@@ -144,15 +144,21 @@ public:
   /// Returns the given timespan in std::chrono::seconds
   static std::chrono::seconds seconds(int seconds);
 
-private:
-  static std::string &string_value() {
-    static std::string val;
-    return val;
-  }
   static std::string &string_expected_value() {
     static std::string val;
     return val;
   }
+
+private:
+  static std::mutex &mtx() {
+    static std::mutex mtx;
+    return mtx;
+  };
+  static std::string &string_value() {
+    static std::string val;
+    return val;
+  }
+
   static std::atomic_bool &worker_proceed() {
     static std::atomic_bool val{};
     return val;
@@ -161,9 +167,8 @@ private:
     static std::atomic_bool val{};
     return val;
   }
-  static void compare_values() {
+  static void eval_values() {
     worker_proceed().store(string_expected_value() == string_value());
-    cv().notify_one();
   }
 };
 

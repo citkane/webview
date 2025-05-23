@@ -64,18 +64,26 @@ void tester::resolve_on_main_thread(bool val) {
 }
 
 void tester::set_value(str_arg_t val) {
+  std::lock_guard<std::mutex> lock(mtx());
   string_value() = val;
-  compare_values();
+  eval_values();
+  if (worker_proceed().load()) {
+    cv().notify_all();
+  }
 }
 
-void tester::expect_value(str_arg_t value) { string_expected_value() = value; }
-
-bool tester::values_match() {
-  compare_values();
-  return worker_proceed().load();
+void tester::expect_value(str_arg_t value) {
+  std::lock_guard<std::mutex> lock(mtx());
+  string_expected_value() = value;
+  eval_values();
 }
 
-std::string tester::get_value() { return string_value(); }
+bool tester::values_match() { return worker_proceed().load(); }
+
+std::string tester::get_value() {
+  std::lock_guard<std::mutex> lock(mtx());
+  return string_value();
+}
 
 void tester::ping_value(str_arg_t value, engine_base &wv) {
   wv.dispatch([&, value] { wv.eval(js.post_value(value)); });
