@@ -44,12 +44,10 @@ void cb_assert_arg(webview_t w, void *arg) {
   REQUIRE(w != nullptr);
   REQUIRE(memcmp(arg, "arg", 3) == 0);
 }
-
 void cb_terminate(webview_t w, void *arg) {
   REQUIRE(arg == nullptr);
   webview_terminate(w);
 }
-
 TEST_CASE("Use C API to create a window, run app and terminate it") {
   webview_t w;
   w = webview_create(false, nullptr);
@@ -90,14 +88,7 @@ void cb_eval_value3(void *w, void * /*arg*/) {
   webview_eval(w, tester_t::js.make_call_js(3).c_str());
 };
 TEST_CASE("Use C API to test binding and unbinding") {
-
   c_context_t context{};
-
-  //  context.increment = +[](const char *seq, const char * /*req*/, void *arg) {
-  //    auto *ctx = static_cast<context_t *>(arg);
-  //    ++ctx->number;
-  //    webview_return(ctx->w, seq, 0, "");
-  //  };
 
   auto tests = +[](const char *seq, const char *req, void *arg) {
     auto context = static_cast<c_context_t *>(arg);
@@ -215,6 +206,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
 }
 
 TEST_CASE("The string returned from a binding call must be JSON") {
+  tester_t::resolve_on_main_thread(true);
   webview::webview w(true, nullptr);
   auto html = tester_t::html;
 
@@ -233,6 +225,7 @@ TEST_CASE("The string returned from a binding call must be JSON") {
 }
 
 TEST_CASE("The string returned of a binding call must not be JS") {
+  tester_t::resolve_on_main_thread(true);
   webview::webview w(true, nullptr);
   auto html = tester_t::html;
 
@@ -266,6 +259,7 @@ TEST_CASE("webview_version()") {
 }
 
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
+  tester_t::resolve_on_main_thread(false);
   webview::webview wv{true, nullptr};
   tester_t test{&wv};
   auto tester = test.tester;
@@ -289,7 +283,7 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
 
     REQUIRE(tester.get_value() == "exiting 42");
 
-    tester.terminate();
+    wv.terminate();
   });
 
   wv.init(js.init(R"("loaded")"));

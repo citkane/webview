@@ -80,11 +80,7 @@ bool tester_t::public_api_t::values_match() const {
 std::string tester_t::public_api_t::get_value() const { return string_value(); }
 
 void tester_t::public_api_t::ping_value(str_arg_t value) {
-  wv->dispatch([=] { wv->eval(js.post_value(value)); });
-}
-
-void tester_t::public_api_t::terminate() {
-  wv->dispatch([&] { wv->terminate(); });
+  wv->dispatch([this, value] { wv->eval(js.post_value(value)); });
 }
 
 std::chrono::seconds tester_t::public_api_t::seconds(int seconds) const {

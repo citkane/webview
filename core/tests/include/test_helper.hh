@@ -150,9 +150,6 @@ public:
     /// dispatch -> wv->eval of a tokenised `window.__webview__.post` string with a test value
     void ping_value(str_arg_t value);
 
-    /// Wraps wv->terminate in dispatch
-    void terminate();
-
     /// Returns the given timespan in std::chrono::seconds
     std::chrono::seconds seconds(int seconds) const;
 
