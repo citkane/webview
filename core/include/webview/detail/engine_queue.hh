@@ -36,6 +36,7 @@
 #include <atomic>
 #include <thread>
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
 namespace backend {

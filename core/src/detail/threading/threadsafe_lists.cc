@@ -33,6 +33,7 @@
 
 using namespace webview::types;
 using namespace webview::detail;
+using namespace webview::detail::user;
 using namespace webview::detail::backend;
 using namespace webview::detail::backend::_structs;
 

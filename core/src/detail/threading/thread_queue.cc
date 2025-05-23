@@ -32,9 +32,10 @@
 #include "webview/log/trace_log.hh"
 #include <mutex>
 
+using namespace webview::log;
+using namespace webview::types;
 using namespace webview::detail::backend;
 using namespace webview::detail::frontend;
-using namespace webview::log;
 
 void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
   std::mutex queue_thread_mtx;
