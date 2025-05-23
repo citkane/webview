@@ -261,25 +261,27 @@ TEST_CASE("webview_version()") {
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
   tester_t::resolve_on_main_thread(false);
   webview::webview wv{true, nullptr};
-  tester_t test{&wv};
-  auto tester = test.tester;
-  auto js = tester_t::js;
-  auto html = tester_t::html;
+
+  auto &js = tester_t::js;
+  auto &html = tester_t::html;
 
   auto async_tests = std::thread([&]() {
     std::mutex worker_mtx;
     std::unique_lock<std::mutex> lock(worker_mtx);
 
+    tester_t test{&wv};
+    auto &tester = test.tester;
+
     tester.expect_value("loaded");
     tester_t::cv().wait_for(lock, tester.seconds(2),
-                            [&tester] { return tester.values_match(); });
+                            [&] { return tester.values_match(); });
 
     REQUIRE(tester.get_value() == "loaded");
 
     tester.expect_value("exiting 42");
     tester.ping_value(R"("exiting " + window.x)");
     tester_t::cv().wait_for(lock, tester.seconds(2),
-                            [&tester] { return tester.values_match(); });
+                            [&] { return tester.values_match(); });
 
     REQUIRE(tester.get_value() == "exiting 42");
 
