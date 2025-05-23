@@ -66,6 +66,7 @@ struct c_context_t {
   unsigned int number;
   void (*increment)(const char *, const char *, void *);
 };
+namespace {
 void cb_increment(const char *seq, const char * /*req*/, void *arg) {
   auto *ctx = static_cast<c_context_t *>(arg);
   ++ctx->number;
@@ -87,64 +88,64 @@ void cb_eval_value2(void *w, void * /*arg*/) {
 void cb_eval_value3(void *w, void * /*arg*/) {
   webview_eval(w, tester::js.make_call_js(3).c_str());
 };
+void cb_tests(const char *seq, const char *req, void *arg) {
+  auto context = static_cast<c_context_t *>(arg);
+  std::string req_(req);
+
+  // User defined native callback functions are called from a child thread,
+  // so we use dispatch to get back on the main thread.
+  // @todo Guarantee thread safety
+
+  // Bind and increment number.
+  if (req_ == "[0]") {
+    REQUIRE(context->number == 0);
+
+    webview_dispatch(context->w, cb_bind_increment, arg);
+    webview_dispatch(context->w, cb_eval_value1, nullptr);
+    webview_return(context->w, seq, 0, "");
+    return;
+  }
+  // Unbind and make sure that we cannot increment even if we try.
+  if (req_ == "[1]") {
+    REQUIRE(context->number == 1);
+
+    webview_dispatch(context->w, cb_unbind_increment, nullptr);
+    webview_dispatch(context->w, cb_eval_value2, nullptr);
+    webview_return(context->w, seq, 0, "");
+    return;
+  }
+  // Number should not have changed but we can bind again and change the number.
+  if (req_ == "[2,1]") {
+    REQUIRE(context->number == 1);
+
+    webview_dispatch(context->w, cb_bind_increment, arg);
+    webview_dispatch(context->w, cb_eval_value3, nullptr);
+
+    webview_return(context->w, seq, 0, "");
+    return;
+  }
+  // Finish test.
+  if (req_ == "[3]") {
+    REQUIRE(context->number == 2);
+
+    webview_terminate(context->w);
+    return;
+  }
+  REQUIRE(!"Should not reach here");
+};
+} // namespace
 TEST_CASE("Use C API to test binding and unbinding") {
   tester::resolve_on_main_thread(false);
   c_context_t context{};
-
-  auto tests = +[](const char *seq, const char *req, void *arg) {
-    auto context = static_cast<c_context_t *>(arg);
-    std::string req_(req);
-
-    // User defined native callback functions are called from a child thread,
-    // so we use dispatch to get back on the main thread.
-    // @todo Guarantee thread safety
-
-    // Bind and increment number.
-    if (req_ == "[0]") {
-      REQUIRE(context->number == 0);
-
-      webview_dispatch(context->w, cb_bind_increment, arg);
-      webview_dispatch(context->w, cb_eval_value1, nullptr);
-      webview_return(context->w, seq, 0, "");
-      return;
-    }
-    // Unbind and make sure that we cannot increment even if we try.
-    if (req_ == "[1]") {
-      REQUIRE(context->number == 1);
-
-      webview_dispatch(context->w, cb_unbind_increment, nullptr);
-      webview_dispatch(context->w, cb_eval_value2, nullptr);
-      webview_return(context->w, seq, 0, "");
-      return;
-    }
-    // Number should not have changed but we can bind again and change the number.
-    if (req_ == "[2,1]") {
-      REQUIRE(context->number == 1);
-
-      webview_dispatch(context->w, cb_bind_increment, arg);
-      webview_dispatch(context->w, cb_eval_value3, nullptr);
-
-      webview_return(context->w, seq, 0, "");
-      return;
-    }
-    // Finish test.
-    if (req_ == "[3]") {
-      REQUIRE(context->number == 2);
-
-      webview_terminate(context->w);
-      return;
-    }
-    REQUIRE(!"Should not reach here");
-  };
 
   auto w = webview_create(1, nullptr);
   context.w = w;
   webview_set_html(w, "Use C API to test binding and unbinding");
   // Attempting to remove non-existing binding is OK
   webview_unbind(w, "test");
-  webview_bind(w, "test", tests, &context);
+  webview_bind(w, "test", cb_tests, &context);
   // Attempting to bind multiple times only binds once
-  webview_bind(w, "test", tests, &context);
+  webview_bind(w, "test", cb_tests, &context);
   webview_eval(w, "window.test(0);");
   webview_run(w);
   webview_destroy(w);

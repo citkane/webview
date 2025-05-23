@@ -34,49 +34,49 @@ using namespace webview::detail::frontend::_structs;
 using replacements_t = std::initializer_list<tokenise_data_t>;
 
 std::string js_string_t::onunbind(str_arg_t name) const {
-  auto js_string = tokenise(js.onunbind, token.name, json_escape(name));
+  auto js_string = tokenise(js.onunbind, tokens.name, json_escape(name));
   return js_string;
 }
 std::string js_string_t::onbind(str_arg_t name) const {
-  auto js_string = tokenise(js.onbind, token.name, json_escape(name));
+  auto js_string = tokenise(js.onbind, tokens.name, json_escape(name));
   return js_string;
 }
 std::string js_string_t::onreply(str_arg_t id, int status,
                                  str_arg_t escaped_result) const {
-  replacements_t replacements = {{token.id, json_escape(id)},
-                                 {token.status, std::to_string(status)},
-                                 {token.result, escaped_result}};
+  replacements_t replacements = {{tokens.id, json_escape(id)},
+                                 {tokens.status, std::to_string(status)},
+                                 {tokens.result, escaped_result}};
   auto js_string = tokenise(js.onreply, replacements);
   return js_string;
 }
 std::string js_string_t::init(str_arg_t post_fn) const {
-  auto js_string = tokenise(js.init, token.post_fn, post_fn);
+  auto js_string = tokenise(js.init, tokens.post_fn, post_fn);
   return js_string;
 }
 std::string js_string_t::bind(std::vector<std::string> &bound_names) const {
   auto js_names = json_list(bound_names);
-  auto js_string = tokenise(js.bind, token.js_names, js_names);
+  auto js_string = tokenise(js.bind, tokens.js_names, js_names);
   return js_string;
 }
 std::string js_string_t::eval_wrapper(str_arg_t user_js) const {
-  auto js_string = tokenise(js.eval_wrapper, token.user_js, user_js);
+  auto js_string = tokenise(js.eval_wrapper, tokens.user_js, user_js);
   return js_string;
 }
 
 std::string error_message_t::reject_unbound(str_arg_t id,
                                             str_arg_t name) const {
-  replacements_t replacements = {{token.id, id}, {token.name, name}};
+  replacements_t replacements = {{tokens.id, id}, {tokens.name, name}};
   auto js_string = tokenise(error.reject_unbound, replacements);
   return js_string;
 }
 std::string error_message_t::uncaught_exception(str_arg_t name,
                                                 str_arg_t what) const {
-  replacements_t replacements = {{token.name, name}, {token.what, what}};
+  replacements_t replacements = {{tokens.name, name}, {tokens.what, what}};
   auto js_string = tokenise(error.uncaught_exp, replacements);
   return js_string;
 }
 std::string error_message_t::webview_terminated(str_arg_t name) const {
-  auto js_string = tokenise(error.terminated, token.name, name);
+  auto js_string = tokenise(error.terminated, tokens.name, name);
   return js_string;
 }
 
