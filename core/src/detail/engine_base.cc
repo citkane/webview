@@ -41,8 +41,7 @@ using namespace webview::detail::user;
 using namespace webview::detail::backend;
 using namespace webview::detail::frontend;
 
-engine_base::engine_base(bool owns_window)
-    : tester_t{this}, m_owns_window{owns_window} {}
+engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {}
 
 noresult engine_base::navigate(str_arg_t url) {
   if (url.empty()) {
@@ -191,12 +190,11 @@ std::string engine_base::create_bind_script() {
 
 void engine_base::on_message(str_arg_t msg) {
   auto id = json_parse(msg, "id", 0);
+  auto name = json_parse(msg, "method", 0);
   if (id == sys_flag.testop) {
-    auto test_value = json_parse(msg, "method", 0);
-    tester.set_value(test_value);
+    tester::set_value(name);
     return;
   }
-  auto name = json_parse(msg, "method", 0);
   if (queue.promises.exec_system_message(id, name)) {
     return;
   }
@@ -208,7 +206,7 @@ void engine_base::on_message(str_arg_t msg) {
   auto args = json_parse(msg, "params", 0);
   // Keep the user defined native callback work on the main thread.
   // Used for synchronous testing purposes
-  if (tester_t::resolve_on_main_thread()) {
+  if (tester::resolve_on_main_thread()) {
     dispatch([this, name, id, args] { list.bindings.at(name).call(id, args); });
     return;
   }

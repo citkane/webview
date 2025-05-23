@@ -56,34 +56,32 @@ std::string html_t::navigate_encoded() const {
   return encoding + html;
 }
 
-bool tester_t::resolve_on_main_thread() {
+bool tester::resolve_on_main_thread() {
   return resolve_on_main_thread_().load();
 }
-void tester_t::resolve_on_main_thread(bool val) {
+void tester::resolve_on_main_thread(bool val) {
   resolve_on_main_thread_().store(val);
 }
 
-void tester_t::public_api_t::set_value(str_arg_t val) {
+void tester::set_value(str_arg_t val) {
   string_value() = val;
   compare_values();
 }
 
-void tester_t::public_api_t::expect_value(str_arg_t value) {
-  string_expected_value() = value;
-}
+void tester::expect_value(str_arg_t value) { string_expected_value() = value; }
 
-bool tester_t::public_api_t::values_match() const {
+bool tester::values_match() {
   compare_values();
   return worker_proceed().load();
 }
 
-std::string tester_t::public_api_t::get_value() const { return string_value(); }
+std::string tester::get_value() { return string_value(); }
 
-void tester_t::public_api_t::ping_value(str_arg_t value) {
-  wv->dispatch([this, value] { wv->eval(js.post_value(value)); });
+void tester::ping_value(str_arg_t value, engine_base &wv) {
+  wv.dispatch([&, value] { wv.eval(js.post_value(value)); });
 }
 
-std::chrono::seconds tester_t::public_api_t::seconds(int seconds) const {
+std::chrono::seconds tester::seconds(int seconds) {
   return std::chrono::seconds(seconds);
 }
 

@@ -50,7 +50,7 @@ using sync_binding_t = std::function<std::string(std::string)>;
 /// - cocoa_webkit
 /// - gtk_webkitgtk
 /// - win32_edge
-class engine_base : public engine_queue, private tester_t {
+class engine_base : public engine_queue {
 
 public:
   virtual ~engine_base() = default;

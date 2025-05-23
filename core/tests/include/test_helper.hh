@@ -115,12 +115,8 @@ struct html_t {
 using namespace webview::detail::backend;
 
 /// Test utilities class
-class tester_t {
-  engine_base *wv;
-
+class tester {
 public:
-  tester_t(engine_base *wv) : wv(wv){};
-
   static const _structs::js_t js;
   static const _structs::html_t html;
   static std::condition_variable &cv() {
@@ -130,35 +126,23 @@ public:
   static bool resolve_on_main_thread();
   static void resolve_on_main_thread(bool val);
 
-  // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
+  /// Sets the returned test value.
+  static void set_value(str_arg_t val);
 
-  struct public_api_t {
-    public_api_t(engine_base *wv) : wv(wv){};
+  /// Sets the expected returned test value.
+  static void expect_value(str_arg_t value);
 
-    /// Sets the returned test value.
-    void set_value(str_arg_t val);
+  /// Gets the returned test value.
+  static std::string get_value();
 
-    /// Sets the expected returned test value.
-    void expect_value(str_arg_t value);
+  /// Flag for evaluating if the returned value matches the expected value.
+  static bool values_match();
 
-    /// Gets the returned test value.
-    std::string get_value() const;
+  /// dispatch -> wv->eval of a tokenised `window.__webview__.post` string with a test value
+  static void ping_value(str_arg_t value, engine_base &wv);
 
-    /// Flag for evaluating if the returned value matches the expected value.
-    bool values_match() const;
-
-    /// dispatch -> wv->eval of a tokenised `window.__webview__.post` string with a test value
-    void ping_value(str_arg_t value);
-
-    /// Returns the given timespan in std::chrono::seconds
-    std::chrono::seconds seconds(int seconds) const;
-
-  private:
-    engine_base *wv;
-
-  } tester{wv};
-
-  // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
+  /// Returns the given timespan in std::chrono::seconds
+  static std::chrono::seconds seconds(int seconds);
 
 private:
   static std::string &string_value() {
@@ -183,8 +167,8 @@ private:
   }
 };
 
-const _structs::js_t tester_t::js{};
-const _structs::html_t tester_t::html{};
+const _structs::js_t tester::js{};
+const _structs::html_t tester::html{};
 
 } // namespace test
 } // namespace webview

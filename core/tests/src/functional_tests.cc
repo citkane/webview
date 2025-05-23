@@ -79,13 +79,13 @@ void cb_unbind_increment(void *w, void * /*arg*/) {
   webview_unbind(w, "increment");
 };
 void cb_eval_value1(void *w, void * /*arg*/) {
-  webview_eval(w, tester_t::js.make_call_js(1).c_str());
+  webview_eval(w, tester::js.make_call_js(1).c_str());
 };
 void cb_eval_value2(void *w, void * /*arg*/) {
-  webview_eval(w, tester_t::js.make_call_js(2).c_str());
+  webview_eval(w, tester::js.make_call_js(2).c_str());
 };
 void cb_eval_value3(void *w, void * /*arg*/) {
-  webview_eval(w, tester_t::js.make_call_js(3).c_str());
+  webview_eval(w, tester::js.make_call_js(3).c_str());
 };
 TEST_CASE("Use C API to test binding and unbinding") {
   c_context_t context{};
@@ -150,11 +150,9 @@ TEST_CASE("Use C API to test binding and unbinding") {
 }
 
 TEST_CASE("Test synchronous binding and unbinding") {
-  tester_t::resolve_on_main_thread(true);
+  tester::resolve_on_main_thread(true);
   webview::webview w(true, nullptr);
 
-  auto js = tester_t::js;
-  auto html = tester_t::html;
   unsigned int number = 0;
 
   auto increment = [&](str_arg_t /*req*/) -> std::string {
@@ -166,7 +164,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[0]") {
       REQUIRE(number == 0);
       w.bind("increment", increment);
-      w.eval(js.make_call_js(1), true);
+      w.eval(tester::js.make_call_js(1), true);
       return "";
     }
 
@@ -174,7 +172,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[1]") {
       REQUIRE(number == 1);
       w.unbind("increment", true);
-      w.eval(js.make_call_js(2), true);
+      w.eval(tester::js.make_call_js(2), true);
       return "";
     }
     // We should have gotten an error on the JS side.
@@ -182,7 +180,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
     if (req == "[2,1]") {
       REQUIRE(number == 1);
       w.bind("increment", increment);
-      w.eval(js.make_call_js(3), true);
+      w.eval(tester::js.make_call_js(3), true);
       return "";
     }
     // Finish test.
@@ -201,14 +199,14 @@ TEST_CASE("Test synchronous binding and unbinding") {
   w.bind("test", tests);
   // Attempting to bind multiple times only binds once
   w.bind("test", tests);
-  w.set_html(html.bind_unbind);
+  w.set_html(tester::html.bind_unbind);
   w.run();
 }
 
 TEST_CASE("The string returned from a binding call must be JSON") {
-  tester_t::resolve_on_main_thread(true);
+  tester::resolve_on_main_thread(true);
   webview::webview w(true, nullptr);
-  auto html = tester_t::html;
+  auto html = tester::html;
 
   w.bind("loadData",
          [](str_arg_t /*req*/) -> std::string { return "\"hello\""; });
@@ -225,9 +223,9 @@ TEST_CASE("The string returned from a binding call must be JSON") {
 }
 
 TEST_CASE("The string returned of a binding call must not be JS") {
-  tester_t::resolve_on_main_thread(true);
+  tester::resolve_on_main_thread(true);
   webview::webview w(true, nullptr);
-  auto html = tester_t::html;
+  auto html = tester::html;
 
   w.bind("loadData", [](str_arg_t /*req*/) -> std::string {
     // Try to load malicious JS code
@@ -259,37 +257,31 @@ TEST_CASE("webview_version()") {
 }
 
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
-  tester_t::resolve_on_main_thread(false);
+  tester::resolve_on_main_thread(false);
   webview::webview wv{true, nullptr};
-
-  auto &js = tester_t::js;
-  auto &html = tester_t::html;
 
   auto async_tests = std::thread([&]() {
     std::mutex worker_mtx;
     std::unique_lock<std::mutex> lock(worker_mtx);
 
-    tester_t test{&wv};
-    auto &tester = test.tester;
+    tester::expect_value("loaded");
+    tester::cv().wait_for(lock, tester::seconds(2),
+                          [] { return tester::values_match(); });
 
-    tester.expect_value("loaded");
-    tester_t::cv().wait_for(lock, tester.seconds(2),
-                            [&] { return tester.values_match(); });
+    REQUIRE(tester::get_value() == "loaded");
 
-    REQUIRE(tester.get_value() == "loaded");
+    tester::expect_value("exiting 42");
+    tester::ping_value(R"("exiting " + window.x)", wv);
+    tester::cv().wait_for(lock, tester::seconds(2),
+                          [&] { return tester::values_match(); });
 
-    tester.expect_value("exiting 42");
-    tester.ping_value(R"("exiting " + window.x)");
-    tester_t::cv().wait_for(lock, tester.seconds(2),
-                            [&] { return tester.values_match(); });
-
-    REQUIRE(tester.get_value() == "exiting 42");
+    REQUIRE(tester::get_value() == "exiting 42");
 
     wv.terminate();
   });
 
-  wv.init(js.init(R"("loaded")"));
-  wv.navigate(html.navigate_encoded());
+  wv.init(tester::js.init(R"("loaded")"));
+  wv.navigate(tester::html.navigate_encoded());
   wv.run();
   async_tests.join();
 }
