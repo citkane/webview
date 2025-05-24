@@ -31,18 +31,17 @@
 #include <exception>
 #include <string>
 
-using str_arg_t = const std::string &;
 namespace webview {
 namespace errors {
 
 class error_info {
 public:
-  error_info(webview_error_t code, str_arg_t message = {}) noexcept
+  error_info(webview_error_t code, const std::string &message = {}) noexcept
       : m_code{code}, m_message{message} {}
   error_info() = default;
 
   webview_error_t code() const { return m_code; }
-  str_arg_t message() const { return m_message; }
+  const std::string &message() const { return m_message; }
 
 private:
   webview_error_t m_code{WEBVIEW_ERROR_UNSPECIFIED};
@@ -51,11 +50,11 @@ private:
 
 class exception : public std::exception {
 public:
-  exception(webview_error_t code, str_arg_t message,
+  exception(webview_error_t code, const std::string &message,
             std::exception_ptr cause) noexcept
       : exception{error_info{code, message}, cause} {}
 
-  exception(webview_error_t code, str_arg_t message) noexcept
+  exception(webview_error_t code, const std::string &message) noexcept
       : exception{error_info{code, message}} {}
 
   exception(const error_info &error, std::exception_ptr cause) noexcept

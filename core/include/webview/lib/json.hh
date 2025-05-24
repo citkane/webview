@@ -32,6 +32,7 @@
 #include <cstring>
 #include <string>
 
+using namespace webview::types;
 namespace webview {
 namespace strings {
 

@@ -30,6 +30,8 @@
 
 #include "webview/errors/errors.hh"
 #include "webview/types/basic_result.hh"
+#include "webview/types/optional.hh"
+#include <chrono>
 #include <functional>
 
 using namespace webview::errors;
@@ -48,11 +50,12 @@ template <typename T> struct nested_api_t {
   nested_api_t(T *self) : self(self) {}
 };
 
-using dispatch_fn_t = std::function<void()>;
-
 template <typename T> using result = basic_result<T, error_info, exception>;
 
 using noresult = basic_result<void, error_info, exception>;
+using dispatch_fn_t = std::function<void()>;
+using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
+using str_arg_t = const std::string &;
 
 } // namespace types
 } // namespace webview

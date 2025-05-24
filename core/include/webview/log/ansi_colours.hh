@@ -29,14 +29,13 @@
 #include "webview/types/types.hh"
 #include <string>
 
+using namespace webview::types;
 namespace webview {
 namespace log {
 namespace _classes {
 
 class ansi_t {
 public:
-  ~ansi_t() = default;
-  ansi_t() = default;
   struct ansi_colours_t {
     std::string yellow = yellow_s();
     std::string yellow_dim = yellow_dim_s();
