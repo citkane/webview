@@ -26,7 +26,7 @@
 #define WEBVIEW_TEST_HELPER_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "../include/test_helper.hh"
+#include "webview/test_helper.hh"
 #include "webview/detail/engine_base.hh"
 
 using namespace webview::test;

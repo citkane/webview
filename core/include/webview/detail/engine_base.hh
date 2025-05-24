@@ -27,9 +27,9 @@
 #define WEBVIEW_DETAIL_ENGINE_BASE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/../../tests/include/test_helper.hh"
 #include "webview/detail/engine_queue.hh"
 #include "webview/detail/frontend/user_script.hh"
+#include "webview/test_helper.hh"
 #include "webview/types/types.h"
 #include "webview/types/types.hh"
 #include <atomic>

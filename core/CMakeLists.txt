@@ -5,6 +5,7 @@ target_include_directories(
     webview_core_headers
     INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tests/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 target_link_libraries(webview_core_headers INTERFACE ${WEBVIEW_DEPENDENCIES})
 # Note that we also use CMAKE_CXX_STANDARD which can override this
