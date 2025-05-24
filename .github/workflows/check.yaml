@@ -65,7 +65,7 @@ jobs:
           python3 scripts/amalgamate/amalgamate.py \
             --clang-format-exe "${{ matrix.clang-format-exe }}" \
             --base core \
-            --search include \
+            --search include tests/include \
             --output scripts/amalgamate/generated/webview_amalgamation.h \
             src
         shell: bash

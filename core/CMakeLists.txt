@@ -78,7 +78,7 @@ if(WEBVIEW_BUILD_AMALGAMATION)
                     "${PROJECT_SOURCE_DIR}/scripts/amalgamate/amalgamate.py"
                     --clang-format-exe "${WEBVIEW_CLANG_FORMAT_EXE}"
                     --base "${CMAKE_CURRENT_SOURCE_DIR}"
-                    --search include
+                    --search include tests/include
                     --output "${CMAKE_CURRENT_BINARY_DIR}/amalgamation/webview.h"
                     ${SOURCE_FILES}
                 DEPENDS ${HEADER_FILES} ${SOURCE_FILES}
