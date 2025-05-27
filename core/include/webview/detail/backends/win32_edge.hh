@@ -50,6 +50,7 @@
 #include "webview/detail/platform/windows/theme.hh"
 #include "webview/detail/platform/windows/version.hh"
 #include "webview/detail/platform/windows/webview2/loader.hh"
+#include "webview/types/types.hh"
 
 #include <atomic>
 #include <cstdlib>

@@ -28,21 +28,24 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "webview/detail/platform/windows/string.hh"
-
+#include "webview/types/types.hh"
 #include <string>
 
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+#include "webview/detail/platform/windows/string.hh"
 #include <windows.h>
 #else
 #include <dlfcn.h>
 #endif
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 
 // Holds a symbol name and associated type for code clarity.
 template <typename T> class library_symbol {
@@ -162,6 +165,8 @@ private:
   mod_handle_t m_handle{};
 };
 
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

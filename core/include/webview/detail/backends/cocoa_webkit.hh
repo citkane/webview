@@ -46,6 +46,7 @@
 #include "webview/detail/platform/darwin/cocoa/cocoa.hh"
 #include "webview/detail/platform/darwin/objc/objc.hh"
 #include "webview/detail/platform/darwin/webkit/webkit.hh"
+#include "webview/types/types.hh"
 
 #include <atomic>
 #include <functional>

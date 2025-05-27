@@ -27,15 +27,14 @@
 #define WEBVIEW_PLATFORM_DARWIN_COCOA_NSSTRING_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
 #include "../objc/objc.hh"
-
+#include "webview/types/types.hh"
 #include <string>
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
 namespace cocoa {

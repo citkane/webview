@@ -27,7 +27,7 @@
 #define WEBVIEW_PLATFORM_WINDOWS_STRING_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
+#include "webview/types/types.hh"
 #include <string>
 
 #if defined(_WIN32)
@@ -37,6 +37,7 @@
 #include <windows.h>
 #endif
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
 
