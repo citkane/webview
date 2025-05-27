@@ -45,6 +45,7 @@
 #pragma comment(lib, "advapi32.lib")
 #endif
 
+using namespace webview::detail::platform::windows;
 namespace webview {
 namespace detail {
 

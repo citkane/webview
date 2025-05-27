@@ -27,15 +27,16 @@
 #define WEBVIEW_PLATFORM_WINDOWS_STRING_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#include "webview/lib/macros.h"
+
+#if defined(WEBVIEW_PLATFORM_WINDOWS)
 #include "webview/types/types.hh"
 #include <string>
 
-#if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-#endif
 
 using namespace webview::types;
 namespace webview {
@@ -96,5 +97,6 @@ inline std::string narrow_string(const std::wstring &input) {
 } // namespace detail
 } // namespace webview
 
+#endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_PLATFORM_WINDOWS_STRING_HH

@@ -40,6 +40,7 @@
 
 #include <windows.h>
 
+using namespace webview::detail::platform::windows;
 namespace webview {
 namespace detail {
 namespace shcore_symbols {

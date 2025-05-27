@@ -56,6 +56,7 @@
 #pragma comment(lib, "user32.lib")
 #endif
 
+using namespace webview::detail::platform::windows;
 namespace webview {
 namespace detail {
 

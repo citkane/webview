@@ -27,7 +27,6 @@
 #define WEBVIEW_PLATFORM_WINDOWS_THEME_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
@@ -36,6 +35,7 @@
 #include "webview/detail/platform/windows/native_library.hh"
 #include "webview/detail/platform/windows/reg_key.hh"
 
+using namespace webview::detail::platform::windows;
 namespace webview {
 namespace detail {
 
