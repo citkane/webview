@@ -50,6 +50,9 @@
 
 namespace webview {
 namespace detail {
+namespace platform {
+namespace linux {
+namespace gtk {
 
 /**
  * GTK compatibility helper class.
@@ -129,6 +132,9 @@ public:
   }
 };
 
+} // namespace gtk
+} // namespace linux
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

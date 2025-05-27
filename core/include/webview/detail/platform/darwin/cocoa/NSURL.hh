@@ -50,7 +50,7 @@ inline id NSURL_URLWithString(const char *string) {
   return NSURL_URLWithString(NSString_stringWithUTF8String(string));
 }
 
-inline id NSURL_URLWithString(const std::string &string) {
+inline id NSURL_URLWithString(const_str_ref string) {
   return NSURL_URLWithString(NSString_stringWithUTF8String(string));
 }
 

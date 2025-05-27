@@ -28,44 +28,38 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
-#include "webview/detail/frontend/engine_frontend.hh"
-#include "webview/lib/json.hh"
 #include "webview/log/trace_log.hh"
+#include "webview/strings/string_api.hh"
 
-using namespace webview::test;
-using namespace webview::strings;
-using namespace webview::log;
-using namespace webview::types;
-using namespace webview::errors;
+using namespace webview::detail;
 using namespace webview::detail::user;
-using namespace webview::detail::backend;
-using namespace webview::detail::frontend;
+using namespace webview::log;
+using namespace webview::strings;
 
 engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {}
 
-noresult engine_base::navigate(str_arg_t url) {
+noresult engine_base::navigate(const_str_ref url) {
   if (url.empty()) {
     return navigate_impl("about:blank");
   }
   return navigate_impl(url);
 }
 
-noresult engine_base::bind(str_arg_t name, sync_binding_t fn) {
-  auto wrapper = [this, fn](str_arg_t id, str_arg_t req, void * /*arg*/) {
-    resolve(id, 0, fn(req));
-  };
+noresult engine_base::bind(const_str_ref name, sync_binding_t fn) {
+  auto wrapper = [this, fn](const_str_ref id, const_str_ref req,
+                            void * /*arg*/) { resolve(id, 0, fn(req)); };
   auto res = bind(name, wrapper, nullptr, true);
   return res;
 }
 
-noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg,
+noresult engine_base::bind(const_str_ref name, binding_t fn, void *arg,
                            bool skip_queue) {
   trace::base.bind.start(name);
   dispatch_fn_t do_work = [this, name, fn, arg] {
     trace::base.bind.work(name);
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
-    eval(front_end.js.onbind(name), true);
+    eval(string::js.onbind(name), true);
   };
   if (queue.bind.is_duplicate(name)) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
@@ -77,11 +71,11 @@ noresult engine_base::bind(str_arg_t name, binding_t fn, void *arg,
   return {};
 }
 
-noresult engine_base::unbind(str_arg_t name, bool skip_queue) {
+noresult engine_base::unbind(const_str_ref name, bool skip_queue) {
   trace::base.unbind.start(name);
   dispatch_fn_t do_work = [this, name]() {
     trace::base.unbind.work(name);
-    eval(front_end.js.onunbind(name), true);
+    eval(string::js.onunbind(name), true);
     list.bindings.erase(name);
     replace_bind_script();
   };
@@ -95,23 +89,24 @@ noresult engine_base::unbind(str_arg_t name, bool skip_queue) {
   return {};
 }
 
-noresult engine_base::resolve(str_arg_t id, int status, str_arg_t result) {
+noresult engine_base::resolve(const_str_ref id, int status,
+                              const_str_ref result) {
   // Firstly notify the queue that the promise is resolving.
   std::string name = list.id_name_map.get(id);
   queue.promises.resolving(name, id);
   list.id_name_map.erase(id);
 
   dispatch_fn_t do_work = [this, id, status, result] {
-    auto res = result.empty() ? "undefined" : json_escape(result);
-    auto js = front_end.js.onreply(id, status, res);
+    auto res = result.empty() ? "undefined" : string::json.escape(result);
+    auto js = string::js.onreply(id, status, res);
     const char *escaped_js = js.c_str();
     eval(escaped_js, true);
   };
   return dispatch(do_work);
 }
 
-noresult engine_base::reject(str_arg_t id, str_arg_t err) {
-  return resolve(id, 1, json_escape(err));
+noresult engine_base::reject(const_str_ref id, const_str_ref err) {
+  return resolve(id, 1, string::json.escape(err));
 }
 
 result<void *> engine_base::window() { return window_impl(); }
@@ -134,7 +129,7 @@ noresult engine_base::dispatch(std::function<void()> f) {
   return dispatch_impl(f);
 }
 
-noresult engine_base::set_title(str_arg_t title) {
+noresult engine_base::set_title(const_str_ref title) {
   return set_title_impl(title);
 }
 
@@ -144,18 +139,20 @@ noresult engine_base::set_size(int width, int height, webview_hint_t hints) {
   return res;
 }
 
-noresult engine_base::set_html(str_arg_t html) { return set_html_impl(html); }
+noresult engine_base::set_html(const_str_ref html) {
+  return set_html_impl(html);
+}
 
-noresult engine_base::init(str_arg_t js) {
+noresult engine_base::init(const_str_ref js) {
   list.m_user_scripts.add(js, this);
   return {};
 }
 
-noresult engine_base::eval(str_arg_t js, bool skip_queue) {
+noresult engine_base::eval(const_str_ref js, bool skip_queue) {
   trace::base.eval.start(js, skip_queue);
   if (!skip_queue) {
     dispatch_fn_t do_work = [this, js] {
-      auto wrapped_js = front_end.js.eval_wrapper(js);
+      auto wrapped_js = string::js.eval_wrapper(js);
       trace::base.eval.work(wrapped_js);
       eval_impl(wrapped_js);
     };
@@ -176,8 +173,8 @@ void engine_base::replace_bind_script() {
   }
 }
 
-void engine_base::add_init_script(str_arg_t post_fn) {
-  auto init_js = front_end.js.init(post_fn);
+void engine_base::add_init_script(const_str_ref post_fn) {
+  auto init_js = string::js.init(post_fn);
   list.m_user_scripts.add(init_js, this);
   m_is_init_script_sent = true;
 }
@@ -185,13 +182,13 @@ void engine_base::add_init_script(str_arg_t post_fn) {
 std::string engine_base::create_bind_script() {
   std::vector<std::string> bound_names;
   list.bindings.get_names(bound_names);
-  return front_end.js.bind(bound_names);
+  return string::js.bind(bound_names);
 }
 
-void engine_base::on_message(str_arg_t msg) {
-  auto id = json_parse(msg, "id", 0);
-  auto name = json_parse(msg, "method", 0);
-  if (id == sys_flag.testop) {
+void engine_base::on_message(const_str_ref msg) {
+  auto id = string::json.parse(msg, "id", 0);
+  auto name = string::json.parse(msg, "method", 0);
+  if (id == sys_flags.testop) {
     tester::set_value(name);
     return;
   }
@@ -199,11 +196,11 @@ void engine_base::on_message(str_arg_t msg) {
     return;
   }
   if (!list.bindings.has_name(name)) {
-    auto message = front_end.err_message.reject_unbound(id, name);
+    auto message = string::err.reject_unbound(id, name);
     reject(id, message);
     return;
   }
-  auto args = json_parse(msg, "params", 0);
+  auto args = string::json.parse(msg, "params", 0);
   // Keep the user defined native callback work on the main thread.
   // Used for synchronous testing purposes
   if (tester::resolve_on_main_thread()) {

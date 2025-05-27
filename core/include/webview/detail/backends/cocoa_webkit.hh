@@ -59,6 +59,7 @@ using namespace webview::types;
 using namespace webview::errors;
 namespace webview {
 namespace detail {
+namespace user {
 
 class user_script::impl {
 public:
@@ -77,16 +78,14 @@ private:
   id m_script{};
 };
 
-// Encapsulate backend in its own namespace to avoid polluting the parent
-// namespace when pulling in commonly-used symbols from other namespaces.
-// Since those commmon symbols are used a lot, this reduces the overall
-// noise in the code.
+} // namespace user
+
 namespace backend {
 
 using namespace cocoa;
 using namespace webkit;
 
-class cocoa_wkwebview_engine : public engine_base {
+class cocoa_wkwebview_engine : public detail::engine_base {
 public:
   cocoa_wkwebview_engine(bool debug, void *window)
       : engine_base{!window}, m_app{NSApplication_get_sharedApplication()} {
@@ -189,7 +188,7 @@ protected:
     return {};
   }
 
-  noresult set_title_impl(str_arg_t title) override {
+  noresult set_title_impl(const_str_ref title) override {
     NSWindow_set_title(m_window, title);
     return {};
   }
@@ -219,7 +218,7 @@ protected:
 
     return window_show();
   }
-  noresult navigate_impl(str_arg_t url) override {
+  noresult navigate_impl(const_str_ref url) override {
     objc::autoreleasepool arp;
 
     WKWebView_loadRequest(
@@ -227,13 +226,13 @@ protected:
 
     return {};
   }
-  noresult set_html_impl(str_arg_t html) override {
+  noresult set_html_impl(const_str_ref html) override {
     objc::autoreleasepool arp;
     WKWebView_loadHTMLString(m_webview, NSString_stringWithUTF8String(html),
                              nullptr);
     return {};
   }
-  noresult eval_impl(str_arg_t js) override {
+  noresult eval_impl(const_str_ref js) override {
     objc::autoreleasepool arp;
     // URI is null before content has begun loading.
     auto nsurl{WKWebView_get_URL(m_webview)};
@@ -245,7 +244,7 @@ protected:
     return {};
   }
 
-  user_script add_user_script_impl(str_arg_t js) override {
+  user_script add_user_script_impl(const_str_ref js) override {
     objc::autoreleasepool arp;
     auto wk_script{WKUserScript_withSource(
         NSString_stringWithUTF8String(js),

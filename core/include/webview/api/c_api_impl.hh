@@ -30,15 +30,14 @@
 
 #include "webview/detail/backends/backends.hh"
 #include "webview/errors/errors.h"
-#include "webview/lib/json_deprecated.hh"
 #include "webview/lib/macros.h"
 #include "webview/lib/version.h"
 
 using namespace webview::detail;
 using namespace webview::errors;
 namespace webview {
-namespace detail {
-
+namespace api {
+namespace _util {
 // The library's version information.
 constexpr const webview_version_info_t library_version_info{
     {WEBVIEW_VERSION_MAJOR, WEBVIEW_VERSION_MINOR, WEBVIEW_VERSION_PATCH},
@@ -77,24 +76,26 @@ webview_error_t api_filter(WorkFn &&do_work) noexcept {
   }
 }
 
-inline webview *cast_to_webview(void *w) {
+inline webview_cc *cast_to_webview(void *w) {
   if (!w) {
     throw exception{WEBVIEW_ERROR_INVALID_ARGUMENT,
                     "Cannot cast null pointer to webview instance"};
   }
-  return static_cast<webview *>(w);
+  return static_cast<webview_cc *>(w);
 }
-
-} // namespace detail
+} // namespace _util
+} // namespace api
 } // namespace webview
 
+using namespace webview::api::_util;
+
 WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
-  webview::webview *w{};
+  webview_cc *w{};
   auto err = api_filter(
-      [=]() -> result<webview::webview *> {
-        return new webview::webview{static_cast<bool>(debug), wnd};
+      [=]() -> result<webview_cc *> {
+        return new webview_cc{static_cast<bool>(debug), wnd};
       },
-      [&](webview::webview *w_) { w = w_; });
+      [&](webview_cc *w_) { w = w_; });
   if (err == WEBVIEW_ERROR_OK) {
     return w;
   }
@@ -211,7 +212,7 @@ WEBVIEW_API webview_error_t webview_bind(webview_t w, const char *name,
   return api_filter([=] {
     return cast_to_webview(w)->bind(
         name,
-        [=](str_arg_t seq, str_arg_t req, void *arg_) {
+        [=](const_str_ref seq, const_str_ref req, void *arg_) {
           fn(seq.c_str(), req.c_str(), arg_);
         },
         arg);
@@ -235,7 +236,7 @@ WEBVIEW_API webview_error_t webview_return(webview_t w, const char *id,
 }
 
 WEBVIEW_API const webview_version_info_t *webview_version(void) {
-  return &webview::detail::library_version_info;
+  return &library_version_info;
 }
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

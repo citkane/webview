@@ -30,7 +30,7 @@
 
 namespace webview {
 namespace log {
-namespace _classes {
+namespace _lib {
 
 std::string ansi_t::to_ansi_string(std::initializer_list<int> codes) noexcept {
   std::string ansi_string;
@@ -50,48 +50,48 @@ std::string ansi_t::to_ansi_string(std::initializer_list<int> codes) noexcept {
   return ansi_string;
 }
 
-str_arg_t ansi_t::yellow_s() {
+const_str_ref ansi_t::yellow_s() {
   static const std::string instance = to_ansi_string({33});
   return instance;
 }
-str_arg_t ansi_t::yellow_dim_s() {
+const_str_ref ansi_t::yellow_dim_s() {
   static const std::string instance = to_ansi_string({33, 2});
   return instance;
 }
-str_arg_t ansi_t::green_s() {
+const_str_ref ansi_t::green_s() {
   static const std::string instance = to_ansi_string({92});
   return instance;
 }
-str_arg_t ansi_t::red_s() {
+const_str_ref ansi_t::red_s() {
   static const std::string instance = to_ansi_string({91});
   return instance;
 }
-str_arg_t ansi_t::blue_s() {
+const_str_ref ansi_t::blue_s() {
   static const std::string instance = to_ansi_string({94});
   return instance;
 }
-str_arg_t ansi_t::blue_dark_s() {
+const_str_ref ansi_t::blue_dark_s() {
   static const std::string instance = to_ansi_string({34});
   return instance;
 }
-str_arg_t ansi_t::magenta_s() {
+const_str_ref ansi_t::magenta_s() {
   static const std::string instance = to_ansi_string({95});
   return instance;
 }
-str_arg_t ansi_t::default_c_s() {
+const_str_ref ansi_t::default_c_s() {
   static const std::string instance = to_ansi_string({0});
   return instance;
 }
-str_arg_t ansi_t::bold_s() {
+const_str_ref ansi_t::bold_s() {
   static const std::string instance = to_ansi_string({1});
   return instance;
 }
-str_arg_t ansi_t::dim_s() {
+const_str_ref ansi_t::dim_s() {
   static const std::string instance = to_ansi_string({90});
   return instance;
 }
 
-} // namespace _classes
+} // namespace _lib
 } // namespace log
 } // namespace webview
 

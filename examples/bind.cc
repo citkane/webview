@@ -5,6 +5,8 @@
 #include <string>
 #include <thread>
 
+using namespace webview::detail;
+
 constexpr const auto html =
     R"html(
 <div>
@@ -47,12 +49,12 @@ int main() {
   try {
     long count = 0;
 
-    webview::webview w(true, nullptr);
+    webview_cc w(true, nullptr);
     w.set_title("Bind Example");
     w.set_size(480, 320, WEBVIEW_HINT_NONE);
 
     // A binding that counts up or down and immediately returns the new value.
-    w.bind("count", [&](const std::string &req) -> std::string {
+    w.bind("count", [&](const_str_ref req) -> std::string {
       // Imagine that req is properly parsed or use your own JSON parser.
       auto direction = std::stol(req.substr(1, req.size() - 1));
       return std::to_string(count += direction);
@@ -61,7 +63,7 @@ int main() {
     // A binding that creates a new thread and returns the result at a later time.
     w.bind(
         "compute",
-        [&](const std::string &id, const std::string &req, void * /*arg*/) {
+        [&](const_str_ref id, const_str_ref req, void * /*arg*/) {
           // Create a thread and forget about it for the sake of simplicity.
           std::thread([&, id, req] {
             // Simulate load.

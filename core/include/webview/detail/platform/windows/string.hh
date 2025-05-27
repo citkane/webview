@@ -42,7 +42,7 @@ namespace detail {
 
 #if defined(_WIN32)
 // Converts a narrow (UTF-8-encoded) string into a wide (UTF-16-encoded) string.
-inline std::wstring widen_string(const std::string &input) {
+inline std::wstring widen_string(const_str_ref input) {
   if (input.empty()) {
     return std::wstring();
   }

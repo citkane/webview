@@ -27,8 +27,8 @@
 #define WEBVIEW_BACKENDS_GTK_WEBKITGTK_DMABUF_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
+#include "webview/types/types.hh"
 
 #if defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)
 
@@ -60,8 +60,12 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
+namespace platform {
+namespace linux {
+namespace webkitgtk {
 
 // Namespace containing workaround for WebKit 2.42 when using NVIDIA GPU
 // driver.
@@ -70,7 +74,7 @@ namespace detail {
 namespace webkit_dmabuf {
 
 // Get environment variable. Not thread-safe.
-static inline std::string get_env(const std::string &name) {
+static inline std::string get_env(const_str_ref name) {
   auto *value = std::getenv(name.c_str());
   if (value) {
     return {value};
@@ -79,7 +83,7 @@ static inline std::string get_env(const std::string &name) {
 }
 
 // Set environment variable. Not thread-safe.
-static inline void set_env(const std::string &name, const std::string &value) {
+static inline void set_env(const_str_ref name, const_str_ref value) {
   ::setenv(name.c_str(), value.c_str(), 1);
 }
 
@@ -159,6 +163,9 @@ static inline void apply_webkit_dmabuf_workaround() {
 }
 
 } // namespace webkit_dmabuf
+} // namespace webkitgtk
+} // namespace linux
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

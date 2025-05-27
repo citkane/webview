@@ -28,23 +28,25 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/engine_queue.hh"
-#include "webview/detail/frontend/engine_frontend.hh"
+#include "webview/strings/string_api.hh"
 
-using namespace webview::detail::backend;
-using namespace webview::detail::frontend;
+using namespace webview::strings;
+using namespace webview::detail;
 
-void engine_queue::resolve_thread_constructor(str_arg_t name, str_arg_t id,
-                                              str_arg_t args, engine_base *wv) {
+void engine_queue::resolve_thread_constructor(const_str_ref name,
+                                              const_str_ref id,
+                                              const_str_ref args,
+                                              engine_base *wv) {
   if (atomic.terminating()) {
     return;
   }
   try {
     list.bindings.at(name).call(id, args);
   } catch (const std::exception &err_) {
-    auto err = front_end.err_message.uncaught_exception(name, err_.what());
+    auto err = string::err.uncaught_exception(name, err_.what());
     wv->reject(id, err);
   } catch (...) {
-    perror(front_end.err_message.webview_terminated(name).c_str());
+    perror(string::err.webview_terminated(name).c_str());
   };
 }
 

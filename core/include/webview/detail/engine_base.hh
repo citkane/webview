@@ -28,8 +28,8 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_queue.hh"
-#include "webview/detail/frontend/user_script.hh"
-#include "webview/test_helper.hh"
+#include "webview/detail/user/user_script.hh"
+#include "webview/tests/test_helper.hh"
 #include "webview/types/types.h"
 #include "webview/types/types.hh"
 #include <atomic>
@@ -40,35 +40,33 @@ using namespace webview::test;
 using namespace webview::detail::user;
 namespace webview {
 namespace detail {
-namespace backend {
 
 /// Internally used callback function type for messaging in the promise resolution
 /// native / JS round trip
-using sync_binding_t = std::function<std::string(std::string)>;
 
 /// Common internal API methods for all three Webview platform classes:
 /// - cocoa_webkit
 /// - gtk_webkitgtk
 /// - win32_edge
-class engine_base : public engine_queue {
+class engine_base : public detail::engine_queue {
 
 public:
   virtual ~engine_base() = default;
   engine_base(bool owns_window);
 
   /// Internal API implementation of public \ref webview_navigate
-  noresult navigate(str_arg_t url);
+  noresult navigate(const_str_ref url);
   /// Internal API implementation of public \ref webview_bind (synchronous)
-  noresult bind(str_arg_t name, sync_binding_t fn);
+  noresult bind(const_str_ref name, sync_binding_t fn);
   /// Internal API implementation of public \ref webview_bind (asynchronous)
-  noresult bind(str_arg_t name, binding_t fn, void *arg,
+  noresult bind(const_str_ref name, binding_t fn, void *arg,
                 bool skip_queue = false);
   /// Internal API implementation of public \ref webview_unbind
-  noresult unbind(str_arg_t name, bool skip_queue = false);
+  noresult unbind(const_str_ref name, bool skip_queue = false);
   /// Internal API implementation of public \ref webview_return
-  noresult resolve(str_arg_t id, int status, str_arg_t result);
+  noresult resolve(const_str_ref id, int status, const_str_ref result);
   /// Helper to reject a promise through \ref resolve
-  noresult reject(str_arg_t id, str_arg_t err);
+  noresult reject(const_str_ref id, const_str_ref err);
   /// Internal API implementation of public \ref webview_get_window
   result<void *> window();
   /// Internal API implementation part of public \ref webview_get_native_handle
@@ -82,20 +80,20 @@ public:
   /// Internal API implementation of public \ref webview_dispatch
   noresult dispatch(std::function<void()> f);
   /// Internal API implementation of public \ref webview_set_title
-  noresult set_title(str_arg_t title);
+  noresult set_title(const_str_ref title);
   /// Internal API implementation of public \ref webview_set_size
   noresult set_size(int width, int height, webview_hint_t hints);
   /// Internal API implementation of public \ref webview_set_html
-  noresult set_html(str_arg_t html);
+  noresult set_html(const_str_ref html);
   /// Internal API implementation of public \ref webview_init
-  noresult init(str_arg_t js);
+  noresult init(const_str_ref js);
   /// Internal API implementation of public \ref webview_eval
-  noresult eval(str_arg_t js, bool skip_queue = false);
+  noresult eval(const_str_ref js, bool skip_queue = false);
 
 protected:
-  friend struct _structs::user_scripts_t;
+  friend struct threading::_lib::user_scripts_t;
   /// Platform specific implementation for \ref navigate
-  virtual noresult navigate_impl(str_arg_t url) = 0;
+  virtual noresult navigate_impl(const_str_ref url) = 0;
   /// Platform specific implementation for \ref window
   virtual result<void *> window_impl() = 0;
   /// Platform specific implementation for \ref widget
@@ -109,19 +107,19 @@ protected:
   /// Platform specific implementation for \ref dispatch
   virtual noresult dispatch_impl(std::function<void()> f) = 0;
   /// Platform specific implementation for \ref set_title
-  virtual noresult set_title_impl(str_arg_t title) = 0;
+  virtual noresult set_title_impl(const_str_ref title) = 0;
   /// Platform specific implementation for \ref set_size
   virtual noresult set_size_impl(int width, int height,
                                  webview_hint_t hints) = 0;
   /// Platform specific implementation for \ref set_html
-  virtual noresult set_html_impl(str_arg_t html) = 0;
+  virtual noresult set_html_impl(const_str_ref html) = 0;
   /// Platform specific implementation for \ref eval
-  virtual noresult eval_impl(str_arg_t js) = 0;
+  virtual noresult eval_impl(const_str_ref js) = 0;
 
   /// Adds a bound user function to Webview native code.
-  //virtual user_script *add_user_script(str_arg_t js);
+  //virtual user_script *add_user_script(cont_str_&_t js);
   /// Platform specific implementation to add a bound user JS function.
-  virtual user_script add_user_script_impl(str_arg_t js) = 0;
+  virtual user_script add_user_script_impl(const_str_ref js) = 0;
   /// Platform specific implementation to remove all bound JS user functions from the Webview script.
   virtual void
   remove_all_user_scripts_impl(const std::list<user_script> &scripts) = 0;
@@ -130,15 +128,15 @@ protected:
                                            const user_script &second) = 0;
   /// Replaces a bound user script in Webview native code.
   //virtual user_script *replace_user_script(const user_script &old_script,
-  //                                        str_arg_t new_script_code);
+  //                                        cont_str_&_t new_script_code);
   /// Updates the JS `bind` script in the frontend window.
   void replace_bind_script();
   /// Adds the JS Webview script to the frontend window
-  void add_init_script(str_arg_t post_fn);
+  void add_init_script(const_str_ref post_fn);
   // Creates a `bind` JS script string for the frontend window.
   std::string create_bind_script();
   /// Handler for messages from the frontend window to the native Webview process.
-  virtual void on_message(str_arg_t msg);
+  virtual void on_message(const_str_ref msg);
   /// Handler to increment the browser window count
   virtual void on_window_created();
   /// Handler to decrement the browser window count
@@ -180,7 +178,6 @@ private:
   static const int m_initial_height = 480;
 };
 
-} // namespace backend
 } // namespace detail
 } // namespace webview
 

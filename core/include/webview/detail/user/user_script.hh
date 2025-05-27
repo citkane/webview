@@ -23,8 +23,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_USER_SCRIPT_HH
-#define WEBVIEW_DETAIL_USER_SCRIPT_HH
+#ifndef WEBVIEW_DETAIL_USER_USER_SCRIPT_HH
+#define WEBVIEW_DETAIL_USER_USER_SCRIPT_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/types/types.hh"
@@ -55,7 +55,7 @@ public:
   using impl_deleter = std::function<void(impl *)>;
   using impl_ptr = std::unique_ptr<impl, impl_deleter>;
 
-  user_script(str_arg_t code, impl_ptr &&impl_)
+  user_script(const_str_ref code, impl_ptr &&impl_)
       : m_code{code}, m_impl{std::move(impl_)} {}
 
   user_script(const user_script &other) = delete;
@@ -71,7 +71,7 @@ public:
     return *this;
   }
 
-  str_arg_t get_code() const { return m_code; }
+  const_str_ref get_code() const { return m_code; }
 
   impl &get_impl() { return *m_impl; }
 
@@ -107,4 +107,4 @@ private:
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_USER_SCRIPT_HH
+#endif // WEBVIEW_DETAIL_USER_USER_SCRIPT_HH

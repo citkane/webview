@@ -29,7 +29,7 @@
 #include "webview/detail/threading/atomic_api.hh"
 #include "webview/detail/engine_queue.hh"
 
-using namespace webview::detail::backend::_structs;
+using namespace webview::detail::threading::_lib;
 
 bool atomic_done_t::bind() const { return self->bind_done.load(); }
 void atomic_done_t::bind(bool val) {

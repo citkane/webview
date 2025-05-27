@@ -28,14 +28,13 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/engine_queue.hh"
-#include "webview/detail/frontend/engine_frontend.hh"
 #include "webview/log/trace_log.hh"
+#include "webview/strings/string_api.hh"
 #include <mutex>
 
 using namespace webview::log;
-using namespace webview::types;
-using namespace webview::detail::backend;
-using namespace webview::detail::frontend;
+using namespace webview::strings;
+using namespace webview::detail;
 
 void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
   std::mutex queue_thread_mtx;
@@ -52,7 +51,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
     trace::queue.loop.start(list.queue.size());
     auto action = list.queue.front();
     context_t &work_ctx = action.ctx;
-    str_arg_t name = action.name_or_js;
+    std::string name = action.name_or_js;
     auto &work_fn = action.work_fn;
 
     // `bind` user work unit
@@ -83,7 +82,7 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
       trace::queue.unbind.start(name);
       auto promises = list.unresolved_promises.get_copy(name);
       for (auto &id : promises) {
-        auto err = front_end.err_message.reject_unbound(id, name);
+        auto err = string::err.reject_unbound(id, name);
         wv_instance->reject(id, err);
       }
 

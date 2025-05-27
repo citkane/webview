@@ -39,9 +39,9 @@
 using namespace webview::types;
 namespace webview {
 namespace detail {
-namespace backend {
 
-class engine_queue : protected engine_lists_t {
+class engine_base;
+class engine_queue : protected threading::engine_lists_t {
 public:
   ~engine_queue() = default;
   engine_queue();
@@ -58,35 +58,35 @@ public:
     ~bind_api_t() = default;
     bind_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `bind` work unit onto the queue.
-    noresult enqueue(dispatch_fn_t fn, str_arg_t name) const;
+    noresult enqueue(dispatch_fn_t fn, const_str_ref name) const;
     /// Indicates if adding a `bind` to the queue is an error, eg. duplicate name.
-    bool is_duplicate(str_arg_t name) const;
+    bool is_duplicate(const_str_ref name) const;
   };
   struct unbind_api_t : nested_api_t<engine_queue> {
     ~unbind_api_t() = default;
     unbind_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `unbind` work unit onto the queue.
-    noresult enqueue(dispatch_fn_t fn, str_arg_t name) const;
+    noresult enqueue(dispatch_fn_t fn, const_str_ref name) const;
     /// Indicates if adding an `unbind` to the queue is an error, eg. bind doesn't exist.
-    bool not_found(str_arg_t name) const;
+    bool not_found(const_str_ref name) const;
   };
   struct eval_api_t : nested_api_t<engine_queue> {
     ~eval_api_t() = default;
     eval_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `eval` work unit onto the queue.
-    noresult enqueue(dispatch_fn_t fn, str_arg_t js) const;
+    noresult enqueue(dispatch_fn_t fn, const_str_ref js) const;
   };
   struct promise_api_t : nested_api_t<engine_queue> {
     ~promise_api_t() = default;
     promise_api_t(engine_queue *self) : nested_api_t(self) {}
 
     /// Takes queue action for a resolved promise
-    void resolving(str_arg_t name, str_arg_t id) const;
+    void resolving(const_str_ref name, const_str_ref id) const;
     /// Sends the native work unit of a promise to a concurrent thread.
-    void resolve(str_arg_t name, str_arg_t id, str_arg_t args,
+    void resolve(const_str_ref name, const_str_ref id, const_str_ref args,
                  engine_base *wv) const;
     /// Relays notifications from the frontend to relevant queue methods.
-    bool exec_system_message(str_arg_t id, str_arg_t method);
+    bool exec_system_message(const_str_ref id, const_str_ref method);
   };
   struct bindings_api_t : nested_api_t<engine_queue> {
     bindings_api_t(engine_queue *self) : nested_api_t(self) {}
@@ -117,9 +117,9 @@ public:
   // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
 private:
-  friend struct _structs::atomic_dom_ready_t;
-  friend struct _structs::atomic_done_t;
-  friend struct _structs::atomic_api_t;
+  friend struct threading::_lib::atomic_dom_ready_t;
+  friend struct threading::_lib::atomic_done_t;
+  friend struct threading::_lib::atomic_api_t;
 
   /// Container for user work operation tags, ie. `bind`, `unbind`, `eval`
   action_ctx_t const ctx{};
@@ -140,20 +140,21 @@ private:
   /// We want native promise work units to run concurrently.
   /// We do not want native promise work to stall execution of the main / app thread.
   /// @todo hardware concurrency limit queue.
-  void resolve_thread_constructor(str_arg_t name, str_arg_t id, str_arg_t args,
-                                  engine_base *wv);
+  void resolve_thread_constructor(const_str_ref name, const_str_ref id,
+                                  const_str_ref args, engine_base *wv);
 
   /// Determines if a given binding name will be bound at the time of queue execution.
-  bool will_be_bound(str_arg_t name) const;
+  bool will_be_bound(const_str_ref name) const;
 
   /// Adds `bind`, `unbind` or `eval` user work unit to the queue.
-  noresult queue_work(str_arg_t name_or_js, dispatch_fn_t fn, context_t fn_ctx);
+  noresult queue_work(const_str_ref name_or_js, dispatch_fn_t fn,
+                      context_t fn_ctx);
 
   /// Sends a native promise work unit to a concurrent detached thread.
-  void resolve_work(engine_base *wv, str_arg_t msg, str_arg_t id);
+  void resolve_work(engine_base *wv, const_str_ref msg, const_str_ref id);
 
   /// API to query and set various flags atomically
-  _structs::atomic_api_t atomic;
+  threading::_lib::atomic_api_t atomic;
 
   std::atomic_bool is_dom_ready{};
   std::atomic_bool queue_empty{};
@@ -168,7 +169,6 @@ private:
   std::thread queue_thread;
 };
 
-} // namespace backend
 } // namespace detail
 } // namespace webview
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

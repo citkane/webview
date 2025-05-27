@@ -5,7 +5,6 @@ target_include_directories(
     webview_core_headers
     INTERFACE
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/tests/include>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
 target_link_libraries(webview_core_headers INTERFACE ${WEBVIEW_DEPENDENCIES})
 # Note that we also use CMAKE_CXX_STANDARD which can override this
@@ -78,7 +77,7 @@ if(WEBVIEW_BUILD_AMALGAMATION)
                     "${PROJECT_SOURCE_DIR}/scripts/amalgamate/amalgamate.py"
                     --clang-format-exe "${WEBVIEW_CLANG_FORMAT_EXE}"
                     --base "${CMAKE_CURRENT_SOURCE_DIR}"
-                    --search include tests/include
+                    --search include
                     --output "${CMAKE_CURRENT_BINARY_DIR}/amalgamation/webview.h"
                     ${SOURCE_FILES}
                 DEPENDS ${HEADER_FILES} ${SOURCE_FILES}

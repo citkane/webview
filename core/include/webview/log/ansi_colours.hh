@@ -32,7 +32,7 @@
 using namespace webview::types;
 namespace webview {
 namespace log {
-namespace _classes {
+namespace _lib {
 
 class ansi_t {
 public:
@@ -50,21 +50,21 @@ public:
   } ansi{};
 
 private:
-  static str_arg_t yellow_s();
-  static str_arg_t yellow_dim_s();
-  static str_arg_t green_s();
-  static str_arg_t red_s();
-  static str_arg_t blue_s();
-  static str_arg_t blue_dark_s();
-  static str_arg_t magenta_s();
-  static str_arg_t default_c_s();
-  static str_arg_t bold_s();
-  static str_arg_t dim_s();
+  static const_str_ref yellow_s();
+  static const_str_ref yellow_dim_s();
+  static const_str_ref green_s();
+  static const_str_ref red_s();
+  static const_str_ref blue_s();
+  static const_str_ref blue_dark_s();
+  static const_str_ref magenta_s();
+  static const_str_ref default_c_s();
+  static const_str_ref bold_s();
+  static const_str_ref dim_s();
 
   static std::string to_ansi_string(std::initializer_list<int> codes) noexcept;
 };
 
-} // namespace _classes
+} // namespace _lib
 } // namespace log
 } // namespace webview
 

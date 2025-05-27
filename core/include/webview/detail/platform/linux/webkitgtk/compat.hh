@@ -27,8 +27,8 @@
 #define WEBVIEW_PLATFORM_LINUX_WEBKITGTK_COMPAT_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
+#include "webview/types/types.hh"
 
 #if defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)
 
@@ -57,8 +57,12 @@
 
 #endif
 
+using namespace webview::types;
 namespace webview {
 namespace detail {
+namespace platform {
+namespace linux {
+namespace webkitgtk {
 
 /**
  * WebKitGTK compatibility helper class.
@@ -72,10 +76,10 @@ public:
 #endif
 
   using on_script_message_received_t =
-      std::function<void(WebKitUserContentManager *, const std::string &)>;
+      std::function<void(WebKitUserContentManager *, const_str_ref)>;
   static void
   connect_script_message_received(WebKitUserContentManager *manager,
-                                  const std::string &handler_name,
+                                  const_str_ref handler_name,
                                   on_script_message_received_t handler) {
     std::string signal_name = "script-message-received::";
     signal_name += handler_name;
@@ -134,6 +138,9 @@ public:
   }
 };
 
+} // namespace webkitgtk
+} // namespace linux
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

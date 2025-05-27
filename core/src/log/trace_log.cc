@@ -30,7 +30,7 @@
 
 using namespace webview::types;
 using namespace webview::log;
-using namespace webview::log::_structs_classes;
+using namespace webview::log::_lib;
 
 time_point_t trace_tools_t::get_now() const {
   return std::chrono::steady_clock::now();
@@ -52,37 +52,40 @@ long trace_tools_t::elapsed_ms(time_point_t start, time_point_t end) const {
 std::string trace_tools_t::bool_s(bool flag) const {
   return flag ? "true" : "false";
 }
-std::string trace_tools_t::escape_s(str_arg_t text) const {
+std::string trace_tools_t::escape_s(const_str_ref text) const {
   return "\"" + text + "\"";
 }
 std::string trace_tools_t::num_s(size_t val) const {
   return std::to_string(val);
 }
-std::string trace_tools_t::bold(str_arg_t this_col, str_arg_t text) const {
+std::string trace_tools_t::bold(const_str_ref this_col,
+                                const_str_ref text) const {
   return ansi.bold + text + ansi.default_c + this_col;
 }
-std::string trace_tools_t::dim(str_arg_t this_col, str_arg_t text) const {
+std::string trace_tools_t::dim(const_str_ref this_col,
+                               const_str_ref text) const {
   return ansi.dim + text + ansi.default_c + this_col;
 }
-void trace_tools_t::print_ansi(str_arg_t this_col, str_arg_t message) const {
+void trace_tools_t::print_ansi(const_str_ref this_col,
+                               const_str_ref message) const {
   static std::mutex mtx;
   std::lock_guard<std::mutex> lock(mtx);
   printf("%s%s%s\n", this_col.c_str(), message.c_str(), ansi.default_c.c_str());
 }
 
 #if WEBVIEW_LOG_TRACE
-void print_here_t::print_here(str_arg_t message) const {
+void print_here_t::print_here(const_str_ref message) const {
   auto this_c = ansi.magenta;
   auto here_m = bold(this_c, "here") + ": ";
   auto message_ = ansi.default_c + message;
   print_ansi(this_c, prefix + postfix + here_m + message_);
 }
 #else
-void print_here_t::print_here(str_arg_t /*message*/) const {}
+void print_here_t::print_here(const_str_ref /*message*/) const {}
 #endif
 
 #if WEBVIEW_LOG_TRACE
-void queue_print_t::start(str_arg_t name) const {
+void queue_print_t::start(const_str_ref name) const {
 
   auto this_c = ansi.blue;
   auto postfix_m = bold(this_c, postfix) + ": ";
@@ -90,20 +93,20 @@ void queue_print_t::start(str_arg_t name) const {
   print_ansi(this_c, prefix + postfix_m + start_m);
 }
 #else
-void queue_print_t::start(str_arg_t /**/) const {}
+void queue_print_t::start(const_str_ref /**/) const {}
 #endif
 #if WEBVIEW_LOG_TRACE
-void queue_print_t::wait(str_arg_t name) const {
+void queue_print_t::wait(const_str_ref name) const {
   auto this_c = ansi.yellow_dim;
   auto postfix_m = bold(this_c, postfix) + ": ";
   auto wait_m = bold(this_c, "WAIT: ") + escape_s(name);
   print_ansi(this_c, prefix + postfix_m + wait_m);
 }
 #else
-void queue_print_t::wait(str_arg_t /**/) const {}
+void queue_print_t::wait(const_str_ref /**/) const {}
 #endif
 #if WEBVIEW_LOG_TRACE
-void queue_print_t::done(bool done, str_arg_t name) const {
+void queue_print_t::done(bool done, const_str_ref name) const {
   auto this_c = ansi.blue;
   auto postfix_m = bold(this_c, postfix) + ": ";
   auto done_m = bold(this_c, "work_done: ") + bool_s(done) + ": ";
@@ -111,7 +114,7 @@ void queue_print_t::done(bool done, str_arg_t name) const {
   print_ansi(this_c, prefix + postfix_m + done_m + name_m);
 }
 #else
-void queue_print_t::done(bool /**/, str_arg_t /**/) const {}
+void queue_print_t::done(bool /**/, const_str_ref /**/) const {}
 #endif
 
 #if WEBVIEW_LOG_TRACE
@@ -215,19 +218,19 @@ std::string queue_loop_t::wrapper_t::loop_elapsed() const {
 }
 
 #if WEBVIEW_LOG_TRACE
-void queue_notify_t::wrapper_t::on_message(str_arg_t method) const {
+void queue_notify_t::wrapper_t::on_message(const_str_ref method) const {
   auto this_c = ansi.yellow_dim;
   auto mess_m = bold(this_c, "on_message") + ": ";
   auto method_m = escape_s(method);
   print_ansi(this_c, prefix + postfix + mess_m + method_m);
 }
 #else
-void queue_notify_t::wrapper_t::on_message(str_arg_t /**/) const {}
+void queue_notify_t::wrapper_t::on_message(const_str_ref /**/) const {}
 #endif
 
 #if WEBVIEW_LOG_TRACE
 void queue_enqueue_t::wrapper_t::added(char scp, size_t size,
-                                       str_arg_t name_or_js) const {
+                                       const_str_ref name_or_js) const {
   auto this_c = ansi.default_c;
   auto size_m = "queue size: " + num_s(size) + " | ";
   auto queued_m = get_ctx(scp) + " | ";
@@ -237,7 +240,7 @@ void queue_enqueue_t::wrapper_t::added(char scp, size_t size,
 }
 #else
 void queue_enqueue_t::wrapper_t::added(char /**/, size_t /**/,
-                                       str_arg_t /**/) const {}
+                                       const_str_ref /**/) const {}
 #endif
 #if WEBVIEW_LOG_TRACE
 void queue_enqueue_t::wrapper_t::added(char scp, size_t size) const {
@@ -252,38 +255,38 @@ void queue_enqueue_t::wrapper_t::added(char /**/, size_t /**/) const {}
 #endif
 
 #if WEBVIEW_LOG_TRACE
-void base_print_t::start(str_arg_t name) const {
+void base_print_t::start(const_str_ref name) const {
   auto this_c = ansi.default_c;
   auto got_m = "got     | ";
   auto name_m = bold(this_c, escape_s(name));
   print_ansi(this_c, prefix + postfix + got_m + name_m);
 }
 #else
-void base_print_t::start(str_arg_t /**/) const {}
+void base_print_t::start(const_str_ref /**/) const {}
 #endif
 #if WEBVIEW_LOG_TRACE
-void base_print_t::work(str_arg_t name) const {
+void base_print_t::work(const_str_ref name) const {
   auto this_c = ansi.blue_dark;
   auto work_m = bold(this_c, "do_work: ");
   auto name_m = escape_s(name);
   print_ansi(this_c, prefix + postfix + work_m + name_m);
 }
 #else
-void base_print_t::work(str_arg_t /**/) const {}
+void base_print_t::work(const_str_ref /**/) const {}
 #endif
 #if WEBVIEW_LOG_TRACE
-void base_print_t::done(str_arg_t name) const {
+void base_print_t::done(const_str_ref name) const {
   auto this_c = ansi.blue;
   auto done_m = bold(this_c, "work done") + ": ";
   auto name_m = escape_s(name);
   print_ansi(this_c, prefix + postfix + done_m + name_m);
 }
 #else
-void base_print_t::done(str_arg_t /**/) const {}
+void base_print_t::done(const_str_ref /**/) const {}
 #endif
 
 #if WEBVIEW_LOG_TRACE
-void base_eval_t::wrapper_t::start(str_arg_t js, bool skip_queue) const {
+void base_eval_t::wrapper_t::start(const_str_ref js, bool skip_queue) const {
   auto this_c = ansi.default_c;
   auto skip_m = "skip queue: " + bool_s(skip_queue);
   auto got_m = "got js  | ";
@@ -292,27 +295,27 @@ void base_eval_t::wrapper_t::start(str_arg_t js, bool skip_queue) const {
   print_ansi(this_c, m);
 }
 #else
-void base_eval_t::wrapper_t::start(str_arg_t /**/, bool /**/) const {}
+void base_eval_t::wrapper_t::start(const_str_ref /**/, bool /**/) const {}
 #endif
 #if WEBVIEW_LOG_TRACE
-void base_eval_t::wrapper_t::work(str_arg_t js) const {
+void base_eval_t::wrapper_t::work(const_str_ref js) const {
   auto this_c = ansi.blue_dark;
   auto work_m = bold(this_c, "do_work") + " js...\n";
   auto m = prefix + postfix + work_m + dim(this_c, js);
   print_ansi(this_c, m);
 }
 #else
-void base_eval_t::wrapper_t::work(str_arg_t /**/) const {}
+void base_eval_t::wrapper_t::work(const_str_ref /**/) const {}
 #endif
 #if WEBVIEW_LOG_TRACE
-void base_eval_t::wrapper_t::done(bool done, str_arg_t js) const {
+void base_eval_t::wrapper_t::done(bool done, const_str_ref js) const {
   auto this_c = ansi.blue;
   auto done_m = bold(this_c, "work done") + ": " + bool_s(done) + " | js ...\n";
   auto js_m = dim(this_c, js);
   print_ansi(this_c, prefix + postfix + done_m + js_m);
 }
 #else
-void base_eval_t::wrapper_t::done(bool /**/, str_arg_t /**/) const {}
+void base_eval_t::wrapper_t::done(bool /**/, const_str_ref /**/) const {}
 #endif
 
 const base_trace_t &trace::base = get_base();

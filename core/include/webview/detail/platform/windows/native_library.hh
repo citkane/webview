@@ -62,8 +62,7 @@ class native_library {
 public:
   native_library() = default;
 
-  explicit native_library(const std::string &name)
-      : m_handle{load_library(name)} {}
+  explicit native_library(const_str_ref name) : m_handle{load_library(name)} {}
 
 #ifdef _WIN32
   explicit native_library(const std::wstring &name)
@@ -127,7 +126,7 @@ public:
   void detach() { m_handle = nullptr; }
 
   // Returns true if the library by the given name is currently loaded; otherwise false.
-  static inline bool is_loaded(const std::string &name) {
+  static inline bool is_loaded(const_str_ref name) {
 #ifdef _WIN32
     auto handle = GetModuleHandleW(widen_string(name).c_str());
 #else
@@ -146,7 +145,7 @@ private:
   using mod_handle_t = void *;
 #endif
 
-  static inline mod_handle_t load_library(const std::string &name) {
+  static inline mod_handle_t load_library(const_str_ref name) {
 #ifdef _WIN32
     return load_library(widen_string(name));
 #else

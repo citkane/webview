@@ -33,8 +33,12 @@
 #include "win32_edge.hh"
 
 namespace webview {
-using webview = browser_engine;
-}
+namespace detail {
+
+using webview_cc = browser_engine;
+
+} // namespace detail
+} // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_BACKENDS_HH

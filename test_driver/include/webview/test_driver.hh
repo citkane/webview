@@ -25,11 +25,13 @@
 #ifndef WEBVIEW_TEST_DRIVER_HH
 #define WEBVIEW_TEST_DRIVER_HH
 
+#include "webview/types/types.hh"
 #include <exception>
 #include <functional>
 #include <map>
 #include <string>
 
+using namespace webview::types;
 namespace webview {
 namespace test {
 namespace driver {
@@ -66,7 +68,7 @@ public:
   test_reg(const char *name, std::function<void()> fn) noexcept
       : m_name{name}, m_fn{std::move(fn)} {}
 
-  const std::string &name() const noexcept { return m_name; }
+  const_str_ref name() const noexcept { return m_name; }
   void invoke() const { m_fn(); }
 
 private:
@@ -129,7 +131,7 @@ struct auto_test_reg {
 
 int cmd_help();
 int cmd_list();
-int cmd_run_test(const std::string &test_name);
+int cmd_run_test(const_str_ref test_name);
 int cmd_run_all_tests();
 
 } // namespace driver

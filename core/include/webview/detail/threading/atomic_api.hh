@@ -31,23 +31,22 @@
 using namespace webview::types;
 namespace webview {
 namespace detail {
-namespace backend {
 
 class engine_queue;
 
-namespace _structs {
+namespace threading {
+namespace _lib {
 
 struct atomic_dom_ready_t : nested_api_t<engine_queue> {
-  atomic_dom_ready_t(detail::backend::engine_queue *self)
-      : nested_api_t(self) {}
-  /// Query if the backend is ready to do work.
+  atomic_dom_ready_t(engine_queue *self) : nested_api_t(self) {}
+  /// Query if the threading is ready to do work.
   bool ready() const;
-  /// Notify the queue that the backend is ready to receive work.
+  /// Notify the queue that the threading is ready to receive work.
   void ready(bool flag);
 };
 
 struct atomic_done_t : nested_api_t<engine_queue> {
-  atomic_done_t(detail::backend::engine_queue *self) : nested_api_t(self) {}
+  atomic_done_t(engine_queue *self) : nested_api_t(self) {}
   /// Gets the bind flag state
   bool bind() const;
   /// Sets the bind flag state
@@ -63,8 +62,7 @@ struct atomic_done_t : nested_api_t<engine_queue> {
 };
 
 struct atomic_api_t : nested_api_t<engine_queue> {
-  ~atomic_api_t() = default;
-  atomic_api_t(detail::backend::engine_queue *self) : nested_api_t(self) {}
+  atomic_api_t(engine_queue *self) : nested_api_t(self) {}
 
   atomic_dom_ready_t dom{this->self};
   atomic_done_t done{this->self};
@@ -72,8 +70,8 @@ struct atomic_api_t : nested_api_t<engine_queue> {
   bool AND(std::initializer_list<bool> flags) const;
 };
 
-} // namespace _structs
-} // namespace backend
+} // namespace _lib
+} // namespace threading
 } // namespace detail
 } // namespace webview
 

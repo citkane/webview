@@ -26,47 +26,20 @@
 #define WEBVIEW_TEST_HELPER_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/test_helper.hh"
+#include "webview/tests/test_helper.hh"
 #include "webview/detail/engine_base.hh"
+#include "webview/strings/string_api.hh"
 
-using namespace webview::test;
 using namespace webview::strings;
-using namespace webview::detail::backend;
-using namespace webview::test::_structs;
-
-std::string js_t::init(str_arg_t init_value) const {
-  auto init_value_js = post_value(init_value);
-  return tokenise(TEST_INIT_JS, tokens.post_fn, init_value_js);
-}
-std::string js_t::post_value(str_arg_t value) const {
-  return tokenise(TEST_VALUE_WRAPPER_JS, strings::tokens.value, value);
-}
-std::string js_t::make_call_js(unsigned int result) const {
-  return tokenise(TEST_MAKE_CALL_JS, tokens.value, std::to_string(result));
-}
-
-std::string html_t::string_returns(str_arg_t title) const {
-  return tokenise(TEST_STRING_RETURNS_HTML, tokens.value, title);
-}
-std::string html_t::navigate_encoded() const {
-  std::string encoding = "data:text/html,";
-  std::string html =
-      "%3Chtml%3EEnsure%20that%20JS%20code%20can%20call%20native%"
-      "20code%20and%"
-      "20vice%20versa%3C%2Fhtml%3E";
-  return encoding + html;
-}
 
 bool tester::resolve_on_main_thread() {
-  std::lock_guard<std::mutex> lock(mtx());
   return resolve_on_main_thread_().load();
 }
 void tester::resolve_on_main_thread(bool val) {
-  std::lock_guard<std::mutex> lock(mtx());
   resolve_on_main_thread_().store(val);
 }
 
-void tester::set_value(str_arg_t val) {
+void tester::set_value(const_str_ref val) {
   std::lock_guard<std::mutex> lock(mtx());
   string_value() = val;
   eval_values();
@@ -75,7 +48,7 @@ void tester::set_value(str_arg_t val) {
   }
 }
 
-void tester::expect_value(str_arg_t value) {
+void tester::expect_value(const_str_ref value) {
   std::lock_guard<std::mutex> lock(mtx());
   string_expected_value() = value;
   eval_values();
@@ -88,8 +61,12 @@ std::string tester::get_value() {
   return string_value();
 }
 
-void tester::ping_value(str_arg_t value, engine_base &wv) {
-  wv.dispatch([&, value] { wv.eval(js.post_value(value)); });
+void tester::ping_value(const_str_ref escaped_value, engine_base &wv,
+                        bool escaped) {
+  std::lock_guard<std::mutex> lock(mtx());
+  wv.dispatch([&, escaped_value, escaped] {
+    wv.eval(string::tests::js.post_value(escaped_value, escaped));
+  });
 }
 
 std::chrono::seconds tester::seconds(int seconds) {

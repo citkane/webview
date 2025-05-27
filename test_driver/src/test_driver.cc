@@ -41,7 +41,6 @@ int driver::cmd_help() {
 }
 
 int driver::cmd_list() {
-  using namespace webview;
   auto &tests{auto_test_reg::tests()};
   if (tests.empty()) {
     std::cerr << "No tests found.\n";
@@ -53,8 +52,7 @@ int driver::cmd_list() {
   return failure_exit_codes::success;
 }
 
-int driver::cmd_run_test(const std::string &test_name) {
-  using namespace webview;
+int driver::cmd_run_test(const_str_ref test_name) {
   auto &tests{auto_test_reg::tests()};
   auto found{tests.find(test_name)};
   if (found == tests.end()) {
@@ -80,7 +78,6 @@ int driver::cmd_run_test(const std::string &test_name) {
 }
 
 int driver::cmd_run_all_tests() {
-  using namespace webview;
   auto &tests{auto_test_reg::tests()};
   if (tests.empty()) {
     return failure_exit_codes::no_tests_found;

@@ -80,6 +80,7 @@ using namespace webview::types;
 using namespace webview::errors;
 namespace webview {
 namespace detail {
+namespace user {
 
 using msg_cb_t = std::function<void(const std::string)>;
 
@@ -307,9 +308,11 @@ private:
   std::wstring m_code;
 };
 
+} // namespace user
+
 namespace backend {
 
-class win32_edge_engine : public engine_base {
+class win32_edge_engine : public detail::engine_base {
 public:
   win32_edge_engine(bool debug, void *window) : engine_base{!window} {
     queue.init(this);
@@ -409,7 +412,7 @@ protected:
     return {};
   }
 
-  noresult set_title_impl(str_arg_t title) override {
+  noresult set_title_impl(const_str_ref title) override {
     SetWindowTextW(m_window, widen_string(title).c_str());
     return {};
   }
@@ -443,13 +446,13 @@ protected:
     return window_show();
   }
 
-  noresult navigate_impl(str_arg_t url) override {
+  noresult navigate_impl(const_str_ref url) override {
     auto wurl = widen_string(url);
     m_webview->Navigate(wurl.c_str());
     return {};
   }
 
-  noresult eval_impl(str_arg_t js) override {
+  noresult eval_impl(const_str_ref js) override {
     // TODO: Skip if no content has begun loading yet. Can't check with
     //       ICoreWebView2::get_Source because it returns "about:blank".
     auto wjs = widen_string(js);
@@ -457,12 +460,12 @@ protected:
     return {};
   }
 
-  noresult set_html_impl(str_arg_t html) override {
+  noresult set_html_impl(const_str_ref html) override {
     m_webview->NavigateToString(widen_string(html).c_str());
     return {};
   }
 
-  user_script add_user_script_impl(str_arg_t js) override {
+  user_script add_user_script_impl(const_str_ref js) override {
     auto wjs = widen_string(js);
     std::wstring script_id;
     bool done{};

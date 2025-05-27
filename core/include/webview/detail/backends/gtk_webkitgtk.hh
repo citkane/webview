@@ -75,8 +75,11 @@
 
 using namespace webview::types;
 using namespace webview::errors;
+using namespace webview::platform::linux::gtk;
+using namespace webview::platform::linux::webkitgtk;
 namespace webview {
 namespace detail {
+namespace user {
 
 class user_script::impl {
 public:
@@ -96,10 +99,11 @@ public:
 private:
   WebKitUserScript *m_script{};
 };
+} // namespace user
 
 namespace backend {
 
-class gtk_webkit_engine : public engine_base {
+class gtk_webkit_engine : public detail::engine_base {
 public:
   gtk_webkit_engine(bool debug, void *window) : engine_base{!window} {
     queue.init(this);
@@ -179,7 +183,7 @@ protected:
     return {};
   }
 
-  noresult set_title_impl(str_arg_t title) override {
+  noresult set_title_impl(const_str_ref title) override {
     gtk_window_set_title(GTK_WINDOW(m_window), title.c_str());
     return {};
   }
@@ -198,18 +202,18 @@ protected:
     return window_show();
   }
 
-  noresult navigate_impl(str_arg_t url) override {
+  noresult navigate_impl(const_str_ref url) override {
     webkit_web_view_load_uri(WEBKIT_WEB_VIEW(m_webview), url.c_str());
     return {};
   }
 
-  noresult set_html_impl(str_arg_t html) override {
+  noresult set_html_impl(const_str_ref html) override {
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(m_webview), html.c_str(),
                               nullptr);
     return {};
   }
 
-  noresult eval_impl(str_arg_t js) override {
+  noresult eval_impl(const_str_ref js) override {
     // URI is null before content has begun loading.
     if (!webkit_web_view_get_uri(WEBKIT_WEB_VIEW(m_webview))) {
       return {};
@@ -226,7 +230,7 @@ protected:
     return {};
   }
 
-  user_script add_user_script_impl(str_arg_t js) override {
+  user_script add_user_script_impl(const_str_ref js) override {
     auto *wk_script = webkit_user_script_new(
         js.c_str(), WEBKIT_USER_CONTENT_INJECT_TOP_FRAME,
         WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START, nullptr, nullptr);
@@ -299,12 +303,12 @@ private:
         webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(m_webview));
     webkitgtk_compat::connect_script_message_received(
         manager, "__webview__",
-        [this](WebKitUserContentManager *, str_arg_t r) { on_message(r); });
+        [this](WebKitUserContentManager *, const_str_ref r) { on_message(r); });
     webkitgtk_compat::user_content_manager_register_script_message_handler(
         manager, "__webview__");
-    add_init_script("function(message) {\n\
-  return window.webkit.messageHandlers.__webview__.postMessage(message);\n\
-}");
+    add_init_script(R"(function(message) {
+                return window.webkit.messageHandlers.__webview__.postMessage(message);
+            })");
   }
 
   void window_settings(bool debug) {
@@ -347,8 +351,10 @@ private:
 };
 
 } // namespace backend
+
+using browser_engine = backend::gtk_webkit_engine;
+
 } // namespace detail
-using browser_engine = detail::backend::gtk_webkit_engine;
 } // namespace webview
 
 #endif // defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)

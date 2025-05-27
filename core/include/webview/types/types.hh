@@ -52,10 +52,17 @@ template <typename T> struct nested_api_t {
 
 template <typename T> using result = basic_result<T, error_info, exception>;
 
+struct tokenise_data_t {
+  std::string token;
+  std::string tkn_replcmnt;
+};
+
 using noresult = basic_result<void, error_info, exception>;
 using dispatch_fn_t = std::function<void()>;
 using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
-using str_arg_t = const std::string &;
+using const_str_ref = const std::string &;
+using strg_replacements_t = std::initializer_list<tokenise_data_t>;
+using sync_binding_t = std::function<std::string(std::string)>;
 
 } // namespace types
 } // namespace webview

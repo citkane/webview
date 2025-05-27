@@ -1,78 +1,72 @@
 #include "webview/test_driver.hh"
 #include "webview/webview.h"
-
-using namespace webview::detail;
-using namespace webview::types;
-using namespace webview::errors;
+auto &json = string::json;
 
 TEST_CASE("Ensure that JSON parsing works") {
-  auto J = webview::strings::json_parse;
+
   // Valid input with expected output
-  REQUIRE(J(R"({"foo":"bar"})", "foo", -1) == "bar");
-  REQUIRE(J(R"({"foo":""})", "foo", -1).empty());
-  REQUIRE(J(R"({"foo":{}")", "foo", -1) == "{}");
-  REQUIRE(J(R"({"foo": {"bar": 1}})", "foo", -1) == R"({"bar": 1})");
-  REQUIRE(J(R"(["foo", "bar", "baz"])", "", 0) == "foo");
-  REQUIRE(J(R"(["foo", "bar", "baz"])", "", 2) == "baz");
+  REQUIRE(json.parse(R"({"foo":"bar"})", "foo", -1) == "bar");
+  REQUIRE(json.parse(R"({"foo":""})", "foo", -1).empty());
+  REQUIRE(json.parse(R"({"foo":{}")", "foo", -1) == "{}");
+  REQUIRE(json.parse(R"({"foo": {"bar": 1}})", "foo", -1) == R"({"bar": 1})");
+  REQUIRE(json.parse(R"(["foo", "bar", "baz"])", "", 0) == "foo");
+  REQUIRE(json.parse(R"(["foo", "bar", "baz"])", "", 2) == "baz");
   // Valid UTF-8 with expected output
-  REQUIRE(J(R"({"フー":"バー"})", "フー", -1) == "バー");
-  REQUIRE(J(R"(["フー", "バー", "バズ"])", "", 2) == "バズ");
+  REQUIRE(json.parse(R"({"フー":"バー"})", "フー", -1) == "バー");
+  REQUIRE(json.parse(R"(["フー", "バー", "バズ"])", "", 2) == "バズ");
   // Invalid input with valid output - should probably fail
-  REQUIRE(J(R"({"foo":"bar")", "foo", -1) == "bar");
+  REQUIRE(json.parse(R"({"foo":"bar")", "foo", -1) == "bar");
   // Valid input with other invalid parameters - should fail
-  REQUIRE(J(R"([])", "", 0).empty());
-  REQUIRE(J(R"({})", "foo", -1).empty());
-  REQUIRE(J(R"(["foo", "bar", "baz"])", "", -1).empty());
-  REQUIRE(J(R"(["foo"])", "", 1234).empty());
-  REQUIRE(J(R"(["foo"])", "", -1234).empty());
+  REQUIRE(json.parse(R"([])", "", 0).empty());
+  REQUIRE(json.parse(R"({})", "foo", -1).empty());
+  REQUIRE(json.parse(R"(["foo", "bar", "baz"])", "", -1).empty());
+  REQUIRE(json.parse(R"(["foo"])", "", 1234).empty());
+  REQUIRE(json.parse(R"(["foo"])", "", -1234).empty());
   // Invalid input - should fail
-  REQUIRE(J("", "", 0).empty());
-  REQUIRE(J("", "foo", -1).empty());
-  REQUIRE(J(R"({"foo":")", "foo", -1).empty());
-  REQUIRE(J(R"({"foo":{)", "foo", -1).empty());
-  REQUIRE(J(R"({"foo":{")", "foo", -1).empty());
-  REQUIRE(J(R"(}")", "foo", -1).empty());
-  REQUIRE(J(R"({}}")", "foo", -1).empty());
-  REQUIRE(J(R"("foo)", "foo", -1).empty());
-  REQUIRE(J(R"(foo)", "foo", -1).empty());
-  REQUIRE(J(R"({{[[""foo""]]}})", "", 1234).empty());
-  REQUIRE(J("bad", "", 0).empty());
-  REQUIRE(J("bad", "foo", -1).empty());
+  REQUIRE(json.parse("", "", 0).empty());
+  REQUIRE(json.parse("", "foo", -1).empty());
+  REQUIRE(json.parse(R"({"foo":")", "foo", -1).empty());
+  REQUIRE(json.parse(R"({"foo":{)", "foo", -1).empty());
+  REQUIRE(json.parse(R"({"foo":{")", "foo", -1).empty());
+  REQUIRE(json.parse(R"(}")", "foo", -1).empty());
+  REQUIRE(json.parse(R"({}}")", "foo", -1).empty());
+  REQUIRE(json.parse(R"("foo)", "foo", -1).empty());
+  REQUIRE(json.parse(R"(foo)", "foo", -1).empty());
+  REQUIRE(json.parse(R"({{[[""foo""]]}})", "", 1234).empty());
+  REQUIRE(json.parse("bad", "", 0).empty());
+  REQUIRE(json.parse("bad", "foo", -1).empty());
 }
 
 TEST_CASE("Ensure that JSON escaping works") {
-  using webview::strings::json_escape;
 
   // Simple case without need for escaping. Quotes added by default.
-  REQUIRE(json_escape("hello") == "\"hello\"");
+  REQUIRE(json.escape("hello") == "\"hello\"");
   // Simple case without need for escaping. Quotes explicitly not added.
-  REQUIRE(json_escape("hello", false) == "hello");
+  REQUIRE(json.escape("hello", false) == "hello");
   // Empty input should return empty output.
-  REQUIRE(json_escape("", false).empty());
+  REQUIRE(json.escape("", false).empty());
   // '"' and '\' should be escaped.
-  REQUIRE(json_escape("\"", false) == "\\\"");
-  REQUIRE(json_escape("\\", false) == "\\\\");
+  REQUIRE(json.escape("\"", false) == "\\\"");
+  REQUIRE(json.escape("\\", false) == "\\\\");
   // Commonly-used characters that should be escaped.
-  REQUIRE(json_escape("\b\f\n\r\t", false) == "\\b\\f\\n\\r\\t");
+  REQUIRE(json.escape("\b\f\n\r\t", false) == "\\b\\f\\n\\r\\t");
   // ASCII control characters should be escaped.
-  REQUIRE(json_escape(std::string{"\0\x1f", 2}, false) == "\\u0000\\u001f");
+  REQUIRE(json.escape(std::string{"\0\x1f", 2}, false) == "\\u0000\\u001f");
   // ASCII printable characters (even DEL) shouldn't be escaped.
-  REQUIRE(json_escape("\x20\x7e\x7f", false) == "\x20\x7e\x7f");
+  REQUIRE(json.escape("\x20\x7e\x7f", false) == "\x20\x7e\x7f");
   // Valid UTF-8.
-  REQUIRE(json_escape("\u2328", false) == "\u2328");
-  REQUIRE(json_escape("フーバー", false) == "フーバー");
+  REQUIRE(json.escape("\u2328", false) == "\u2328");
+  REQUIRE(json.escape("フーバー", false) == "フーバー");
   // Replacement character for invalid characters.
-  REQUIRE(json_escape("�", false) == "�");
+  REQUIRE(json.escape("�", false) == "�");
   // Invalid characters should be replaced with '�' but we just leave them as-is.
-  REQUIRE(json_escape("\x80\x9f\xa0\xff", false) == "\x80\x9f\xa0\xff");
+  REQUIRE(json.escape("\x80\x9f\xa0\xff", false) == "\x80\x9f\xa0\xff");
   // JS code should not be executed (eval).
   auto expected_gotcha = R"js(alert(\"gotcha\"))js";
-  REQUIRE(json_escape(R"(alert("gotcha"))", false) == expected_gotcha);
+  REQUIRE(json.escape(R"(alert("gotcha"))", false) == expected_gotcha);
 }
 
 TEST_CASE("optional class") {
-  using namespace webview::detail;
-
   REQUIRE(!optional<int>{}.has_value());
   REQUIRE(optional<int>{1}.has_value());
   REQUIRE(optional<int>{1}.get() == 1);
@@ -85,9 +79,6 @@ TEST_CASE("optional class") {
 }
 
 TEST_CASE("result class") {
-  using namespace webview::detail;
-  using namespace webview;
-
   REQUIRE(result<int>{}.has_value());
   REQUIRE(result<int>{}.value() == 0);
   REQUIRE(result<int>{1}.has_value());
@@ -109,9 +100,6 @@ TEST_CASE("result class") {
 }
 
 TEST_CASE("noresult class") {
-  using namespace webview::detail;
-  using namespace webview;
-
   REQUIRE(!noresult{}.has_error());
   REQUIRE(noresult{}.ok());
   REQUIRE(!noresult{error_info{}}.ok());
