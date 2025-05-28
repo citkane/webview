@@ -23,22 +23,21 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_BACKENDS_HH
-#define WEBVIEW_BACKENDS_HH
+#ifndef WEBVIEW_CC_API_HH
+#define WEBVIEW_CC_API_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "cocoa_webkit.hh"
-#include "gtk_webkitgtk.hh"
-#include "win32_edge.hh"
+#include "webview/detail/backends/cocoa_webkit.hh"
+#include "webview/detail/backends/gtk_webkitgtk.hh"
+#include "webview/detail/backends/win32_edge.hh"
 
 namespace webview {
-namespace detail {
 
-using webview_cc = browser_engine;
+/// A Webview C++ API instance
+using webview_cc_t = detail::backend::browser_engine;
 
-} // namespace detail
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_BACKENDS_HH
+#endif // WEBVIEW_CC_API_HH

@@ -616,11 +616,10 @@ private:
   bool m_is_window_shown{};
 };
 
+using browser_engine = gtk_webkit_engine;
+
 } // namespace backend
 } // namespace detail
-
-using browser_engine = detail::backend::cocoa_wkwebview_engine;
-
 } // namespace webview
 
 #endif // defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)

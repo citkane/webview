@@ -350,10 +350,9 @@ private:
   bool m_is_window_shown{};
 };
 
+using browser_engine = gtk_webkit_engine;
+
 } // namespace backend
-
-using browser_engine = backend::gtk_webkit_engine;
-
 } // namespace detail
 } // namespace webview
 

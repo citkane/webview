@@ -28,7 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
-#include "webview/detail/backends/backends.hh"
+#include "webview/cc_api.hh"
 #include "webview/errors/errors.h"
 #include "webview/lib/macros.h"
 #include "webview/lib/version.h"
@@ -76,26 +76,27 @@ webview_error_t api_filter(WorkFn &&do_work) noexcept {
   }
 }
 
-inline webview_cc *cast_to_webview(void *w) {
+inline webview_cc_t *cast_to_webview(void *w) {
   if (!w) {
     throw exception{WEBVIEW_ERROR_INVALID_ARGUMENT,
                     "Cannot cast null pointer to webview instance"};
   }
-  return static_cast<webview_cc *>(w);
+  return static_cast<webview_cc_t *>(w);
 }
 } // namespace _util
 } // namespace api
 } // namespace webview
 
+using namespace webview;
 using namespace webview::api::_util;
 
 WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
-  webview_cc *w{};
+  webview_cc_t *w{};
   auto err = api_filter(
-      [=]() -> result<webview_cc *> {
-        return new webview_cc{static_cast<bool>(debug), wnd};
+      [=]() -> result<webview_cc_t *> {
+        return new webview_cc_t{static_cast<bool>(debug), wnd};
       },
-      [&](webview_cc *w_) { w = w_; });
+      [&](webview_cc_t *w_) { w = w_; });
   if (err == WEBVIEW_ERROR_OK) {
     return w;
   }

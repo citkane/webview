@@ -5,8 +5,6 @@
 #include <string>
 #include <thread>
 
-using namespace webview::detail;
-
 constexpr const auto html =
     R"html(
 <div>
@@ -49,7 +47,7 @@ int main() {
   try {
     long count = 0;
 
-    webview_cc w(true, nullptr);
+    webview_cc_t w(true, nullptr);
     w.set_title("Bind Example");
     w.set_size(480, 320, WEBVIEW_HINT_NONE);
 

@@ -1,5 +1,4 @@
 #include "webview/test_driver.hh"
-#include "webview/types/types.hh"
 
 #define WEBVIEW_VERSION_MAJOR 1
 #define WEBVIEW_VERSION_MINOR 2
@@ -8,11 +7,10 @@
 #define WEBVIEW_VERSION_BUILD_METADATA "+gaabbccd"
 
 #include "webview/tests/test_helper.hh"
+#include "webview/types/types.hh"
 #include "webview/webview.h"
 #include <cassert>
 #include <cstdint>
-
-using namespace webview::detail;
 
 // This test should only run on Windows to enable us to perform a controlled
 // "warm-up" of MS WebView2 in order to avoid the initial test from
@@ -23,14 +21,14 @@ using namespace webview::detail;
 TEST_CASE("# Warm-up") {
   // Signal to the test runner that this may be a slow test.
   std::cerr << "[[slow]]" << std::endl; // NOLINT(performance-avoid-endl)
-  webview_cc w(false, nullptr);
+  webview_cc_t w(false, nullptr);
   w.dispatch([&]() { w.terminate(); });
   w.run();
 }
 #endif
 
 TEST_CASE("Start app loop and terminate it") {
-  webview_cc w(false, nullptr);
+  webview_cc_t w(false, nullptr);
   w.dispatch([&]() { w.terminate(); });
   w.run();
 }
@@ -151,7 +149,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
 
 TEST_CASE("Test synchronous binding and unbinding") {
   tester::resolve_on_main_thread(true);
-  webview_cc w(true, nullptr);
+  webview_cc_t w(true, nullptr);
 
   unsigned int number = 0;
 
@@ -205,7 +203,7 @@ TEST_CASE("Test synchronous binding and unbinding") {
 
 TEST_CASE("The string returned from a binding call must be JSON") {
   tester::resolve_on_main_thread(true);
-  webview_cc w(true, nullptr);
+  webview_cc_t w(true, nullptr);
 
   w.bind("loadData",
          [](const_str_ref /*req*/) -> std::string { return "\"hello\""; });
@@ -223,7 +221,7 @@ TEST_CASE("The string returned from a binding call must be JSON") {
 
 TEST_CASE("The string returned of a binding call must not be JS") {
   tester::resolve_on_main_thread(true);
-  webview_cc w(true, nullptr);
+  webview_cc_t w(true, nullptr);
 
   w.bind("loadData", [](const_str_ref /*req*/) -> std::string {
     // Try to load malicious JS code
@@ -256,7 +254,7 @@ TEST_CASE("webview_version()") {
 
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
   tester::resolve_on_main_thread(false);
-  webview_cc wv{true, nullptr};
+  webview_cc_t wv{true, nullptr};
 
   auto async_tests = std::thread([&]() {
     std::mutex worker_mtx;

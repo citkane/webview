@@ -1,8 +1,6 @@
 #include "webview/webview.h"
 #include <iostream>
 
-using namespace webview::detail;
-
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
                    LPSTR /*lpCmdLine*/, int /*nCmdShow*/) {
@@ -10,7 +8,7 @@ int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
 int main() {
 #endif
   try {
-    webview_cc w(false, nullptr);
+    webview_cc_t w(false, nullptr);
     w.set_title("Basic Example");
     w.set_size(480, 320, WEBVIEW_HINT_NONE);
     w.set_html("Thanks for using webview!");

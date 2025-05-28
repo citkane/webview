@@ -896,11 +896,10 @@ private:
   bool m_is_window_shown{};
 };
 
+using browser_engine = gtk_webkit_engine;
+
 } // namespace backend
 } // namespace detail
-
-using browser_engine = detail::backend::win32_edge_engine;
-
 } // namespace webview
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS) && defined(WEBVIEW_EDGE)
