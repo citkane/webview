@@ -308,14 +308,12 @@ namespace backend {
 class win32_edge_engine : public detail::engine_base {
 public:
   win32_edge_engine(bool debug, void *window) : engine_base{!window} {
-    queue.init(this);
     window_init(window);
     window_settings(debug);
     dispatch_size_default();
   }
 
   virtual ~win32_edge_engine() {
-    queue.shutdown();
     if (m_com_handler) {
       m_com_handler->Release();
       m_com_handler = nullptr;

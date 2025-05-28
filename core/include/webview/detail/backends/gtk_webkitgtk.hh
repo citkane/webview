@@ -106,7 +106,6 @@ namespace backend {
 class gtk_webkit_engine : public detail::engine_base {
 public:
   gtk_webkit_engine(bool debug, void *window) : engine_base{!window} {
-    queue.init(this);
     window_init(window);
     window_settings(debug);
     dispatch_size_default();
@@ -118,7 +117,6 @@ public:
   gtk_webkit_engine &operator=(gtk_webkit_engine &&) = delete;
 
   virtual ~gtk_webkit_engine() {
-    queue.shutdown();
     if (m_window) {
       if (owns_window()) {
         // Disconnect handlers to avoid callbacks invoked during destruction.

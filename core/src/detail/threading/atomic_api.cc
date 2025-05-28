@@ -53,6 +53,8 @@ void atomic_dom_ready_t::ready(bool flag) {
   self->cv.queue.notify_one();
 };
 
+bool atomic_api_t::terminating() const { return self->is_terminating.load(); };
+
 bool atomic_api_t::AND(std::initializer_list<bool> flags) const {
   if (self->atomic.terminating()) {
     return true;
@@ -66,7 +68,6 @@ bool atomic_api_t::AND(std::initializer_list<bool> flags) const {
   }
   return res;
 };
-bool atomic_api_t::terminating() const { return self->is_terminating.load(); };
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_DETAIL_ATOMIC_API_CC

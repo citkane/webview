@@ -26,7 +26,7 @@
 #define WEBVIEW_ENGINE_THREAD_QUEUE_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/engine_base.hh"
+#include "webview/cc_api.hh"
 #include "webview/detail/engine_queue.hh"
 #include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
@@ -36,17 +36,17 @@ using namespace webview::log;
 using namespace webview::strings;
 using namespace webview::detail;
 
-void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
+void engine_queue::queue_thread_constructor() {
   std::mutex queue_thread_mtx;
   std::unique_lock<std::mutex> lock(queue_thread_mtx);
-  while (true) {
+  while (!atomic.terminating()) {
     trace::queue.loop.wait(list.queue.size(), list.queue.empty(),
                            atomic.dom.ready());
     cv.queue.wait(lock, [this] {
       return atomic.AND({atomic.dom.ready(), !list.queue.empty()});
     });
     if (atomic.terminating()) {
-      break;
+      return;
     }
     trace::queue.loop.start(list.queue.size());
     auto action = list.queue.front();
@@ -57,11 +57,11 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
     // `bind` user work unit
     if (work_ctx == ctx.bind) {
       trace::queue.bind.start(name);
-      wv_instance->dispatch(work_fn);
+      wv->dispatch(work_fn);
       trace::queue.bind.wait(name);
       cv.bind.wait(lock, [this] { return atomic.AND({atomic.done.bind()}); });
       if (atomic.terminating()) {
-        break;
+        return;
       }
 
       trace::queue.bind.done(atomic.done.bind(), name);
@@ -77,19 +77,21 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
         return atomic.AND({list.unresolved_promises.empty(name)});
       });
       if (atomic.terminating()) {
-        break;
+        return;
       }
       trace::queue.unbind.start(name);
       auto promises = list.unresolved_promises.get_copy(name);
       for (auto &id : promises) {
         auto err = string::err.reject_unbound(id, name);
-        wv_instance->reject(id, err);
+        wv->reject(id, err);
       }
 
-      wv_instance->dispatch(work_fn);
+      wv->dispatch(work_fn);
       cv.unbind.wait(lock,
                      [this] { return atomic.AND({atomic.done.unbind()}); });
-
+      if (atomic.terminating()) {
+        return;
+      }
       trace::queue.unbind.done(atomic.done.unbind(), name);
       list.pending.pop_front();
       atomic.done.unbind(false);
@@ -98,10 +100,10 @@ void engine_queue::queue_thread_constructor(engine_base *wv_instance) {
     // `eval` user work unit
     if (work_ctx == ctx.eval) {
       trace::queue.eval.start();
-      wv_instance->dispatch(work_fn);
+      wv->dispatch(work_fn);
       cv.eval.wait(lock, [this] { return atomic.AND({atomic.done.eval()}); });
       if (atomic.terminating()) {
-        break;
+        return;
       }
       trace::queue.eval.done(atomic.done.eval());
       atomic.done.eval(false);

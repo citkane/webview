@@ -28,7 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_queue.hh"
-#include "webview/detail/engine_base.hh"
+#include "webview/cc_api.hh"
 #include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
 #include <cstdio>
@@ -44,7 +44,24 @@ using unbind_api_t = engine_queue::unbind_api_t;
 using promise_api_t = engine_queue::promise_api_t;
 using eval_api_t = engine_queue::eval_api_t;
 
-engine_queue::engine_queue() : queue{this}, atomic{this} {}
+engine_queue::engine_queue(engine_base *wv)
+    : queue{this}, atomic{this}, wv(wv) {
+  queue_thread = std::thread(&engine_queue::queue_thread_constructor, this);
+}
+
+engine_queue::~engine_queue() { queue_thread.join(); }
+
+void engine_queue::terminate_queue() {
+  printf("terminate_queue\n");
+  is_terminating.store(true);
+  cv.notify_all();
+  printf("Notified, is joinable:%s\n",
+         (queue_thread.joinable() ? "true" : "false"));
+  if (!queue_thread.joinable()) {
+    perror("Thread not joinable");
+    throw std::exception();
+  }
+};
 
 bool engine_queue::will_be_bound(const_str_ref name) const {
   auto i = list.pending.indices(name);
@@ -58,7 +75,7 @@ bool engine_queue::will_be_bound(const_str_ref name) const {
   };
 };
 
-noresult bind_api_t::enqueue(dispatch_fn_t fn, const_str_ref name) const {
+noresult bind_api_t::enqueue(dispatch_fn_t fn, const_str_ref name) {
   return self->queue_work(name, fn, self->ctx.bind);
 };
 bool bind_api_t::is_duplicate(const_str_ref name) const {
@@ -68,15 +85,15 @@ bool bind_api_t::is_duplicate(const_str_ref name) const {
 bool unbind_api_t::not_found(const_str_ref name) const {
   return !self->will_be_bound(name);
 };
-noresult unbind_api_t::enqueue(dispatch_fn_t fn, const_str_ref name) const {
+noresult unbind_api_t::enqueue(dispatch_fn_t fn, const_str_ref name) {
   return self->queue_work(name, fn, self->ctx.unbind);
 };
 
-noresult eval_api_t::enqueue(dispatch_fn_t fn, const_str_ref js) const {
+noresult eval_api_t::enqueue(dispatch_fn_t fn, const_str_ref js) {
   return self->queue_work(js, fn, self->ctx.eval);
 };
 
-void promise_api_t::resolving(const_str_ref name, const_str_ref id) const {
+void promise_api_t::resolving(const_str_ref name, const_str_ref id) {
   self->list.unresolved_promises.remove_id(name, id);
   if (self->list.unresolved_promises.empty(name)) {
     self->cv.unbind_timeout.notify_one();
@@ -84,14 +101,14 @@ void promise_api_t::resolving(const_str_ref name, const_str_ref id) const {
   }
 };
 void promise_api_t::resolve(const_str_ref name, const_str_ref id,
-                            const_str_ref args, engine_base *wv) const {
+                            const_str_ref args) {
   self->list.id_name_map.set(id, name);
   self->list.unresolved_promises.add_id(name, id);
   self->cv.unbind_timeout.notify_one();
   // Send the user defined native callback work to a detached thread.
   // @todo Thread pooling and resource management.
   std::thread resolver = std::thread(&engine_queue::resolve_thread_constructor,
-                                     self, name, id, args, wv);
+                                     self, name, id, args);
   resolver.detach();
 }
 bool promise_api_t::exec_system_message(const_str_ref id,
@@ -117,22 +134,6 @@ bool promise_api_t::exec_system_message(const_str_ref id,
   }
   return true;
 }
-
-void public_api_t::init(engine_base *wv_instance) const {
-  self->queue_thread =
-      std::thread(&engine_queue::queue_thread_constructor, self, wv_instance);
-}
-void public_api_t::shutdown() const {
-  self->is_terminating.store(true);
-  self->queue_empty.store(false);
-  self->is_dom_ready.store(true);
-  self->atomic.done.bind(true);
-  self->atomic.done.unbind(true);
-  self->atomic.done.eval(true);
-  self->cv.notify_all();
-  self->queue_thread.join();
-}
-bool public_api_t::shutting_down() const { return self->is_terminating.load(); }
 
 noresult engine_queue::queue_work(const_str_ref name_or_js, dispatch_fn_t fn,
                                   context_t fn_ctx) {

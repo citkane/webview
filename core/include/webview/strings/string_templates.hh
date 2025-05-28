@@ -36,7 +36,7 @@ namespace strings {
 namespace _templates {
 namespace frontend {
 
-static const_str_ref WEVBIEW_INIT_JS() {
+inline const_str_ref WEVBIEW_INIT_JS() {
   static std::string init_js = std::string("") +
                                R"(
 (function() {
@@ -135,7 +135,7 @@ static const_str_ref WEVBIEW_INIT_JS() {
   return init_js;
 };
 
-static const_str_ref ON_BIND_JS() {
+inline const_str_ref ON_BIND_JS() {
   static std::string on_bind = std::string("") + R"(
 if (window.__webview__) {
     try {
@@ -152,7 +152,7 @@ if (window.__webview__) {
   return on_bind;
 }
 
-static const_str_ref ON_UNBIND_JS() {
+inline const_str_ref ON_UNBIND_JS() {
   static std::string on_unbind =
       std::string("") +
       R"(                                                           
@@ -170,14 +170,14 @@ if (window.__webview__) {
   return on_unbind;
 }
 
-static const_str_ref ON_REPLY_JS() {
+inline const_str_ref ON_REPLY_JS() {
   static std::string on_reply = std::string("window.__webview__.onReply(") +
                                 string::json.escape(tokens.id) + ", " +
                                 tokens.status + ", " + tokens.result + ")";
   return on_reply;
 }
 
-static const_str_ref BIND_JS() {
+inline const_str_ref BIND_JS() {
   static std::string bind = std::string("") + R"(
 (function() {
     'use strict';
@@ -190,7 +190,7 @@ static const_str_ref BIND_JS() {
   return bind;
 }
 
-static const_str_ref EVAL_WRAPPER_JS() {
+inline const_str_ref EVAL_WRAPPER_JS() {
   static std::string eval_wrapper = std::string("") + R"(
 try {)" + tokens.user_js + R"(
 } catch (err) {
@@ -202,14 +202,14 @@ try {)" + tokens.user_js + R"(
   return eval_wrapper;
 }
 
-static const_str_ref REJECT_UNBOUND_M() {
+inline const_str_ref REJECT_UNBOUND_M() {
   static std::string reject_unbound_m = R"(
 "Promise id )" + tokens.id + R"( was rejected because function ")" +
                                         tokens.str + R"(" was unbound.)";
   return reject_unbound_m;
 }
 
-static const_str_ref UNCAUGHT_EXP_M() {
+inline const_str_ref UNCAUGHT_EXP_M() {
   static std::string uncought_exp_m = R"(
 Uncaught exception from native user callback function ")" +
                                       tokens.str + R"(":
@@ -217,7 +217,7 @@ Uncaught exception from native user callback function ")" +
   return uncought_exp_m;
 }
 
-static const_str_ref WEBVIEW_TERMINATED_M() {
+inline const_str_ref WEBVIEW_TERMINATED_M() {
   static std::string webview_terminated_m =
       R"(
 Native user callback function ")" +
@@ -229,7 +229,7 @@ Native user callback function ")" +
 
 namespace tests {
 
-static const_str_ref TEST_STRING_RETURNS_HTML() {
+inline const_str_ref TEST_STRING_RETURNS_HTML() {
   static std::string html = std::string("") + R"(
 <html><body>
     <div>)" + tokens.str + R"(</div>
@@ -246,7 +246,7 @@ static const_str_ref TEST_STRING_RETURNS_HTML() {
   return html;
 }
 
-static const_str_ref TEST_BIND_UNBIND_HTML() {
+inline const_str_ref TEST_BIND_UNBIND_HTML() {
   static std::string str = R"(
 <html><body>                                   
   <div>Test synchronous binding and unbinding</div>
@@ -272,22 +272,29 @@ window.__webview__.post(
 );)";
 }
 
-static const_str_ref TEST_MAKE_CALL_JS() {
+inline const_str_ref TEST_MAKE_CALL_JS() {
   static std::string make_call = std::string("") + R"(
     try {
+        console.log("window.increment", _int_);
         window.increment()
-            .then(() => window.test()" +
-                                 tokens.intval + R"())
-            .catch(() => window.test()" +
-                                 tokens.intval + R"(,1))
-    } catch {
-        window.test()" + tokens.intval +
-                                 R"(,1);
+            .then(() => { 
+                console.log("window.test", _int_);
+                window.test(_int_);
+            })
+            .catch((err) => {
+                console.error(err, window.test);
+                console.log("1: window.test(_int_, 1);");
+                window.test(_int_, 1);
+            })
+    } catch (err) {
+        console.error(err, window.test);
+        console.log("2: window.test(_int_, 1);");
+        window.test(_int_, 1);
     })";
   return make_call;
 }
 
-static const_str_ref TEST_INIT_JS() {
+inline const_str_ref TEST_INIT_JS() {
   static std::string init_js = std::string("") + R"(
 window.x = 42;
 window.onload = () => {

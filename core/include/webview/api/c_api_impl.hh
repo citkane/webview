@@ -105,7 +105,9 @@ WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
 
 WEBVIEW_API webview_error_t webview_destroy(webview_t w) {
   return api_filter([=]() -> noresult {
-    delete cast_to_webview(w);
+    auto wv = cast_to_webview(w);
+    wv->terminate_queue();
+    delete wv;
     return {};
   });
 }

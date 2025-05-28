@@ -36,7 +36,8 @@ using namespace webview::detail::user;
 using namespace webview::log;
 using namespace webview::strings;
 
-engine_base::engine_base(bool owns_window) : m_owns_window{owns_window} {}
+engine_base::engine_base(bool owns_window)
+    : engine_queue{this}, m_owns_window{owns_window} {}
 
 noresult engine_base::navigate(const_str_ref url) {
   if (url.empty()) {
@@ -120,9 +121,11 @@ result<void *> engine_base::browser_controller() {
 noresult engine_base::run() { return run_impl(); }
 
 noresult engine_base::terminate() {
-  // terminate should be called from a child thread, so we dispatch it to the main thread.
-  dispatch([&] { terminate_impl(); });
-  return {};
+  // terminate_impl would normally be called from a child thread, so we dispatch it to the main thread.
+  return dispatch([this] {
+    terminate_queue();
+    terminate_impl();
+  });
 }
 
 noresult engine_base::dispatch(std::function<void()> f) {
@@ -207,7 +210,7 @@ void engine_base::on_message(const_str_ref msg) {
     dispatch([this, name, id, args] { list.bindings.at(name).call(id, args); });
     return;
   }
-  queue.promises.resolve(name, id, args, this);
+  queue.promises.resolve(name, id, args);
 }
 
 void engine_base::on_window_created() { inc_window_count(); }

@@ -33,16 +33,18 @@
 using namespace webview::strings;
 using namespace webview::detail;
 
-void engine_queue::resolve_thread_constructor(const_str_ref name,
+void engine_queue::resolve_thread_constructor(std::string name,
                                               const_str_ref id,
-                                              const_str_ref args,
-                                              engine_base *wv) {
+                                              const_str_ref args) {
   if (atomic.terminating()) {
     return;
   }
   try {
     list.bindings.at(name).call(id, args);
   } catch (const std::exception &err_) {
+    if (atomic.terminating()) {
+      return;
+    }
     auto err = string::err.uncaught_exception(name, err_.what());
     wv->reject(id, err);
   } catch (...) {

@@ -90,6 +90,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
   c_context_t context{};
   auto cb_tests = +[](const char *seq, const char *req, void *arg) {
     auto context = static_cast<c_context_t *>(arg);
+    printf("-------------------------- req: %s, %i\n", req, context->number);
     std::string req_(req);
 
     // User defined native callback functions are now called from a child thread,
@@ -127,6 +128,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
     // Finish test.
     if (req_ == "[3]") {
       REQUIRE(context->number == 2);
+      printf("----------------++++++++++ req: %s, %i\n", req, context->number);
 
       webview_terminate(context->w);
       return;
@@ -135,6 +137,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
   };
 
   auto w = webview_create(1, nullptr);
+  printf("++++++++++++++++++++++++++++++++++++++++++ webview created\n");
   context.w = w;
   webview_set_html(w, "Use C API to test binding and unbinding");
   // Attempting to remove non-existing binding is OK
@@ -143,7 +146,9 @@ TEST_CASE("Use C API to test binding and unbinding") {
   // Attempting to bind multiple times only binds once
   webview_bind(w, "test", cb_tests, &context);
   webview_eval(w, R"(
-    window.test(0);)");
+    console.log(0);
+    window.test(0).then(()=>console.log("resolved 0"));
+)");
   webview_run(w);
 }
 
