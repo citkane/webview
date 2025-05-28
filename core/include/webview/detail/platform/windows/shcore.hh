@@ -27,31 +27,32 @@
 #define WEBVIEW_PLATFORM_WINDOWS_SHCORE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-
-#include "webview/detail/platform/windows/native_library.hh"
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 
+#include "webview/detail/platform/windows/native_library.hh"
 #include <windows.h>
 
-using namespace webview::detail::platform::windows;
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 namespace shcore_symbols {
 
 typedef enum { PROCESS_PER_MONITOR_DPI_AWARE = 2 } PROCESS_DPI_AWARENESS;
 using SetProcessDpiAwareness_t = HRESULT(WINAPI *)(PROCESS_DPI_AWARENESS);
 
-constexpr auto SetProcessDpiAwareness =
-    library_symbol<SetProcessDpiAwareness_t>("SetProcessDpiAwareness");
+constexpr library_symbol<SetProcessDpiAwareness_t> SetProcessDpiAwareness() {
+  return library_symbol<SetProcessDpiAwareness_t>("SetProcessDpiAwareness");
+}
 
 } // namespace shcore_symbols
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

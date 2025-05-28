@@ -27,26 +27,23 @@
 #define WEBVIEW_PLATFORM_WINDOWS_IID_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-
-#include <windows.h>
-
-#include <objbase.h>
-
 #ifdef _MSC_VER
 #pragma comment(lib, "ole32.lib")
 #endif
 
-using namespace webview::detail::platform::windows;
+#include <objbase.h>
+#include <windows.h>
+
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 
 template <typename T> struct cast_info_t {
   using type = T;
@@ -71,6 +68,8 @@ To *cast_if_equal_iid(From *from, REFIID riid, const cast_info_t<To> &info,
   return ptr;
 }
 
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

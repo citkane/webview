@@ -27,22 +27,20 @@
 #define WEBVIEW_PLATFORM_WINDOWS_USER32_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-
-#include "webview/detail/platform/windows/native_library.hh"
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 
+#include "webview/detail/platform/windows/native_library.hh"
 #include <windows.h>
 
-using namespace webview::detail::platform::windows;
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 namespace user32_symbols {
 
 using DPI_AWARENESS_CONTEXT = HANDLE;
@@ -64,25 +62,40 @@ enum class dpi_awareness : intptr_t {
   per_monitor_aware = -3
 };
 
-constexpr auto SetProcessDpiAwarenessContext =
-    library_symbol<SetProcessDpiAwarenessContext_t>(
-        "SetProcessDpiAwarenessContext");
-constexpr auto SetProcessDPIAware =
-    library_symbol<SetProcessDPIAware_t>("SetProcessDPIAware");
-constexpr auto GetDpiForWindow =
-    library_symbol<GetDpiForWindow_t>("GetDpiForWindow");
-constexpr auto EnableNonClientDpiScaling =
-    library_symbol<EnableNonClientDpiScaling_t>("EnableNonClientDpiScaling");
-constexpr auto AdjustWindowRectExForDpi =
-    library_symbol<AdjustWindowRectExForDpi_t>("AdjustWindowRectExForDpi");
-constexpr auto GetWindowDpiAwarenessContext =
-    library_symbol<GetWindowDpiAwarenessContext_t>(
-        "GetWindowDpiAwarenessContext");
-constexpr auto AreDpiAwarenessContextsEqual =
-    library_symbol<AreDpiAwarenessContextsEqual_t>(
-        "AreDpiAwarenessContextsEqual");
+constexpr library_symbol<SetProcessDpiAwarenessContext_t>
+SetProcessDpiAwarenessContext() {
+  return library_symbol<SetProcessDpiAwarenessContext_t>(
+      "SetProcessDpiAwarenessContext");
+}
+constexpr library_symbol<SetProcessDPIAware_t> SetProcessDPIAware() {
+  return library_symbol<SetProcessDPIAware_t>("SetProcessDPIAware");
+}
+constexpr library_symbol<GetDpiForWindow_t> GetDpiForWindow() {
+  return library_symbol<GetDpiForWindow_t>("GetDpiForWindow");
+}
+constexpr library_symbol<EnableNonClientDpiScaling_t>
+EnableNonClientDpiScaling() {
+  return library_symbol<EnableNonClientDpiScaling_t>(
+      "EnableNonClientDpiScaling");
+}
+constexpr library_symbol<AdjustWindowRectExForDpi_t>
+AdjustWindowRectExForDpi() {
+  return library_symbol<AdjustWindowRectExForDpi_t>("AdjustWindowRectExForDpi");
+}
+constexpr library_symbol<GetWindowDpiAwarenessContext_t>
+GetWindowDpiAwarenessContext() {
+  return library_symbol<GetWindowDpiAwarenessContext_t>(
+      "GetWindowDpiAwarenessContext");
+}
+constexpr library_symbol<AreDpiAwarenessContextsEqual_t>
+AreDpiAwarenessContextsEqual() {
+  return library_symbol<AreDpiAwarenessContextsEqual_t>(
+      "AreDpiAwarenessContextsEqual");
+}
 
 } // namespace user32_symbols
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

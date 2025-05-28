@@ -27,29 +27,26 @@
 #define WEBVIEW_PLATFORM_WINDOWS_VERSION_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-
-#include "webview/detail/platform/windows/ntdll.hh"
-
-#include <array>
-#include <string>
-#include <vector>
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-
-#include <windows.h>
-
 #ifdef _MSC_VER
 #pragma comment(lib, "version.lib")
 #endif
 
+#include "webview/detail/platform/windows/ntdll.hh"
+#include <array>
+#include <string>
+#include <vector>
+#include <windows.h>
+
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 
 // Parses a version string with 1-4 integral components, e.g. "1.2.3.4".
 // Missing or invalid components default to 0, and excess components are ignored.
@@ -72,14 +69,14 @@ parse_version(const std::basic_string<T> &version) noexcept {
   std::array<unsigned int, 4> components{};
   while (sb != end && se != end && ci < components.size()) {
     if (*se == static_cast<T>('.')) {
-      components[ci++] = parse_component(sb, se);
+      components.at(ci++) = parse_component(sb, se);
       sb = ++se;
       continue;
     }
     ++se;
   }
   if (sb < se && ci < components.size()) {
-    components[ci] = parse_component(sb, se);
+    components.at(ci) = parse_component(sb, se);
   }
   return components;
 }
@@ -95,25 +92,26 @@ get_file_version_string(const std::wstring &file_path) noexcept {
   DWORD info_buffer_length =
       GetFileVersionInfoSizeW(file_path.c_str(), &dummy_handle);
   if (info_buffer_length == 0) {
-    return std::wstring();
+    return {};
   }
   std::vector<char> info_buffer;
   info_buffer.reserve(info_buffer_length);
   if (!GetFileVersionInfoW(file_path.c_str(), 0, info_buffer_length,
                            info_buffer.data())) {
-    return std::wstring();
+    return {};
   }
   auto sub_block = L"\\StringFileInfo\\040904B0\\ProductVersion";
-  LPWSTR version = nullptr;
+  LPVOID *version_ = nullptr;
   unsigned int version_length = 0;
-  if (!VerQueryValueW(info_buffer.data(), sub_block,
-                      reinterpret_cast<LPVOID *>(&version), &version_length)) {
-    return std::wstring();
+  if (!VerQueryValueW(info_buffer.data(), sub_block, version_,
+                      &version_length)) {
+    return {};
   }
+  auto version = static_cast<LPWSTR>(*version_);
   if (!version || version_length == 0) {
-    return std::wstring();
+    return {};
   }
-  return std::wstring(version, version_length);
+  return {version, version_length};
 }
 
 // Compare the specified version against the OS version.
@@ -126,10 +124,11 @@ inline int compare_os_version(unsigned int major, unsigned int minor,
   // VerifyVersionInfo and manifests, and because both GetVersion and
   // GetVersionEx are deprecated.
   auto ntdll = native_library(L"ntdll.dll");
-  if (auto fn = ntdll.get(ntdll_symbols::RtlGetVersion)) {
+  auto address_ptr = ntdll.get(ntdll_symbols::RtlGetVersion());
+  if (address_ptr) {
     RTL_OSVERSIONINFOW vi{};
     vi.dwOSVersionInfoSize = sizeof(vi);
-    if (fn(&vi) != 0) {
+    if (address_ptr(&vi) != 0) {
       return false;
     }
     if (vi.dwMajorVersion == major) {
@@ -143,6 +142,8 @@ inline int compare_os_version(unsigned int major, unsigned int minor,
   return false;
 }
 
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

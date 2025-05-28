@@ -27,22 +27,20 @@
 #define WEBVIEW_PLATFORM_WINDOWS_DWMAPI_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-
-#include "webview/detail/platform/windows/native_library.hh"
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
 
+#include "webview/detail/platform/windows/native_library.hh"
 #include <windows.h>
 
-using namespace webview::detail::platform::windows;
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 namespace dwmapi_symbols {
 
 typedef enum {
@@ -56,10 +54,13 @@ typedef enum {
 
 using DwmSetWindowAttribute_t = HRESULT(WINAPI *)(HWND, DWORD, LPCVOID, DWORD);
 
-constexpr auto DwmSetWindowAttribute =
-    library_symbol<DwmSetWindowAttribute_t>("DwmSetWindowAttribute");
+constexpr library_symbol<DwmSetWindowAttribute_t> DwmSetWindowAttribute() {
+  return library_symbol<DwmSetWindowAttribute_t>("DwmSetWindowAttribute");
+}
 
 } // namespace dwmapi_symbols
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

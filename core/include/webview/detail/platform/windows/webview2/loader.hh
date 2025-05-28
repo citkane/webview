@@ -27,35 +27,29 @@
 #define WEBVIEW_BACKENDS_WEBVIEW2_LOADER_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS) && defined(WEBVIEW_EDGE)
-
-#include "../iid.hh"
-#include "../reg_key.hh"
-#include "../version.hh"
-#include "webview/detail/platform/windows/native_library.hh"
-
-#include <string>
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-
-#include <windows.h>
-
-#include <objbase.h>
-
-#include "WebView2.h" // amalgamate(skip)
-
 #ifdef _MSC_VER
 #pragma comment(lib, "ole32.lib")
 #endif
 
-using namespace webview::detail::platform::windows;
+#include "WebView2.h" // amalgamate(skip)
+#include "webview/detail/platform/windows/iid.hh"
+#include "webview/detail/platform/windows/native_library.hh"
+#include "webview/detail/platform/windows/reg_key.hh"
+#include "webview/detail/platform/windows/version.hh"
+#include <objbase.h>
+#include <string>
+#include <windows.h>
+
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 
 // Enable built-in WebView2Loader implementation by default.
 #ifndef WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL
@@ -361,29 +355,39 @@ private:
 };
 
 namespace cast_info {
-static constexpr auto controller_completed =
-    cast_info_t<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>{
-        IID_ICoreWebView2CreateCoreWebView2ControllerCompletedHandler};
 
-static constexpr auto environment_completed =
-    cast_info_t<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>{
-        IID_ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler};
+constexpr cast_info_t<ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>
+controller_completed() {
+  return {IID_ICoreWebView2CreateCoreWebView2ControllerCompletedHandler};
+}
 
-static constexpr auto message_received =
-    cast_info_t<ICoreWebView2WebMessageReceivedEventHandler>{
-        IID_ICoreWebView2WebMessageReceivedEventHandler};
+constexpr cast_info_t<
+    ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>
+environment_completed() {
+  return {IID_ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler};
+}
 
-static constexpr auto permission_requested =
-    cast_info_t<ICoreWebView2PermissionRequestedEventHandler>{
-        IID_ICoreWebView2PermissionRequestedEventHandler};
+constexpr cast_info_t<ICoreWebView2WebMessageReceivedEventHandler>
+message_received() {
+  return {IID_ICoreWebView2WebMessageReceivedEventHandler};
+}
 
-static constexpr auto add_script_to_execute_on_document_created_completed =
-    cast_info_t<
-        ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>{
-        IID_ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler};
+constexpr cast_info_t<ICoreWebView2PermissionRequestedEventHandler>
+permission_requested() {
+  return {IID_ICoreWebView2PermissionRequestedEventHandler};
+}
+
+constexpr cast_info_t<
+    ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>
+add_script_to_execute_on_document_created_completed() {
+  return {IID_ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler};
+}
+
 } // namespace cast_info
 
 } // namespace mswebview2
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

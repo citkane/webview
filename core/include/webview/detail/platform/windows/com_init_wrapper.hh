@@ -27,10 +27,15 @@
 #define WEBVIEW_PLATFORM_WINDOWS_COM_INIT_WRAPPER_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifdef _MSC_VER
+#pragma comment(lib, "ole32.lib")
+#endif
 
 //
 // ====================================================================
@@ -42,24 +47,15 @@
 //
 
 #include "webview/errors/errors.hh"
-
+#include <objbase.h>
 #include <utility>
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include <windows.h>
 
-#include <objbase.h>
-
-#ifdef _MSC_VER
-#pragma comment(lib, "ole32.lib")
-#endif
-
-using namespace webview::detail::platform::windows;
+using namespace webview::errors;
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 
 /**
  * A wrapper around COM library initialization. Calls CoInitializeEx in the
@@ -119,6 +115,8 @@ private:
   bool m_initialized = false;
 };
 
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

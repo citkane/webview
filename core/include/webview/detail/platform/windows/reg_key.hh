@@ -27,27 +27,24 @@
 #define WEBVIEW_PLATFORM_WINDOWS_REG_KEY_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-
-#include <string>
-#include <vector>
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-
-#include <windows.h>
-
 #ifdef _MSC_VER
 #pragma comment(lib, "advapi32.lib")
 #endif
 
-using namespace webview::detail::platform::windows;
+#include <string>
+#include <vector>
+#include <windows.h>
+
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 
 class reg_key {
 public:
@@ -92,6 +89,7 @@ public:
     }
     // Read the data.
     result.resize(buf_length / sizeof(typename Container::value_type));
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     auto *buf = reinterpret_cast<LPBYTE>(&result[0]);
     status =
         RegQueryValueExW(m_handle, name, nullptr, nullptr, buf, &buf_length);
@@ -121,6 +119,7 @@ public:
     if (data.size() < sizeof(DWORD)) {
       return default_value;
     }
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     return static_cast<unsigned int>(*reinterpret_cast<DWORD *>(data.data()));
   }
 
@@ -128,6 +127,8 @@ private:
   HKEY m_handle = nullptr;
 };
 
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

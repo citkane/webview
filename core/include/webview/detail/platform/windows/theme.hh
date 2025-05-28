@@ -30,14 +30,18 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 
 #include "webview/detail/platform/windows/dwmapi.hh"
 #include "webview/detail/platform/windows/native_library.hh"
 #include "webview/detail/platform/windows/reg_key.hh"
 
-using namespace webview::detail::platform::windows;
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 
 inline bool is_dark_theme_enabled() {
   constexpr auto *sub_key =
@@ -57,7 +61,7 @@ inline void apply_window_theme(HWND window) {
   // Changes the color of the window's title bar (light or dark).
   BOOL use_dark_mode{dark_theme_enabled ? TRUE : FALSE};
   static native_library dwmapi{L"dwmapi.dll"};
-  if (auto fn = dwmapi.get(dwmapi_symbols::DwmSetWindowAttribute)) {
+  if (auto fn = dwmapi.get(dwmapi_symbols::DwmSetWindowAttribute())) {
     // Try the modern, documented attribute before the older, undocumented one.
     if (fn(window, dwmapi_symbols::DWMWA_USE_IMMERSIVE_DARK_MODE,
            &use_dark_mode, sizeof(use_dark_mode)) != S_OK) {
@@ -68,6 +72,8 @@ inline void apply_window_theme(HWND window) {
   }
 }
 
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

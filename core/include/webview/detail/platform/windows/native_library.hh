@@ -27,19 +27,16 @@
 #define WEBVIEW_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#include "webview/lib/macros.h"
 
-#include "webview/types/types.hh"
-#include <string>
-
-#if defined(_WIN32)
+#if defined(WEBVIEW_PLATFORM_WINDOWS)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+
 #include "webview/detail/platform/windows/string.hh"
+#include "webview/types/types.hh"
 #include <windows.h>
-#else
-#include <dlfcn.h>
-#endif
 
 using namespace webview::types;
 namespace webview {
@@ -64,21 +61,13 @@ private:
 class native_library {
 public:
   native_library() = default;
-
   explicit native_library(const_str_ref name) : m_handle{load_library(name)} {}
-
-#ifdef _WIN32
   explicit native_library(const std::wstring &name)
       : m_handle{load_library(name)} {}
-#endif
 
   ~native_library() {
     if (m_handle) {
-#ifdef _WIN32
       FreeLibrary(m_handle);
-#else
-      dlclose(m_handle);
-#endif
       m_handle = nullptr;
     }
   }
@@ -86,7 +75,6 @@ public:
   native_library(const native_library &other) = delete;
   native_library &operator=(const native_library &other) = delete;
   native_library(native_library &&other) noexcept { *this = std::move(other); }
-
   native_library &operator=(native_library &&other) noexcept {
     if (this == &other) {
       return *this;
@@ -102,25 +90,27 @@ public:
   // Get the address for the specified symbol or nullptr if not found.
   template <typename Symbol>
   typename Symbol::type get(const Symbol &symbol) const {
-    if (is_loaded()) {
-      // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
-#ifdef _WIN32
-#ifdef __GNUC__
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4191)
+#else
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-function-type"
 #endif
+
+    if (is_loaded()) {
+      // This cast is required by the Windows API and is safe if the symbol matches the expected signature.
+      // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       return reinterpret_cast<typename Symbol::type>(
           GetProcAddress(m_handle, symbol.get_name()));
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-#else
-      return reinterpret_cast<typename Symbol::type>(
-          dlsym(m_handle, symbol.get_name()));
-#endif
-      // NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
     }
     return nullptr;
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#else
+#pragma GCC diagnostic pop
+#endif
   }
 
   // Returns true if the library is currently loaded; otherwise false.
@@ -129,39 +119,19 @@ public:
   void detach() { m_handle = nullptr; }
 
   // Returns true if the library by the given name is currently loaded; otherwise false.
-  static inline bool is_loaded(const_str_ref name) {
-#ifdef _WIN32
+  static bool is_loaded(const_str_ref name) {
     auto handle = GetModuleHandleW(widen_string(name).c_str());
-#else
-    auto handle = dlopen(name.c_str(), RTLD_NOW | RTLD_NOLOAD);
-    if (handle) {
-      dlclose(handle);
-    }
-#endif
     return !!handle;
   }
 
 private:
-#ifdef _WIN32
   using mod_handle_t = HMODULE;
-#else
-  using mod_handle_t = void *;
-#endif
-
-  static inline mod_handle_t load_library(const_str_ref name) {
-#ifdef _WIN32
+  static mod_handle_t load_library(const_str_ref name) {
     return load_library(widen_string(name));
-#else
-    return dlopen(name.c_str(), RTLD_NOW);
-#endif
   }
-
-#ifdef _WIN32
-  static inline mod_handle_t load_library(const std::wstring &name) {
+  static mod_handle_t load_library(const std::wstring &name) {
     return LoadLibraryW(name.c_str());
   }
-#endif
-
   mod_handle_t m_handle{};
 };
 
@@ -170,5 +140,6 @@ private:
 } // namespace detail
 } // namespace webview
 
+#endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH

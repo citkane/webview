@@ -30,6 +30,16 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS) && defined(WEBVIEW_EDGE)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#ifdef _MSC_VER
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "shlwapi.lib")
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "version.lib")
+#endif
 
 //
 // ====================================================================
@@ -44,41 +54,22 @@
 #include "webview/detail/platform/windows/com_init_wrapper.hh"
 #include "webview/detail/platform/windows/dpi.hh"
 #include "webview/detail/platform/windows/iid.hh"
-#include "webview/detail/platform/windows/native_library.hh"
-#include "webview/detail/platform/windows/reg_key.hh"
 #include "webview/detail/platform/windows/string.hh"
 #include "webview/detail/platform/windows/theme.hh"
-#include "webview/detail/platform/windows/version.hh"
 #include "webview/detail/platform/windows/webview2/loader.hh"
 #include "webview/types/types.hh"
-
 #include <atomic>
 #include <cstdlib>
 #include <functional>
 #include <list>
-#include <memory>
-#include <utility>
-
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#include <windows.h>
-
 #include <objbase.h>
 #include <shlobj.h>
 #include <shlwapi.h>
-
-#ifdef _MSC_VER
-#pragma comment(lib, "ole32.lib")
-#pragma comment(lib, "shell32.lib")
-#pragma comment(lib, "shlwapi.lib")
-#pragma comment(lib, "user32.lib")
-#pragma comment(lib, "version.lib")
-#endif
+#include <windows.h>
 
 using namespace webview::types;
 using namespace webview::errors;
+using namespace webview::detail::platform::windows;
 namespace webview {
 namespace detail {
 namespace user {
@@ -128,10 +119,10 @@ public:
     // that it is the only interface requested in this case. None have been
     // observed to be requested when using the official WebView2 loader.
 
-    if (cast_if_equal_iid(this, riid, controller_completed, ppv) ||
-        cast_if_equal_iid(this, riid, environment_completed, ppv) ||
-        cast_if_equal_iid(this, riid, message_received, ppv) ||
-        cast_if_equal_iid(this, riid, permission_requested, ppv)) {
+    if (cast_if_equal_iid(this, riid, controller_completed(), ppv) ||
+        cast_if_equal_iid(this, riid, environment_completed(), ppv) ||
+        cast_if_equal_iid(this, riid, message_received(), ppv) ||
+        cast_if_equal_iid(this, riid, permission_requested(), ppv)) {
       return S_OK;
     }
 
@@ -158,6 +149,7 @@ public:
       case E_ABORT:
         return S_OK;
       }
+
       try_create_environment();
       return S_OK;
     }
@@ -273,7 +265,7 @@ public:
     }
 
     if (cast_if_equal_iid(this, riid,
-                          add_script_to_execute_on_document_created_completed,
+                          add_script_to_execute_on_document_created_completed(),
                           ppv)) {
       return S_OK;
     }
@@ -525,7 +517,7 @@ private:
       m_com_init = {COINIT_APARTMENTTHREADED};
       enable_dpi_awareness();
 
-      HICON icon = (HICON)LoadImage(
+      auto icon = (HICON)LoadImage(
           hInstance, IDI_APPLICATION, IMAGE_ICON, GetSystemMetrics(SM_CXICON),
           GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR);
 

@@ -30,23 +30,24 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-#include "webview/types/types.hh"
-#include <string>
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+
+#include "webview/types/types.hh"
+#include <string>
 #include <windows.h>
 
 using namespace webview::types;
 namespace webview {
 namespace detail {
+namespace platform {
+namespace windows {
 
-#if defined(_WIN32)
 // Converts a narrow (UTF-8-encoded) string into a wide (UTF-16-encoded) string.
 inline std::wstring widen_string(const_str_ref input) {
   if (input.empty()) {
-    return std::wstring();
+    return {};
   }
   UINT cp = CP_UTF8;
   DWORD flags = MB_ERR_INVALID_CHARS;
@@ -56,13 +57,14 @@ inline std::wstring widen_string(const_str_ref input) {
       MultiByteToWideChar(cp, flags, input_c, input_length, nullptr, 0);
   if (required_length > 0) {
     std::wstring output(static_cast<std::size_t>(required_length), L'\0');
+    // NOLINTNEXTLINE(readability-container-data-pointer)
     if (MultiByteToWideChar(cp, flags, input_c, input_length, &output[0],
                             required_length) > 0) {
       return output;
     }
   }
   // Failed to convert string from UTF-8 to UTF-16
-  return std::wstring();
+  return {};
 }
 
 // Converts a wide (UTF-16-encoded) string into a narrow (UTF-8-encoded) string.
@@ -74,7 +76,7 @@ inline std::string narrow_string(const std::wstring &input) {
     };
   };
   if (input.empty()) {
-    return std::string();
+    return {};
   }
   UINT cp = CP_UTF8;
   DWORD flags = wc_flags::err_invalid_chars;
@@ -84,16 +86,18 @@ inline std::string narrow_string(const std::wstring &input) {
                                              nullptr, 0, nullptr, nullptr);
   if (required_length > 0) {
     std::string output(static_cast<std::size_t>(required_length), '\0');
+    // NOLINTNEXTLINE(readability-container-data-pointer)
     if (WideCharToMultiByte(cp, flags, input_c, input_length, &output[0],
                             required_length, nullptr, nullptr) > 0) {
       return output;
     }
   }
   // Failed to convert string from UTF-16 to UTF-8
-  return std::string();
+  return {};
 }
-#endif
 
+} // namespace windows
+} // namespace platform
 } // namespace detail
 } // namespace webview
 
