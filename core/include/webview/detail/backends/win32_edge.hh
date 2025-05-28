@@ -896,7 +896,7 @@ private:
   bool m_is_window_shown{};
 };
 
-using browser_engine = gtk_webkit_engine;
+using browser_engine = win32_edge_engine;
 
 } // namespace backend
 } // namespace detail

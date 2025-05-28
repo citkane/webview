@@ -616,7 +616,7 @@ private:
   bool m_is_window_shown{};
 };
 
-using browser_engine = gtk_webkit_engine;
+using browser_engine = cocoa_wkwebview_engine;
 
 } // namespace backend
 } // namespace detail
