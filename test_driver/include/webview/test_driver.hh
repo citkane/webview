@@ -68,7 +68,7 @@ public:
   test_reg(const char *name, std::function<void()> fn) noexcept
       : m_name{name}, m_fn{std::move(fn)} {}
 
-  const_str_ref name() const noexcept { return m_name; }
+  cnst_str_r name() const noexcept { return m_name; }
   void invoke() const { m_fn(); }
 
 private:
@@ -127,11 +127,13 @@ struct auto_test_reg {
 
 #define SECTION(name)
 
+#define ASSERT_WEBVIEW_FAILED(expr) REQUIRE(WEBVIEW_FAILED(expr))
+
 // NOLINTEND(cppcoreguidelines-macro-usage, misc-use-anonymous-namespace)
 
 int cmd_help();
 int cmd_list();
-int cmd_run_test(const_str_ref test_name);
+int cmd_run_test(cnst_str_r test_name);
 int cmd_run_all_tests();
 
 } // namespace driver

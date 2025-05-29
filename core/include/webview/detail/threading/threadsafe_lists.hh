@@ -61,11 +61,11 @@ struct bindings_t {
 public:
   size_t size() const;
   void get_names(std::vector<std::string> &bound_names);
-  bool has_name(const_str_ref name) const;
-  void emplace(const_str_ref name, binding_t fn, void *arg);
-  void erase(const_str_ref name);
-  size_t count(const_str_ref name) const;
-  binding_ctx_t at(const_str_ref name) const;
+  bool has_name(cnst_str_r name) const;
+  void emplace(cnst_str_r name, binding_t fn, void *arg);
+  void erase(cnst_str_r name);
+  size_t count(cnst_str_r name) const;
+  binding_ctx_t at(cnst_str_r name) const;
 
 private:
   std::map<std::string, binding_ctx_t> bindings_map;
@@ -75,10 +75,10 @@ private:
 struct user_scripts_t {
 public:
   /// Adds a bound user function to Webview native code.
-  user_script *add(const_str_ref js, engine_base *base);
+  user_script *add(cnst_str_r js, engine_base *base);
   /// Replaces a bound user script in Webview native code.
   user_script *replace(const user_script &old_script,
-                       const_str_ref new_script_code, engine_base *base);
+                       cnst_str_r new_script_code, engine_base *base);
 
 private:
   /// A list of references to bound user scripts.
@@ -102,12 +102,12 @@ private:
 
 struct unres_promises_t {
 public:
-  void set(const_str_ref name, std::list<std::string> ids);
-  std::list<std::string> get_copy(const_str_ref name) const;
-  void remove_id(const_str_ref name, const_str_ref id);
-  void add_id(const_str_ref name, const_str_ref id);
-  void erase(const_str_ref name);
-  bool empty(const_str_ref name) const;
+  void set(cnst_str_r name, std::list<std::string> ids);
+  std::list<std::string> get_copy(cnst_str_r name) const;
+  void remove_id(cnst_str_r name, cnst_str_r id);
+  void add_id(cnst_str_r name, cnst_str_r id);
+  void erase(cnst_str_r name);
+  bool empty(cnst_str_r name) const;
 
 private:
   std::unordered_map<std::string, std::list<std::string>> unres_promises;
@@ -116,9 +116,9 @@ private:
 
 struct id_name_map_t {
 public:
-  std::string get(const_str_ref id) const;
-  void set(const_str_ref id, const_str_ref name);
-  void erase(const_str_ref id);
+  std::string get(cnst_str_r id) const;
+  void set(cnst_str_r id, cnst_str_r name);
+  void erase(cnst_str_r id);
 
 private:
   std::unordered_map<std::string, std::string> id_name;
@@ -128,8 +128,8 @@ private:
 struct pending_t {
 public:
   void pop_front();
-  void push_back(const_str_ref name);
-  indices_t indices(const_str_ref name) const;
+  void push_back(cnst_str_r name);
+  indices_t indices(cnst_str_r name) const;
 
 private:
   std::deque<std::string> pending_bind_unbind;

@@ -47,7 +47,7 @@ void bindings_t::get_names(std::vector<std::string> &bound_names) {
                    return pair.first;
                  });
 }
-bool bindings_t::has_name(const_str_ref name) const {
+bool bindings_t::has_name(cnst_str_r name) const {
   std::lock_guard<std::mutex> lock(mtx);
   bool is_found{true};
   auto found = bindings_map.find(name);
@@ -57,30 +57,30 @@ bool bindings_t::has_name(const_str_ref name) const {
   found = bindings_map.end();
   return is_found;
 }
-void bindings_t::emplace(const_str_ref name, binding_t fn, void *arg) {
+void bindings_t::emplace(cnst_str_r name, binding_t fn, void *arg) {
   std::lock_guard<std::mutex> lock(mtx);
   bindings_map.emplace(name, binding_ctx_t(fn, arg));
 }
-void bindings_t::erase(const_str_ref name) {
+void bindings_t::erase(cnst_str_r name) {
   std::lock_guard<std::mutex> lock(mtx);
   bindings_map.erase(name);
 }
-size_t bindings_t::count(const_str_ref name) const {
+size_t bindings_t::count(cnst_str_r name) const {
   std::lock_guard<std::mutex> lock(mtx);
   return bindings_map.count(name);
 }
-binding_ctx_t bindings_t::at(const_str_ref name) const {
+binding_ctx_t bindings_t::at(cnst_str_r name) const {
   std::lock_guard<std::mutex> lock(mtx);
   return bindings_map.at(name);
 }
 
-user_script *user_scripts_t::add(const_str_ref js, engine_base *base) {
+user_script *user_scripts_t::add(cnst_str_r js, engine_base *base) {
   std::lock_guard<std::mutex> lock(mtx);
   return std::addressof(*m_user_scripts.emplace(
       m_user_scripts.end(), base->add_user_script_impl(js)));
 }
 user_script *user_scripts_t::replace(const user_script &old_script,
-                                     const_str_ref new_script_code,
+                                     cnst_str_r new_script_code,
                                      engine_base *base) {
   std::lock_guard<std::mutex> lock(mtx);
   base->remove_all_user_scripts_impl(m_user_scripts);
@@ -122,11 +122,11 @@ bool queue_t::empty() const {
   return queue.empty();
 }
 
-void unres_promises_t::set(const_str_ref name, std::list<std::string> ids) {
+void unres_promises_t::set(cnst_str_r name, std::list<std::string> ids) {
   std::lock_guard<std::mutex> lock(mtx);
   unres_promises[name] = std::move(ids);
 }
-std::list<std::string> unres_promises_t::get_copy(const_str_ref name) const {
+std::list<std::string> unres_promises_t::get_copy(cnst_str_r name) const {
   std::lock_guard<std::mutex> lock(mtx);
   auto found = unres_promises.find(name);
   if (found == unres_promises.end()) {
@@ -136,7 +136,7 @@ std::list<std::string> unres_promises_t::get_copy(const_str_ref name) const {
   found = unres_promises.end();
   return list_copy;
 }
-void unres_promises_t::remove_id(const_str_ref name, const_str_ref id) {
+void unres_promises_t::remove_id(cnst_str_r name, cnst_str_r id) {
   std::lock_guard<std::mutex> lock(mtx);
   auto found = unres_promises.find(name);
   if (found == unres_promises.end()) {
@@ -145,7 +145,7 @@ void unres_promises_t::remove_id(const_str_ref name, const_str_ref id) {
   found->second.remove(id);
   found = unres_promises.end();
 }
-void unres_promises_t::add_id(const_str_ref name, const_str_ref id) {
+void unres_promises_t::add_id(cnst_str_r name, cnst_str_r id) {
   std::lock_guard<std::mutex> lock(mtx);
   auto found = unres_promises.find(name);
   if (found == unres_promises.end()) {
@@ -155,11 +155,11 @@ void unres_promises_t::add_id(const_str_ref name, const_str_ref id) {
   }
   found = unres_promises.end();
 }
-void unres_promises_t::erase(const_str_ref name) {
+void unres_promises_t::erase(cnst_str_r name) {
   std::lock_guard<std::mutex> lock(mtx);
   unres_promises.erase(name);
 }
-bool unres_promises_t::empty(const_str_ref name) const {
+bool unres_promises_t::empty(cnst_str_r name) const {
   std::lock_guard<std::mutex> lock(mtx);
   auto found = unres_promises.find(name);
   if (found == unres_promises.end()) {
@@ -170,7 +170,7 @@ bool unres_promises_t::empty(const_str_ref name) const {
   return empty;
 }
 
-std::string id_name_map_t::get(const_str_ref id) const {
+std::string id_name_map_t::get(cnst_str_r id) const {
   std::lock_guard<std::mutex> lock(mtx);
   auto found = id_name.find(id);
   if (found == id_name.end()) {
@@ -180,11 +180,11 @@ std::string id_name_map_t::get(const_str_ref id) const {
   found = id_name.end();
   return name;
 }
-void id_name_map_t::set(const_str_ref id, const_str_ref name) {
+void id_name_map_t::set(cnst_str_r id, cnst_str_r name) {
   std::lock_guard<std::mutex> lock(mtx);
   id_name[id] = name;
 }
-void id_name_map_t::erase(const_str_ref id) {
+void id_name_map_t::erase(cnst_str_r id) {
   std::lock_guard<std::mutex> lock(mtx);
   id_name.erase(id);
 }
@@ -193,11 +193,11 @@ void pending_t::pop_front() {
   std::lock_guard<std::mutex> lock(mtx);
   pending_bind_unbind.pop_front();
 }
-void pending_t::push_back(const_str_ref name) {
+void pending_t::push_back(cnst_str_r name) {
   std::lock_guard<std::mutex> lock(mtx);
   pending_bind_unbind.push_back(name);
 }
-indices_t pending_t::indices(const_str_ref name) const {
+indices_t pending_t::indices(cnst_str_r name) const {
   std::lock_guard<std::mutex> lock(mtx);
   auto len = int(pending_bind_unbind.size());
   int bind_i = -1;

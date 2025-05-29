@@ -54,10 +54,10 @@ public:
   static void resolve_on_main_thread(bool val);
 
   /// Sets the returned test value.
-  static void set_value(const_str_ref val);
+  static void set_value(cnst_str_r val);
 
   /// Sets the expected returned test value.
-  static void expect_value(const_str_ref value);
+  static void expect_value(cnst_str_r value);
 
   /// Gets the returned test value.
   static std::string get_value();
@@ -67,7 +67,7 @@ public:
 
   /// Pings the frontend with a test value.
   /// @param parameter-escaped Is the provided value string already escaped?
-  static void ping_value(const_str_ref value, engine_base &wv,
+  static void ping_value(cnst_str_r value, engine_base &wv,
                          bool escaped = false);
 
   /// Returns the given timespan in std::chrono::seconds

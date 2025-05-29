@@ -55,7 +55,7 @@ public:
   using impl_deleter = std::function<void(impl *)>;
   using impl_ptr = std::unique_ptr<impl, impl_deleter>;
 
-  user_script(const_str_ref code, impl_ptr &&impl_)
+  user_script(cnst_str_r code, impl_ptr &&impl_)
       : m_code{code}, m_impl{std::move(impl_)} {}
 
   user_script(const user_script &other) = delete;
@@ -71,7 +71,7 @@ public:
     return *this;
   }
 
-  const_str_ref get_code() const { return m_code; }
+  cnst_str_r get_code() const { return m_code; }
 
   impl &get_impl() { return *m_impl; }
 

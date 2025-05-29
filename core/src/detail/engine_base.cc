@@ -28,6 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
+#include "webview/detail/threading/thread_detector.hh"
 #include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
 
@@ -35,93 +36,148 @@ using namespace webview::detail;
 using namespace webview::detail::user;
 using namespace webview::log;
 using namespace webview::strings;
+using namespace webview::detail::threading;
+
+/* PUBLIC ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 engine_base::engine_base(bool owns_window)
     : engine_queue{this}, m_owns_window{owns_window} {}
 
-noresult engine_base::navigate(const_str_ref url) {
-  if (url.empty()) {
-    return navigate_impl("about:blank");
+noresult engine_base::navigate(cnst_str_r url) {
+  auto do_work = [this, url] {
+    if (url.empty()) {
+      navigate_impl("about:blank");
+    } else {
+      navigate_impl(url);
+    }
+  };
+  if (thread::is_main_thread()) {
+    do_work();
+  } else {
+    dispatch(do_work);
   }
-  return navigate_impl(url);
+  return {};
 }
 
-noresult engine_base::bind(const_str_ref name, sync_binding_t fn) {
-  auto wrapper = [this, fn](const_str_ref id, const_str_ref req,
-                            void * /*arg*/) { resolve(id, 0, fn(req)); };
-  auto res = bind(name, wrapper, nullptr, true);
-  return res;
+noresult engine_base::bind(cnst_str_r name, sync_binding_t fn) {
+  auto wrapper = [this, fn](cnst_str_r id, cnst_str_r req, void * /*arg*/) {
+    resolve(id, 0, fn(req));
+  };
+  auto do_work = [this, name, &wrapper] { bind(name, wrapper, nullptr, true); };
+  if (thread::is_main_thread()) {
+    do_work();
+  } else {
+    dispatch(do_work);
+  }
+  return {};
 }
 
-noresult engine_base::bind(const_str_ref name, binding_t fn, void *arg,
+noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg,
                            bool skip_queue) {
   trace::base.bind.start(name);
-  dispatch_fn_t do_work = [this, name, fn, arg] {
+
+  if (queue.bind.is_duplicate(name)) {
+    return error_info{WEBVIEW_ERROR_DUPLICATE};
+  }
+
+  auto do_work = [this, name, fn, arg] {
     trace::base.bind.work(name);
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
     eval(string::js.onbind(name), true);
   };
-  if (queue.bind.is_duplicate(name)) {
-    return error_info{WEBVIEW_ERROR_DUPLICATE};
-  }
   if (!skip_queue) {
     return queue.bind.enqueue(do_work, name);
   }
-  do_work();
+  if (thread::is_main_thread()) {
+    do_work();
+  } else {
+    dispatch(do_work);
+  }
   return {};
 }
 
-noresult engine_base::unbind(const_str_ref name, bool skip_queue) {
+noresult engine_base::unbind(cnst_str_r name, bool skip_queue) {
   trace::base.unbind.start(name);
-  dispatch_fn_t do_work = [this, name]() {
+
+  if (queue.unbind.not_found(name)) {
+    return error_info{WEBVIEW_ERROR_NOT_FOUND};
+  }
+
+  auto do_work = [this, name]() {
     trace::base.unbind.work(name);
     eval(string::js.onunbind(name), true);
     list.bindings.erase(name);
     replace_bind_script();
   };
-  if (queue.unbind.not_found(name)) {
-    return error_info{WEBVIEW_ERROR_NOT_FOUND};
-  }
   if (!skip_queue) {
     return queue.unbind.enqueue(do_work, name);
   }
-  do_work();
+  if (thread::is_main_thread()) {
+    do_work();
+  } else {
+    dispatch(do_work);
+  }
   return {};
 }
 
-noresult engine_base::resolve(const_str_ref id, int status,
-                              const_str_ref result) {
-  // Firstly notify the queue that the promise is resolving.
+noresult engine_base::eval(cnst_str_r js, bool skip_queue) {
+  trace::base.eval.start(js, skip_queue);
+  auto do_work = [this, js, skip_queue] {
+    if (!skip_queue) {
+      auto wrapped_js = string::js.eval_wrapper(js);
+      trace::base.eval.work(wrapped_js);
+      eval_impl(wrapped_js);
+    } else {
+      trace::base.eval.work(js);
+      eval_impl(js);
+    }
+  };
+  if (!skip_queue) {
+    return queue.eval.enqueue(do_work, js);
+  }
+  if (thread::is_main_thread()) {
+    do_work();
+  } else {
+    dispatch(do_work);
+  }
+  return {};
+}
+
+noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
+  // Firstly get the promise binding name and
+  // notify the queue that the promise is resolving.
   std::string name = list.id_name_map.get(id);
   queue.promises.resolving(name, id);
   list.id_name_map.erase(id);
 
-  dispatch_fn_t do_work = [this, id, status, result] {
-    auto res = result.empty() ? "undefined" : string::json.escape(result);
-    auto js = string::js.onreply(id, status, res);
-    const char *escaped_js = js.c_str();
-    eval(escaped_js, true);
-  };
-  return dispatch(do_work);
+  auto res = result.empty() ? "undefined" : string::json.escape(result);
+  auto js = string::js.onreply(id, status, res);
+  const char *escaped_js = js.c_str();
+  return eval(escaped_js, true);
 }
 
-noresult engine_base::reject(const_str_ref id, const_str_ref err) {
+noresult engine_base::reject(cnst_str_r id, cnst_str_r err) {
   return resolve(id, 1, string::json.escape(err));
 }
 
 result<void *> engine_base::window() { return window_impl(); }
-
 result<void *> engine_base::widget() { return widget_impl(); }
-
 result<void *> engine_base::browser_controller() {
   return browser_controller_impl();
 }
 
-noresult engine_base::run() { return run_impl(); }
+noresult engine_base::run() {
+  if (!thread::is_main_thread()) {
+    throw std::runtime_error("Webview must be run from the main thread.");
+  }
+
+  return run_impl();
+}
 
 noresult engine_base::terminate() {
-  // terminate_impl would normally be called from a child thread, so we dispatch it to the main thread.
+  // terminate_impl should normally be called from a child thread,
+  // so we always dispatch it to the main thread.
   return dispatch([this] {
     terminate_queue();
     terminate_impl();
@@ -132,39 +188,50 @@ noresult engine_base::dispatch(std::function<void()> f) {
   return dispatch_impl(f);
 }
 
-noresult engine_base::set_title(const_str_ref title) {
-  return set_title_impl(title);
+noresult engine_base::set_title(cnst_str_r title) {
+  auto do_work = [this, title] { set_title_impl(title); };
+  if (thread::is_main_thread()) {
+    do_work();
+  } else {
+    dispatch(do_work);
+  }
+  return {};
 }
 
 noresult engine_base::set_size(int width, int height, webview_hint_t hints) {
-  auto res = set_size_impl(width, height, hints);
-  m_is_size_set = true;
-  return res;
-}
-
-noresult engine_base::set_html(const_str_ref html) {
-  return set_html_impl(html);
-}
-
-noresult engine_base::init(const_str_ref js) {
-  list.m_user_scripts.add(js, this);
-  return {};
-}
-
-noresult engine_base::eval(const_str_ref js, bool skip_queue) {
-  trace::base.eval.start(js, skip_queue);
-  if (!skip_queue) {
-    dispatch_fn_t do_work = [this, js] {
-      auto wrapped_js = string::js.eval_wrapper(js);
-      trace::base.eval.work(wrapped_js);
-      eval_impl(wrapped_js);
-    };
-    return queue.eval.enqueue(do_work, js);
+  auto do_work = [this, width, height, hints] {
+    set_size_impl(width, height, hints);
+    m_is_size_set = true;
+  };
+  if (thread::is_main_thread()) {
+    do_work();
+  } else {
+    dispatch(do_work);
   }
-  trace::base.eval.work(js);
-  eval_impl(js);
   return {};
 }
+
+noresult engine_base::set_html(cnst_str_r html) {
+  auto do_work = [this, html] { set_html_impl(html); };
+  if (thread::is_main_thread()) {
+    do_work();
+  } else {
+    dispatch(do_work);
+  }
+  return {};
+}
+
+noresult engine_base::init(cnst_str_r js) {
+  auto do_work = [this, js] { list.m_user_scripts.add(js, this); };
+  if (thread::is_main_thread()) {
+    do_work();
+  } else {
+    dispatch(do_work);
+  }
+  return {};
+}
+
+/* PROTECTED ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 void engine_base::replace_bind_script() {
   auto replacement_js = create_bind_script();
@@ -176,7 +243,7 @@ void engine_base::replace_bind_script() {
   }
 }
 
-void engine_base::add_init_script(const_str_ref post_fn) {
+void engine_base::add_init_script(cnst_str_r post_fn) {
   auto init_js = string::js.init(post_fn);
   list.m_user_scripts.add(init_js, this);
   m_is_init_script_sent = true;
@@ -188,7 +255,7 @@ std::string engine_base::create_bind_script() {
   return string::js.bind(bound_names);
 }
 
-void engine_base::on_message(const_str_ref msg) {
+void engine_base::on_message(cnst_str_r msg) {
   auto id = string::json.parse(msg, "id", 0);
   auto name = string::json.parse(msg, "method", 0);
   if (id == sys_flags.testop) {
@@ -250,6 +317,8 @@ std::atomic_uint &engine_base::window_ref_count() {
   static std::atomic_uint ref_count{0};
   return ref_count;
 }
+
+/* PRIVATE ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 unsigned int engine_base::inc_window_count() { return ++window_ref_count(); }
 

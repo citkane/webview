@@ -27,70 +27,19 @@
 #define WEBVIEW_C_API_IMPL_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
-#include "webview/cc_api.hh"
-#include "webview/errors/errors.h"
-#include "webview/lib/macros.h"
-#include "webview/lib/version.h"
-
-using namespace webview::detail;
-using namespace webview::errors;
-namespace webview {
-namespace api {
-namespace _util {
-// The library's version information.
-constexpr const webview_version_info_t library_version_info{
-    {WEBVIEW_VERSION_MAJOR, WEBVIEW_VERSION_MINOR, WEBVIEW_VERSION_PATCH},
-    WEBVIEW_VERSION_NUMBER,
-    WEBVIEW_VERSION_PRE_RELEASE,
-    WEBVIEW_VERSION_BUILD_METADATA};
-
-template <typename WorkFn, typename ResultFn>
-webview_error_t api_filter(WorkFn &&do_work, ResultFn &&put_result) noexcept {
-  try {
-    auto result = do_work();
-    if (result.ok()) {
-      put_result(result.value());
-      return WEBVIEW_ERROR_OK;
-    }
-    return result.error().code();
-  } catch (const exception &e) {
-    return e.error().code();
-  } catch (...) {
-    return WEBVIEW_ERROR_UNSPECIFIED;
-  }
-}
-
-template <typename WorkFn>
-webview_error_t api_filter(WorkFn &&do_work) noexcept {
-  try {
-    auto result = do_work();
-    if (result.ok()) {
-      return WEBVIEW_ERROR_OK;
-    }
-    return result.error().code();
-  } catch (const exception &e) {
-    return e.error().code();
-  } catch (...) {
-    return WEBVIEW_ERROR_UNSPECIFIED;
-  }
-}
-
-inline webview_cc_t *cast_to_webview(void *w) {
-  if (!w) {
-    throw exception{WEBVIEW_ERROR_INVALID_ARGUMENT,
-                    "Cannot cast null pointer to webview instance"};
-  }
-  return static_cast<webview_cc_t *>(w);
-}
-} // namespace _util
-} // namespace api
-} // namespace webview
+#include "webview/api/c_api_imp_lib.hh"
+#include "webview/detail/threading/thread_detector.hh"
+#include "webview/types/types.hh"
 
 using namespace webview;
-using namespace webview::api::_util;
+using namespace webview::api::_lib;
+using namespace webview::detail::threading;
 
 WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
+  if (!thread::is_main_thread()) {
+    throw std::runtime_error("Webview must be created from the main thread.");
+  };
+
   webview_cc_t *w{};
   auto err = api_filter(
       [=]() -> result<webview_cc_t *> {
@@ -106,8 +55,15 @@ WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
 WEBVIEW_API webview_error_t webview_destroy(webview_t w) {
   return api_filter([=]() -> noresult {
     auto wv = cast_to_webview(w);
-    wv->terminate_queue();
-    delete wv;
+    auto do_work = [&] {
+      wv->terminate_queue();
+      delete wv;
+    };
+    if (!thread::is_main_thread()) {
+      wv->dispatch(do_work);
+    } else {
+      do_work();
+    }
     return {};
   });
 }
@@ -215,7 +171,7 @@ WEBVIEW_API webview_error_t webview_bind(webview_t w, const char *name,
   return api_filter([=] {
     return cast_to_webview(w)->bind(
         name,
-        [=](const_str_ref seq, const_str_ref req, void *arg_) {
+        [=](cnst_str_r seq, cnst_str_r req, void *arg_) {
           fn(seq.c_str(), req.c_str(), arg_);
         },
         arg);

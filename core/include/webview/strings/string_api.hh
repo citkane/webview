@@ -77,8 +77,8 @@ sys_ops_t const sys_ops{};
 
 /// Performs string replacement for tokens.
 /// @todo REGEX is probably going to be optimal for performance
-std::string tokenise(const_str_ref tmplate, const_str_ref token,
-                     const_str_ref tkn_replcmnt) {
+std::string tokenise(cnst_str_r tmplate, cnst_str_r token,
+                     cnst_str_r tkn_replcmnt) {
   if (token.empty()) {
     return tmplate;
   }
@@ -91,7 +91,7 @@ std::string tokenise(const_str_ref tmplate, const_str_ref token,
   }
   return tokenised_string;
 }
-std::string tokenise(const_str_ref tmplate, strg_replacements_t &replacements) {
+std::string tokenise(cnst_str_r tmplate, strg_replacements_t &replacements) {
   std::string tokenised_string = tmplate;
   for (auto &replacement : replacements) {
     auto string_ =

@@ -33,9 +33,8 @@
 using namespace webview::strings;
 using namespace webview::detail;
 
-void engine_queue::resolve_thread_constructor(std::string name,
-                                              const_str_ref id,
-                                              const_str_ref args) {
+void engine_queue::resolve_thread_constructor(std::string name, cnst_str_r id,
+                                              cnst_str_r args) {
   if (atomic.terminating()) {
     return;
   }

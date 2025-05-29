@@ -42,7 +42,7 @@ namespace frontend {
 struct json_t {
   json_t() noexcept = default;
 
-  std::string escape(const_str_ref s, bool add_quotes = true) const {
+  std::string escape(cnst_str_r s, bool add_quotes = true) const {
     // Calculate the size of the resulting string.
     // Add space for the double quotes.
     size_t required_length = add_quotes ? 2 : 0;
@@ -103,7 +103,7 @@ struct json_t {
     return result;
   }
 
-  std::string parse(const_str_ref s, const_str_ref key, const int index) const {
+  std::string parse(cnst_str_r s, cnst_str_r key, const int index) const {
     const char *value;
     size_t value_sz;
     if (key.empty()) {

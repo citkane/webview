@@ -39,7 +39,7 @@ void tester::resolve_on_main_thread(bool val) {
   resolve_on_main_thread_().store(val);
 }
 
-void tester::set_value(const_str_ref val) {
+void tester::set_value(cnst_str_r val) {
   std::lock_guard<std::mutex> lock(mtx());
   string_value() = val;
   eval_values();
@@ -48,7 +48,7 @@ void tester::set_value(const_str_ref val) {
   }
 }
 
-void tester::expect_value(const_str_ref value) {
+void tester::expect_value(cnst_str_r value) {
   std::lock_guard<std::mutex> lock(mtx());
   string_expected_value() = value;
   eval_values();
@@ -61,7 +61,7 @@ std::string tester::get_value() {
   return string_value();
 }
 
-void tester::ping_value(const_str_ref escaped_value, engine_base &wv,
+void tester::ping_value(cnst_str_r escaped_value, engine_base &wv,
                         bool escaped) {
   std::lock_guard<std::mutex> lock(mtx());
   wv.dispatch([&, escaped_value, escaped] {

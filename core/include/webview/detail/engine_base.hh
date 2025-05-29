@@ -55,18 +55,20 @@ public:
   engine_base(bool owns_window);
 
   /// Internal API implementation of public \ref webview_navigate
-  noresult navigate(const_str_ref url);
+  noresult navigate(cnst_str_r url);
   /// Internal API implementation of public \ref webview_bind (synchronous)
-  noresult bind(const_str_ref name, sync_binding_t fn);
+  noresult bind(cnst_str_r name, sync_binding_t fn);
   /// Internal API implementation of public \ref webview_bind (asynchronous)
-  noresult bind(const_str_ref name, binding_t fn, void *arg,
+  noresult bind(cnst_str_r name, binding_t fn, void *arg,
                 bool skip_queue = false);
   /// Internal API implementation of public \ref webview_unbind
-  noresult unbind(const_str_ref name, bool skip_queue = false);
+  noresult unbind(cnst_str_r name, bool skip_queue = false);
+  /// Internal API implementation of public \ref webview_eval
+  noresult eval(cnst_str_r js, bool skip_queue = false);
   /// Internal API implementation of public \ref webview_return
-  noresult resolve(const_str_ref id, int status, const_str_ref result);
+  noresult resolve(cnst_str_r id, int status, cnst_str_r result);
   /// Helper to reject a promise through \ref resolve
-  noresult reject(const_str_ref id, const_str_ref err);
+  noresult reject(cnst_str_r id, cnst_str_r err);
   /// Internal API implementation of public \ref webview_get_window
   result<void *> window();
   /// Internal API implementation part of public \ref webview_get_native_handle
@@ -80,20 +82,18 @@ public:
   /// Internal API implementation of public \ref webview_dispatch
   noresult dispatch(std::function<void()> f);
   /// Internal API implementation of public \ref webview_set_title
-  noresult set_title(const_str_ref title);
+  noresult set_title(cnst_str_r title);
   /// Internal API implementation of public \ref webview_set_size
   noresult set_size(int width, int height, webview_hint_t hints);
   /// Internal API implementation of public \ref webview_set_html
-  noresult set_html(const_str_ref html);
+  noresult set_html(cnst_str_r html);
   /// Internal API implementation of public \ref webview_init
-  noresult init(const_str_ref js);
-  /// Internal API implementation of public \ref webview_eval
-  noresult eval(const_str_ref js, bool skip_queue = false);
+  noresult init(cnst_str_r js);
 
 protected:
   friend struct threading::_lib::user_scripts_t;
   /// Platform specific implementation for \ref navigate
-  virtual noresult navigate_impl(const_str_ref url) = 0;
+  virtual noresult navigate_impl(cnst_str_r url) = 0;
   /// Platform specific implementation for \ref window
   virtual result<void *> window_impl() = 0;
   /// Platform specific implementation for \ref widget
@@ -107,19 +107,19 @@ protected:
   /// Platform specific implementation for \ref dispatch
   virtual noresult dispatch_impl(std::function<void()> f) = 0;
   /// Platform specific implementation for \ref set_title
-  virtual noresult set_title_impl(const_str_ref title) = 0;
+  virtual noresult set_title_impl(cnst_str_r title) = 0;
   /// Platform specific implementation for \ref set_size
   virtual noresult set_size_impl(int width, int height,
                                  webview_hint_t hints) = 0;
   /// Platform specific implementation for \ref set_html
-  virtual noresult set_html_impl(const_str_ref html) = 0;
+  virtual noresult set_html_impl(cnst_str_r html) = 0;
   /// Platform specific implementation for \ref eval
-  virtual noresult eval_impl(const_str_ref js) = 0;
+  virtual noresult eval_impl(cnst_str_r js) = 0;
 
   /// Adds a bound user function to Webview native code.
   //virtual user_script *add_user_script(cont_str_&_t js);
   /// Platform specific implementation to add a bound user JS function.
-  virtual user_script add_user_script_impl(const_str_ref js) = 0;
+  virtual user_script add_user_script_impl(cnst_str_r js) = 0;
   /// Platform specific implementation to remove all bound JS user functions from the Webview script.
   virtual void
   remove_all_user_scripts_impl(const std::list<user_script> &scripts) = 0;
@@ -132,11 +132,11 @@ protected:
   /// Updates the JS `bind` script in the frontend window.
   void replace_bind_script();
   /// Adds the JS Webview script to the frontend window
-  void add_init_script(const_str_ref post_fn);
+  void add_init_script(cnst_str_r post_fn);
   // Creates a `bind` JS script string for the frontend window.
   std::string create_bind_script();
   /// Handler for messages from the frontend window to the native Webview process.
-  virtual void on_message(const_str_ref msg);
+  virtual void on_message(cnst_str_r msg);
   /// Handler to increment the browser window count
   virtual void on_window_created();
   /// Handler to decrement the browser window count

@@ -57,7 +57,8 @@ void engine_queue::queue_thread_constructor() {
     // `bind` user work unit
     if (work_ctx == ctx.bind) {
       trace::queue.bind.start(name);
-      wv->dispatch(work_fn);
+      //wv->dispatch(work_fn);
+      work_fn();
       trace::queue.bind.wait(name);
       cv.bind.wait(lock, [this] { return atomic.AND({atomic.done.bind()}); });
       if (atomic.terminating()) {
@@ -86,7 +87,8 @@ void engine_queue::queue_thread_constructor() {
         wv->reject(id, err);
       }
 
-      wv->dispatch(work_fn);
+      //wv->dispatch(work_fn);
+      work_fn();
       cv.unbind.wait(lock,
                      [this] { return atomic.AND({atomic.done.unbind()}); });
       if (atomic.terminating()) {

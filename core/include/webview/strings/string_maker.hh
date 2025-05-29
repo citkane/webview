@@ -40,23 +40,23 @@ struct js_string_t {
 
   /// Returns a tokenised JS function string for `unbind` which notifies that
   /// a binding was destroyed after the init script has already set things up.
-  std::string onunbind(const_str_ref name) const;
+  std::string onunbind(cnst_str_r name) const;
 
   /// Returns a tokenised JS function string for `bind` which notifies that
   /// a binding was created after the init script has already set things up.
-  std::string onbind(const_str_ref name) const;
+  std::string onbind(cnst_str_r name) const;
 
   /// Returns a tokenised JS function string for a promise resolve/reject.
-  std::string onreply(const_str_ref id, int status, const_str_ref result) const;
+  std::string onreply(cnst_str_r id, int status, cnst_str_r result) const;
 
   /// Returns a tokenised JS string for the Webview frontend init function.
-  std::string init(const_str_ref post_fn) const;
+  std::string init(cnst_str_r post_fn) const;
 
   /// Returns a tokenised JS string for the Webview frontend `bind` functions.
   std::string bind(std::vector<std::string> &bound_names) const;
 
   /// Wraps user JS to notify the native code when eval is ready.
-  std::string eval_wrapper(const_str_ref user_js) const;
+  std::string eval_wrapper(cnst_str_r user_js) const;
 };
 
 /// Tokenised error message strings
@@ -64,13 +64,13 @@ struct error_message_t {
   error_message_t() noexcept = default;
 
   /// Returns a tokenised error string for rejecting a promise if a callback binding was unbound.
-  std::string reject_unbound(const_str_ref id, const_str_ref name) const;
+  std::string reject_unbound(cnst_str_r id, cnst_str_r name) const;
 
   /// Returns a tokenised error string for rejecting a promise if a native callback has an uncaught exception.
-  std::string uncaught_exception(const_str_ref name, const_str_ref what) const;
+  std::string uncaught_exception(cnst_str_r name, cnst_str_r what) const;
 
   /// Returns a tokenised error string for native callbacks in detached threads after webview terminates.
-  std::string webview_terminated(const_str_ref name) const;
+  std::string webview_terminated(cnst_str_r name) const;
 };
 
 } // namespace frontend
@@ -80,10 +80,10 @@ namespace tests {
 struct test_js_t {
   test_js_t() noexcept = default;
 
-  std::string init(const_str_ref init_value, bool escaped = false) const;
+  std::string init(cnst_str_r init_value, bool escaped = false) const;
 
   /// Wraps a string value in evaluable JS
-  std::string post_value(const_str_ref value, bool escaped = false) const;
+  std::string post_value(cnst_str_r value, bool escaped = false) const;
 
   std::string make_call_js(unsigned int result) const;
 };
@@ -91,7 +91,7 @@ struct test_js_t {
 struct test_html_t {
   test_html_t() noexcept = default;
 
-  std::string string_returns(const_str_ref title) const;
+  std::string string_returns(cnst_str_r title) const;
 
   std::string navigate_encoded() const;
 

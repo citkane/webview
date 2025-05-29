@@ -29,5 +29,6 @@
 #include "../../src/amalgamate_src.hh"
 #include "api/api.h"
 #include "api/c_api_impl.hh"
+#include "detail/threading/thread_detector.hh"
 
 #endif // WEBVIEW_H

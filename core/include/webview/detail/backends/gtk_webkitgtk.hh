@@ -181,7 +181,7 @@ protected:
     return {};
   }
 
-  noresult set_title_impl(const_str_ref title) override {
+  noresult set_title_impl(cnst_str_r title) override {
     gtk_window_set_title(GTK_WINDOW(m_window), title.c_str());
     return {};
   }
@@ -200,18 +200,18 @@ protected:
     return window_show();
   }
 
-  noresult navigate_impl(const_str_ref url) override {
+  noresult navigate_impl(cnst_str_r url) override {
     webkit_web_view_load_uri(WEBKIT_WEB_VIEW(m_webview), url.c_str());
     return {};
   }
 
-  noresult set_html_impl(const_str_ref html) override {
+  noresult set_html_impl(cnst_str_r html) override {
     webkit_web_view_load_html(WEBKIT_WEB_VIEW(m_webview), html.c_str(),
                               nullptr);
     return {};
   }
 
-  noresult eval_impl(const_str_ref js) override {
+  noresult eval_impl(cnst_str_r js) override {
     // URI is null before content has begun loading.
     if (!webkit_web_view_get_uri(WEBKIT_WEB_VIEW(m_webview))) {
       return {};
@@ -228,7 +228,7 @@ protected:
     return {};
   }
 
-  user_script add_user_script_impl(const_str_ref js) override {
+  user_script add_user_script_impl(cnst_str_r js) override {
     auto *wk_script = webkit_user_script_new(
         js.c_str(), WEBKIT_USER_CONTENT_INJECT_TOP_FRAME,
         WEBKIT_USER_SCRIPT_INJECT_AT_DOCUMENT_START, nullptr, nullptr);
@@ -301,7 +301,7 @@ private:
         webkit_web_view_get_user_content_manager(WEBKIT_WEB_VIEW(m_webview));
     webkitgtk_compat::connect_script_message_received(
         manager, "__webview__",
-        [this](WebKitUserContentManager *, const_str_ref r) { on_message(r); });
+        [this](WebKitUserContentManager *, cnst_str_r r) { on_message(r); });
     webkitgtk_compat::user_content_manager_register_script_message_handler(
         manager, "__webview__");
     add_init_script(R"(function(message) {

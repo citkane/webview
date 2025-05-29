@@ -60,7 +60,7 @@ struct tokenise_data_t {
 using noresult = basic_result<void, error_info, exception>;
 using dispatch_fn_t = std::function<void()>;
 using time_point_t = std::chrono::time_point<std::chrono::steady_clock>;
-using const_str_ref = const std::string &;
+using cnst_str_r = const std::string &;
 using strg_replacements_t = std::initializer_list<tokenise_data_t>;
 using sync_binding_t = std::function<std::string(std::string)>;
 

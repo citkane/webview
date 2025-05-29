@@ -74,7 +74,7 @@ namespace webkitgtk {
 namespace webkit_dmabuf {
 
 // Get environment variable. Not thread-safe.
-static inline std::string get_env(const_str_ref name) {
+static inline std::string get_env(cnst_str_r name) {
   auto *value = std::getenv(name.c_str());
   if (value) {
     return {value};
@@ -83,7 +83,7 @@ static inline std::string get_env(const_str_ref name) {
 }
 
 // Set environment variable. Not thread-safe.
-static inline void set_env(const_str_ref name, const_str_ref value) {
+static inline void set_env(cnst_str_r name, cnst_str_r value) {
   ::setenv(name.c_str(), value.c_str(), 1);
 }
 

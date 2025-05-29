@@ -22,51 +22,67 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_LOG_ANSI_COLOURS_HH
-#define WEBVIEW_LOG_ANSI_COLOURS_HH
+#ifndef WEBVIEW_DETAIL_THREADING_THREAD_DETECTOR_HH
+#define WEBVIEW_DETAIL_THREADING_THREAD_DETECTOR_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/types/types.hh"
-#include <string>
+#include "webview/lib/macros.h"
+#include <atomic>
 
-using namespace webview::types;
 namespace webview {
-namespace log {
-namespace _lib {
+namespace detail {
+namespace threading {
 
-class ansi_t {
+#if defined(WEBVIEW_PLATFORM_WINDOWS)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include <windows.h>
+
+namespace _lib {
+class thread_detector_t {
 public:
-  struct ansi_colours_t {
-    std::string yellow = yellow_s();
-    std::string yellow_dim = yellow_dim_s();
-    std::string green = green_s();
-    std::string red = red_s();
-    std::string blue = blue_s();
-    std::string blue_dark = blue_dark_s();
-    std::string magenta = magenta_s();
-    std::string default_c = default_c_s();
-    std::string bold = bold_s();
-    std::string dim = dim_s();
-  } ansi{};
+  thread_detector_t() noexcept { main_thread_id = GetCurrentThreadId(); }
+
+  static bool is_main_thread() {
+    return main_thread_id == GetCurrentThreadId();
+  }
 
 private:
-  static cnst_str_r yellow_s();
-  static cnst_str_r yellow_dim_s();
-  static cnst_str_r green_s();
-  static cnst_str_r red_s();
-  static cnst_str_r blue_s();
-  static cnst_str_r blue_dark_s();
-  static cnst_str_r magenta_s();
-  static cnst_str_r default_c_s();
-  static cnst_str_r bold_s();
-  static cnst_str_r dim_s();
-
-  static std::string to_ansi_string(std::initializer_list<int> codes) noexcept;
+  static DWORD main_thread_id;
 };
 
 } // namespace _lib
-} // namespace log
+
+static const _lib::thread_detector_t thread{};
+
+#endif
+
+#if defined(WEBVIEW_PLATFORM_LINUX)
+#include <sys/syscall.h>
+#include <unistd.h>
+
+class thread {
+public:
+  static bool is_main_thread() { return syscall(SYS_gettid) == getpid(); };
+};
+
+#endif
+
+#if defined(WEBVIEW_PLATFORM_DARWIN)
+#include <pthread.h>
+
+class thread {
+public:
+  static bool is_main_thread() { return pthread_main_np() != 0; };
+};
+
+#endif
+
+} // namespace threading
+} // namespace detail
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_LOG_ANSI_COLOURS_HH
+#endif // WEBVIEW_DETAIL_THREADING_THREAD_DETECTOR_HH

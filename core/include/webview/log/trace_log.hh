@@ -55,19 +55,19 @@ protected:
   std::string get_ctx(char scp) const;
   long elapsed_ms(time_point_t start, time_point_t end) const;
   std::string bool_s(bool flag) const;
-  std::string escape_s(const_str_ref text) const;
+  std::string escape_s(cnst_str_r text) const;
   std::string num_s(size_t val) const;
-  std::string bold(const_str_ref this_col, const_str_ref text) const;
-  std::string dim(const_str_ref this_col, const_str_ref text) const;
-  void print_ansi(const_str_ref this_col, const_str_ref message) const;
+  std::string bold(cnst_str_r this_col, cnst_str_r text) const;
+  std::string dim(cnst_str_r this_col, cnst_str_r text) const;
+  void print_ansi(cnst_str_r this_col, cnst_str_r message) const;
 };
 
 class print_here_t : protected trace_tools_t {
 public:
   ~print_here_t() = default;
-  print_here_t(const_str_ref prefix, const_str_ref postfix)
+  print_here_t(cnst_str_r prefix, cnst_str_r postfix)
       : prefix(prefix), postfix(postfix) {}
-  void print_here(const_str_ref message) const;
+  void print_here(cnst_str_r message) const;
 
 private:
   std::string prefix;
@@ -76,11 +76,11 @@ private:
 
 struct queue_print_t : public print_here_t {
 public:
-  queue_print_t(const_str_ref prefix, const_str_ref postfix)
+  queue_print_t(cnst_str_r prefix, cnst_str_r postfix)
       : print_here_t{prefix, postfix}, prefix{prefix}, postfix(postfix) {}
-  void start(const_str_ref name) const;
-  void wait(const_str_ref name) const;
-  void done(bool done, const_str_ref name) const;
+  void start(cnst_str_r name) const;
+  void wait(cnst_str_r name) const;
+  void done(bool done, cnst_str_r name) const;
 
 private:
   std::string prefix;
@@ -90,11 +90,11 @@ private:
 class queue_bind_t {
 public:
   ~queue_bind_t() = default;
-  queue_bind_t(const_str_ref prefix, const_str_ref postfix = "   BIND")
+  queue_bind_t(cnst_str_r prefix, cnst_str_r postfix = "   BIND")
       : bind{prefix, postfix} {};
 
   struct wrapper_t : public queue_print_t {
-    wrapper_t(const_str_ref prefix, const_str_ref postfix)
+    wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : queue_print_t{prefix, postfix} {};
   } bind;
 };
@@ -102,11 +102,11 @@ public:
 class queue_unbind_t {
 public:
   ~queue_unbind_t() = default;
-  queue_unbind_t(const_str_ref prefix, const_str_ref postfix = " UNBIND")
+  queue_unbind_t(cnst_str_r prefix, cnst_str_r postfix = " UNBIND")
       : unbind{prefix, postfix} {};
 
   struct wrapper_t : public queue_print_t {
-    wrapper_t(const_str_ref prefix, const_str_ref postfix)
+    wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : queue_print_t{prefix, postfix} {};
   } unbind;
 };
@@ -114,11 +114,11 @@ public:
 class queue_eval_t {
 public:
   ~queue_eval_t() = default;
-  queue_eval_t(const_str_ref prefix, const_str_ref postfix = "   EVAL")
+  queue_eval_t(cnst_str_r prefix, cnst_str_r postfix = "   EVAL")
       : eval{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
-    wrapper_t(const_str_ref prefix, const_str_ref postfix)
+    wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {}
     void start() const;
     void done(bool done) const;
@@ -132,11 +132,11 @@ public:
 class queue_loop_t {
 public:
   ~queue_loop_t() = default;
-  queue_loop_t(const_str_ref prefix, const_str_ref postfix = "   LOOP: ")
+  queue_loop_t(cnst_str_r prefix, cnst_str_r postfix = "   LOOP: ")
       : loop{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
-    wrapper_t(const_str_ref prefix, const_str_ref postfix)
+    wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : print_here_t(prefix, postfix),
           prefix(prefix),
           postfix(postfix),
@@ -166,13 +166,13 @@ public:
 class queue_notify_t {
 public:
   ~queue_notify_t() = default;
-  queue_notify_t(const_str_ref prefix, const_str_ref postfix = " NOTIFY: ")
+  queue_notify_t(cnst_str_r prefix, cnst_str_r postfix = " NOTIFY: ")
       : notify{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
-    wrapper_t(const_str_ref prefix, const_str_ref postfix)
+    wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {}
-    void on_message(const_str_ref method) const;
+    void on_message(cnst_str_r method) const;
 
   private:
     std::string prefix;
@@ -183,13 +183,13 @@ public:
 class queue_enqueue_t {
 public:
   ~queue_enqueue_t() = default;
-  queue_enqueue_t(const_str_ref prefix, const_str_ref postfix = "ENQUEUE: ")
+  queue_enqueue_t(cnst_str_r prefix, cnst_str_r postfix = "ENQUEUE: ")
       : enqueue{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
-    wrapper_t(const_str_ref prefix, const_str_ref postfix)
+    wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {}
-    void added(char scp, size_t size, const_str_ref name_or_js) const;
+    void added(char scp, size_t size, cnst_str_r name_or_js) const;
     void added(char scp, size_t size) const;
 
   private:
@@ -207,7 +207,7 @@ class queue_trace_t : public queue_bind_t,
                       public print_here_t {
 public:
   ~queue_trace_t() = default;
-  queue_trace_t(const_str_ref prefix, const_str_ref postfix = "QUEUE: ")
+  queue_trace_t(cnst_str_r prefix, cnst_str_r postfix = "QUEUE: ")
       : queue_bind_t{prefix + postfix},
         queue_unbind_t{prefix + postfix},
         queue_eval_t{prefix + postfix},
@@ -219,11 +219,11 @@ public:
 
 struct base_print_t : public print_here_t {
 public:
-  base_print_t(const_str_ref prefix, const_str_ref postfix)
+  base_print_t(cnst_str_r prefix, cnst_str_r postfix)
       : print_here_t{prefix, postfix}, prefix{prefix}, postfix(postfix) {}
-  void start(const_str_ref name) const;
-  void work(const_str_ref name) const;
-  void done(const_str_ref name) const;
+  void start(cnst_str_r name) const;
+  void work(cnst_str_r name) const;
+  void done(cnst_str_r name) const;
 
 private:
   std::string prefix;
@@ -233,11 +233,11 @@ private:
 class base_bind_t {
 public:
   ~base_bind_t() = default;
-  base_bind_t(const_str_ref prefix, const_str_ref postfix = "   BIND: ")
+  base_bind_t(cnst_str_r prefix, cnst_str_r postfix = "   BIND: ")
       : bind{prefix, postfix} {};
 
   struct wrapper_t : public base_print_t {
-    wrapper_t(const_str_ref prefix, const_str_ref postfix)
+    wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : base_print_t{prefix, postfix} {};
   } bind;
 };
@@ -245,11 +245,11 @@ public:
 class base_unbind_t {
 public:
   ~base_unbind_t() = default;
-  base_unbind_t(const_str_ref prefix, const_str_ref postfix = " UNBIND: ")
+  base_unbind_t(cnst_str_r prefix, cnst_str_r postfix = " UNBIND: ")
       : unbind{prefix, postfix} {};
 
   struct wrapper_t : public base_print_t {
-    wrapper_t(const_str_ref prefix, const_str_ref postfix)
+    wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : base_print_t{prefix, postfix} {};
   } unbind;
 };
@@ -257,15 +257,15 @@ public:
 class base_eval_t {
 public:
   ~base_eval_t() = default;
-  base_eval_t(const_str_ref prefix, const_str_ref postfix = "   EVAL: ")
+  base_eval_t(cnst_str_r prefix, cnst_str_r postfix = "   EVAL: ")
       : eval{prefix, postfix} {};
 
   struct wrapper_t : public print_here_t {
-    wrapper_t(const_str_ref prefix, const_str_ref postfix)
+    wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : print_here_t{prefix, postfix}, prefix(prefix), postfix(postfix) {}
-    void start(const_str_ref js, bool skip_queue) const;
-    void work(const_str_ref js) const;
-    void done(bool done, const_str_ref js) const;
+    void start(cnst_str_r js, bool skip_queue) const;
+    void work(cnst_str_r js) const;
+    void done(bool done, cnst_str_r js) const;
 
   private:
     std::string prefix;
@@ -279,7 +279,7 @@ class base_trace_t : public base_bind_t,
                      public print_here_t {
 public:
   ~base_trace_t() = default;
-  base_trace_t(const_str_ref prefix, const_str_ref postfix = " BASE: ")
+  base_trace_t(cnst_str_r prefix, cnst_str_r postfix = " BASE: ")
       : base_bind_t(prefix + postfix),
         base_unbind_t(prefix + postfix),
         base_eval_t(prefix + postfix),
@@ -304,7 +304,7 @@ public:
   static const queue_trace_t &queue;
 
 private:
-  static const_str_ref prefix() {
+  static cnst_str_r prefix() {
     static const std::string prefix_instance = "WEBVIEW: ";
     return prefix_instance;
   };

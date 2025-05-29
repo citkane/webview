@@ -57,31 +57,31 @@ public:
   struct bind_api_t : nested_api_t<engine_queue> {
     bind_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `bind` work unit onto the queue.
-    noresult enqueue(dispatch_fn_t fn, const_str_ref name);
+    noresult enqueue(dispatch_fn_t fn, cnst_str_r name);
     /// Indicates if adding a `bind` to the queue is an error, eg. duplicate name.
-    bool is_duplicate(const_str_ref name) const;
+    bool is_duplicate(cnst_str_r name) const;
   };
   struct unbind_api_t : nested_api_t<engine_queue> {
     unbind_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `unbind` work unit onto the queue.
-    noresult enqueue(dispatch_fn_t fn, const_str_ref name);
+    noresult enqueue(dispatch_fn_t fn, cnst_str_r name);
     /// Indicates if adding an `unbind` to the queue is an error, eg. bind doesn't exist.
-    bool not_found(const_str_ref name) const;
+    bool not_found(cnst_str_r name) const;
   };
   struct eval_api_t : nested_api_t<engine_queue> {
     eval_api_t(engine_queue *self) : nested_api_t(self) {}
     /// Puts a user `eval` work unit onto the queue.
-    noresult enqueue(dispatch_fn_t fn, const_str_ref js);
+    noresult enqueue(dispatch_fn_t fn, cnst_str_r js);
   };
   struct promise_api_t : nested_api_t<engine_queue> {
     promise_api_t(engine_queue *self) : nested_api_t(self) {}
 
     /// Takes queue action for a resolved promise
-    void resolving(const_str_ref name, const_str_ref id);
+    void resolving(cnst_str_r name, cnst_str_r id);
     /// Sends the native work unit of a promise to a concurrent thread.
-    void resolve(const_str_ref name, const_str_ref id, const_str_ref args);
+    void resolve(cnst_str_r name, cnst_str_r id, cnst_str_r args);
     /// Relays notifications from the frontend to relevant queue methods.
-    bool exec_system_message(const_str_ref id, const_str_ref method);
+    bool exec_system_message(cnst_str_r id, cnst_str_r method);
   };
   struct bindings_api_t : nested_api_t<engine_queue> {
     bindings_api_t(engine_queue *self) : nested_api_t(self) {}
@@ -130,18 +130,18 @@ private:
   /// We want native promise work units to run concurrently.
   /// We do not want native promise work to stall execution of the main / app thread.
   /// @todo hardware concurrency limit queue.
-  void resolve_thread_constructor(std::string name, const_str_ref id,
-                                  const_str_ref args);
+  void resolve_thread_constructor(std::string name, cnst_str_r id,
+                                  cnst_str_r args);
 
   /// Determines if a given binding name will be bound at the time of queue execution.
-  bool will_be_bound(const_str_ref name) const;
+  bool will_be_bound(cnst_str_r name) const;
 
   /// Adds `bind`, `unbind` or `eval` user work unit to the queue.
-  noresult queue_work(const_str_ref name_or_js, dispatch_fn_t fn,
+  noresult queue_work(cnst_str_r name_or_js, dispatch_fn_t fn,
                       context_t fn_ctx);
 
   /// Sends a native promise work unit to a concurrent detached thread.
-  void resolve_work(engine_base *wv, const_str_ref msg, const_str_ref id);
+  void resolve_work(engine_base *wv, cnst_str_r msg, cnst_str_r id);
 
   /// API to query and set various flags atomically
   threading::_lib::atomic_api_t atomic;

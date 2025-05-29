@@ -45,7 +45,7 @@ namespace platform {
 namespace windows {
 
 // Converts a narrow (UTF-8-encoded) string into a wide (UTF-16-encoded) string.
-inline std::wstring widen_string(const_str_ref input) {
+inline std::wstring widen_string(cnst_str_r input) {
   if (input.empty()) {
     return {};
   }

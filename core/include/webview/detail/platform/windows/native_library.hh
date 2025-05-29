@@ -61,7 +61,7 @@ private:
 class native_library {
 public:
   native_library() = default;
-  explicit native_library(const_str_ref name) : m_handle{load_library(name)} {}
+  explicit native_library(cnst_str_r name) : m_handle{load_library(name)} {}
   explicit native_library(const std::wstring &name)
       : m_handle{load_library(name)} {}
 
@@ -119,14 +119,14 @@ public:
   void detach() { m_handle = nullptr; }
 
   // Returns true if the library by the given name is currently loaded; otherwise false.
-  static bool is_loaded(const_str_ref name) {
+  static bool is_loaded(cnst_str_r name) {
     auto handle = GetModuleHandleW(widen_string(name).c_str());
     return !!handle;
   }
 
 private:
   using mod_handle_t = HMODULE;
-  static mod_handle_t load_library(const_str_ref name) {
+  static mod_handle_t load_library(cnst_str_r name) {
     return load_library(widen_string(name));
   }
   static mod_handle_t load_library(const std::wstring &name) {

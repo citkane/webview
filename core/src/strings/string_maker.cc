@@ -31,49 +31,49 @@
 
 using namespace webview::strings;
 
-std::string js_string_t::onunbind(const_str_ref name) const {
+std::string js_string_t::onunbind(cnst_str_r name) const {
   return tokenise(ON_UNBIND_JS(), tokens.str, name);
 }
-std::string js_string_t::onbind(const_str_ref name) const {
+std::string js_string_t::onbind(cnst_str_r name) const {
   return tokenise(ON_BIND_JS(), tokens.str, name);
 }
-std::string js_string_t::onreply(const_str_ref id, int status,
-                                 const_str_ref escaped_result) const {
+std::string js_string_t::onreply(cnst_str_r id, int status,
+                                 cnst_str_r escaped_result) const {
   strg_replacements_t replacements = {{tokens.id, id},
                                       {tokens.status, std::to_string(status)},
                                       {tokens.result, escaped_result}};
   return tokenise(ON_REPLY_JS(), replacements);
 }
-std::string js_string_t::init(const_str_ref post_fn) const {
+std::string js_string_t::init(cnst_str_r post_fn) const {
   return tokenise(WEVBIEW_INIT_JS(), tokens.post_fn, post_fn);
 }
 std::string js_string_t::bind(std::vector<std::string> &bound_names) const {
   auto js_names = string::json.to_list(bound_names);
   return tokenise(BIND_JS(), tokens.js_names, js_names);
 }
-std::string js_string_t::eval_wrapper(const_str_ref user_js) const {
+std::string js_string_t::eval_wrapper(cnst_str_r user_js) const {
   return tokenise(EVAL_WRAPPER_JS(), tokens.user_js, user_js);
 }
 
-std::string error_message_t::reject_unbound(const_str_ref id,
-                                            const_str_ref name) const {
+std::string error_message_t::reject_unbound(cnst_str_r id,
+                                            cnst_str_r name) const {
   strg_replacements_t replacements = {{tokens.id, id}, {tokens.str, name}};
   return tokenise(REJECT_UNBOUND_M(), replacements);
 }
-std::string error_message_t::uncaught_exception(const_str_ref name,
-                                                const_str_ref what) const {
+std::string error_message_t::uncaught_exception(cnst_str_r name,
+                                                cnst_str_r what) const {
   strg_replacements_t replacements = {{tokens.str, name}, {tokens.what, what}};
   return tokenise(UNCAUGHT_EXP_M(), replacements);
 }
-std::string error_message_t::webview_terminated(const_str_ref name) const {
+std::string error_message_t::webview_terminated(cnst_str_r name) const {
   return tokenise(WEBVIEW_TERMINATED_M(), tokens.str, name);
 }
 
-std::string test_js_t::init(const_str_ref init_value, bool escaped) const {
+std::string test_js_t::init(cnst_str_r init_value, bool escaped) const {
   auto init_value_js = post_value(init_value, escaped);
   return tokenise(TEST_INIT_JS(), tokens.post_fn, init_value_js);
 }
-std::string test_js_t::post_value(const_str_ref value, bool escaped) const {
+std::string test_js_t::post_value(cnst_str_r value, bool escaped) const {
   auto tmplt = TEST_VALUE_WRAPPER_JS(escaped);
   return tokenise(tmplt, tokens.str, value);
 }
@@ -81,7 +81,7 @@ std::string test_js_t::make_call_js(unsigned int result) const {
   return tokenise(TEST_MAKE_CALL_JS(), tokens.intval, std::to_string(result));
 }
 
-std::string test_html_t::string_returns(const_str_ref title) const {
+std::string test_html_t::string_returns(cnst_str_r title) const {
   return tokenise(TEST_STRING_RETURNS_HTML(), tokens.str, title);
 }
 std::string test_html_t::navigate_encoded() const {

@@ -187,7 +187,7 @@ protected:
     return {};
   }
 
-  noresult set_title_impl(const_str_ref title) override {
+  noresult set_title_impl(cnst_str_r title) override {
     NSWindow_set_title(m_window, title);
     return {};
   }
@@ -217,7 +217,7 @@ protected:
 
     return window_show();
   }
-  noresult navigate_impl(const_str_ref url) override {
+  noresult navigate_impl(cnst_str_r url) override {
     objc::autoreleasepool arp;
 
     WKWebView_loadRequest(
@@ -225,13 +225,13 @@ protected:
 
     return {};
   }
-  noresult set_html_impl(const_str_ref html) override {
+  noresult set_html_impl(cnst_str_r html) override {
     objc::autoreleasepool arp;
     WKWebView_loadHTMLString(m_webview, NSString_stringWithUTF8String(html),
                              nullptr);
     return {};
   }
-  noresult eval_impl(const_str_ref js) override {
+  noresult eval_impl(cnst_str_r js) override {
     objc::autoreleasepool arp;
     // URI is null before content has begun loading.
     auto nsurl{WKWebView_get_URL(m_webview)};
@@ -243,7 +243,7 @@ protected:
     return {};
   }
 
-  user_script add_user_script_impl(const_str_ref js) override {
+  user_script add_user_script_impl(cnst_str_r js) override {
     objc::autoreleasepool arp;
     auto wk_script{WKUserScript_withSource(
         NSString_stringWithUTF8String(js),

@@ -76,10 +76,10 @@ public:
 #endif
 
   using on_script_message_received_t =
-      std::function<void(WebKitUserContentManager *, const_str_ref)>;
+      std::function<void(WebKitUserContentManager *, cnst_str_r)>;
   static void
   connect_script_message_received(WebKitUserContentManager *manager,
-                                  const_str_ref handler_name,
+                                  cnst_str_r handler_name,
                                   on_script_message_received_t handler) {
     std::string signal_name = "script-message-received::";
     signal_name += handler_name;

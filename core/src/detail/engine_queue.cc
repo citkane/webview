@@ -63,7 +63,7 @@ void engine_queue::terminate_queue() {
   }
 };
 
-bool engine_queue::will_be_bound(const_str_ref name) const {
+bool engine_queue::will_be_bound(cnst_str_r name) const {
   auto i = list.pending.indices(name);
   auto is_bound = list.bindings.count(name) > 0;
   if (is_bound) {
@@ -75,33 +75,32 @@ bool engine_queue::will_be_bound(const_str_ref name) const {
   };
 };
 
-noresult bind_api_t::enqueue(dispatch_fn_t fn, const_str_ref name) {
+noresult bind_api_t::enqueue(dispatch_fn_t fn, cnst_str_r name) {
   return self->queue_work(name, fn, self->ctx.bind);
 };
-bool bind_api_t::is_duplicate(const_str_ref name) const {
+bool bind_api_t::is_duplicate(cnst_str_r name) const {
   return self->will_be_bound(name);
 };
 
-bool unbind_api_t::not_found(const_str_ref name) const {
+bool unbind_api_t::not_found(cnst_str_r name) const {
   return !self->will_be_bound(name);
 };
-noresult unbind_api_t::enqueue(dispatch_fn_t fn, const_str_ref name) {
+noresult unbind_api_t::enqueue(dispatch_fn_t fn, cnst_str_r name) {
   return self->queue_work(name, fn, self->ctx.unbind);
 };
 
-noresult eval_api_t::enqueue(dispatch_fn_t fn, const_str_ref js) {
+noresult eval_api_t::enqueue(dispatch_fn_t fn, cnst_str_r js) {
   return self->queue_work(js, fn, self->ctx.eval);
 };
 
-void promise_api_t::resolving(const_str_ref name, const_str_ref id) {
+void promise_api_t::resolving(cnst_str_r name, cnst_str_r id) {
   self->list.unresolved_promises.remove_id(name, id);
   if (self->list.unresolved_promises.empty(name)) {
     self->cv.unbind_timeout.notify_one();
     self->list.unresolved_promises.erase(name);
   }
 };
-void promise_api_t::resolve(const_str_ref name, const_str_ref id,
-                            const_str_ref args) {
+void promise_api_t::resolve(cnst_str_r name, cnst_str_r id, cnst_str_r args) {
   self->list.id_name_map.set(id, name);
   self->list.unresolved_promises.add_id(name, id);
   self->cv.unbind_timeout.notify_one();
@@ -111,8 +110,7 @@ void promise_api_t::resolve(const_str_ref name, const_str_ref id,
                                      self, name, id, args);
   resolver.detach();
 }
-bool promise_api_t::exec_system_message(const_str_ref id,
-                                        const_str_ref method) {
+bool promise_api_t::exec_system_message(cnst_str_r id, cnst_str_r method) {
   if (id != sys_flags.sysop) {
     return false;
   };
@@ -135,7 +133,7 @@ bool promise_api_t::exec_system_message(const_str_ref id,
   return true;
 }
 
-noresult engine_queue::queue_work(const_str_ref name_or_js, dispatch_fn_t fn,
+noresult engine_queue::queue_work(cnst_str_r name_or_js, dispatch_fn_t fn,
                                   context_t fn_ctx) {
   const auto &name = name_or_js;
   if (fn_ctx == ctx.bind) {

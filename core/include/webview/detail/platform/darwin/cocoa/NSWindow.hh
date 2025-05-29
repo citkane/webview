@@ -90,7 +90,7 @@ inline void NSWindow_set_styleMask(id self, NSWindowStyleMask style) {
   objc::msg_send<void>(self, objc::selector("setStyleMask:"), style);
 }
 
-inline void NSWindow_set_title(id self, const_str_ref title) {
+inline void NSWindow_set_title(id self, cnst_str_r title) {
   objc::autoreleasepool arp;
   objc::msg_send<void>(
       self, objc::selector("setTitle:"),
