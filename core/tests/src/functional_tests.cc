@@ -273,7 +273,7 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
     REQUIRE(tester::get_value() == "loaded");
 
     tester::expect_value("exiting 42");
-    tester::ping_value(R"("exiting " + window.x)", wv, true);
+    tester::ping_value(R"("exiting " + window.x)", &wv, true);
     tester::cv().wait_for(lock, tester::seconds(2),
                           [&] { return tester::values_match(); });
 

@@ -67,7 +67,7 @@ public:
 
   /// Pings the frontend with a test value.
   /// @param parameter-escaped Is the provided value string already escaped?
-  static void ping_value(cnst_str_r value, engine_base &wv,
+  static void ping_value(cnst_str_r value, engine_base *wv,
                          bool escaped = false);
 
   /// Returns the given timespan in std::chrono::seconds

@@ -61,12 +61,10 @@ std::string tester::get_value() {
   return string_value();
 }
 
-void tester::ping_value(cnst_str_r escaped_value, engine_base &wv,
+void tester::ping_value(cnst_str_r escaped_value, engine_base *wv,
                         bool escaped) {
   std::lock_guard<std::mutex> lock(mtx());
-  wv.dispatch([&, escaped_value, escaped] {
-    wv.eval(string::tests::js.post_value(escaped_value, escaped));
-  });
+  wv->eval(string::tests::js.post_value(escaped_value, escaped));
 }
 
 std::chrono::seconds tester::seconds(int seconds) {
