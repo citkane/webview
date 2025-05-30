@@ -248,17 +248,8 @@ inline cnst_str_r TEST_BIND_UNBIND_HTML() {
   return str;
 }
 
-static std::string TEST_VALUE_WRAPPER_JS(bool escaped) {
-  return escaped ?
-                 R"(
-window.__webview__.post(
-  JSON.stringify({
-    id: "_testop",
-    method: _str_
-  })
-);
-)"
-                 : R"(
+inline cnst_str_r TEST_VALUE_WRAPPER_JS() {
+  static std::string str = R"(
 window.__webview__.post(
   JSON.stringify({
     id: "_testop",
@@ -266,6 +257,18 @@ window.__webview__.post(
   })
 );
 )";
+  return str;
+}
+inline cnst_str_r TEST_VALUE_WRAPPER_JS_ESCAPED() {
+  static std::string str = R"(
+window.__webview__.post(
+  JSON.stringify({
+    id: "_testop",
+    method: _str_
+  })
+);
+)";
+  return str;
 }
 
 inline cnst_str_r TEST_MAKE_CALL_JS() {
@@ -309,51 +312,6 @@ window.onload = () => {
 
 } // namespace tests
 } // namespace _templates
-
-using namespace _templates::frontend;
-namespace frontend {
-namespace _lib {
-struct templates_js_t {
-  templates_js_t() noexcept = default;
-  std::string init = WEVBIEW_INIT_JS();
-  std::string onbind = ON_BIND_JS();
-  std::string onunbind = ON_UNBIND_JS();
-  std::string onreply = ON_REPLY_JS();
-  std::string bind = BIND_JS();
-  std::string eval_wrapper = EVAL_WRAPPER_JS();
-};
-
-struct error_messages_t {
-  error_messages_t() noexcept = default;
-  std::string reject_unbound = REJECT_UNBOUND_M();
-  std::string uncaught_exp = UNCAUGHT_EXP_M();
-  std::string terminated = WEBVIEW_TERMINATED_M();
-};
-
-} // namespace _lib
-} // namespace frontend
-
-using namespace _templates::tests;
-namespace test {
-namespace _lib {
-struct templates_html_t {
-  templates_html_t() noexcept = default;
-  std::string string_returns = TEST_STRING_RETURNS_HTML();
-  std::string bind_unbind = TEST_BIND_UNBIND_HTML();
-};
-
-struct templates_js_t {
-  templates_js_t() noexcept = default;
-  std::string value_wrapper(bool escaped) const {
-    return TEST_VALUE_WRAPPER_JS(escaped);
-  }
-  std::string make_call = TEST_MAKE_CALL_JS();
-  std::string init = TEST_INIT_JS();
-};
-
-} // namespace _lib
-} // namespace test
-
 } // namespace strings
 } // namespace webview
 

@@ -30,6 +30,9 @@
 #include "webview/strings/string_templates.hh"
 
 using namespace webview::strings;
+using namespace webview::strings::_templates;
+using namespace webview::strings::_templates::tests;
+using namespace webview::strings::_templates::frontend;
 
 std::string js_string_t::onunbind(cnst_str_r name) const {
   return tokenise(ON_UNBIND_JS(), tokens.str, name);
@@ -74,7 +77,8 @@ std::string test_js_t::init(cnst_str_r init_value, bool escaped) const {
   return tokenise(TEST_INIT_JS(), tokens.post_fn, init_value_js);
 }
 std::string test_js_t::post_value(cnst_str_r value, bool escaped) const {
-  auto tmplt = TEST_VALUE_WRAPPER_JS(escaped);
+  auto tmplt =
+      escaped ? TEST_VALUE_WRAPPER_JS_ESCAPED() : TEST_VALUE_WRAPPER_JS();
   return tokenise(tmplt, tokens.str, value);
 }
 std::string test_js_t::make_call_js(unsigned int result) const {
