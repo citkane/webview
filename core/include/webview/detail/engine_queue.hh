@@ -91,10 +91,7 @@ private:
   threading::_lib::atomic_api_t atomic;
 
   std::atomic_bool is_dom_ready{};
-  std::atomic_bool queue_empty{};
-  std::atomic_size_t queue_size{};
   std::atomic_bool unbind_done{};
-  std::atomic_bool unbind_can_proceed{};
   std::atomic_bool bind_done{};
   std::atomic_bool eval_done{};
   std::atomic_bool is_terminating{};
