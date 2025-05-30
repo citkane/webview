@@ -28,23 +28,9 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "ansi_colours.hh"
-#include "webview/lib/macros.h"
 #include <chrono>
 #include <mutex>
 #include <string>
-
-#if defined(_WIN32)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif // WIN32_LEAN_AND_MEAN
-#ifdef _MSC_VER
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501 //Win XP
-#endif                      // _WIN32_WINNT
-#endif                      // _MSC_VER
-#include <io.h>
-#include <windows.h>
-#endif
 
 namespace webview {
 namespace log {
@@ -326,16 +312,6 @@ public:
 using namespace _lib;
 
 class trace {
-  ~trace() = default;
-#if defined(_WIN32)
-  trace() {
-    AttachConsole(ATTACH_PARENT_PROCESS);
-    static_cast<void>(freopen("CONOUT$", "w", stdout));
-  };
-#else
-  trace() = default;
-#endif
-
 public:
   /// Trace log methods for `engine_base` functionality
   static const base_trace_t &base;

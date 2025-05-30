@@ -30,7 +30,6 @@
 #include "webview/api/c_api_imp_lib.hh"
 #include "webview/detail/threading/thread_detector.hh"
 #include "webview/types/types.hh"
-#include <stdexcept>
 
 using namespace webview;
 using namespace webview::api::_lib;
@@ -38,7 +37,8 @@ using namespace webview::detail::threading;
 
 WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
   if (!thread::is_main_thread()) {
-    throw std::runtime_error("Webview must be created from the main thread.");
+    throw exception{WEBVIEW_ERROR_INVALID_ARGUMENT,
+                    R"(Webview must be created from the main thread.)"};
   };
 
   webview_cc_t *w{};
@@ -57,7 +57,7 @@ WEBVIEW_API webview_error_t webview_destroy(webview_t w) {
   return api_filter([=]() -> noresult {
     auto wv = cast_to_webview(w);
     auto do_work = [&] {
-      wv->terminate_queue();
+      wv->queue.terminate();
       delete wv;
     };
     if (!thread::is_main_thread()) {

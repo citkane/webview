@@ -34,6 +34,12 @@
 using namespace webview::detail::threading;
 using namespace webview::detail::threading::_lib;
 
+/* Nested API _lib for thread-safe functions
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
+
+/* Thread-safe operations on a name map of active bindings
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
 size_t bindings_t::size() const {
   std::lock_guard<std::mutex> lock(mtx);
   return bindings_map.size();
@@ -74,6 +80,9 @@ binding_ctx_t bindings_t::at(cnst_str_r name) const {
   return bindings_map.at(name);
 }
 
+/* Thread-safe operations for adding and replacing user functions and scripts
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
 user_script *user_scripts_t::add(cnst_str_r js, engine_base *base) {
   std::lock_guard<std::mutex> lock(mtx);
   return std::addressof(*m_user_scripts.emplace(
@@ -95,6 +104,9 @@ user_script *user_scripts_t::replace(const user_script &old_script,
   }
   return old_script_ptr;
 }
+
+/* Thread-safe operations for the user actions queue
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 action_t queue_t::front() {
   std::lock_guard<std::mutex> lock(mtx);
@@ -121,6 +133,9 @@ bool queue_t::empty() const {
   std::lock_guard<std::mutex> lock(mtx);
   return queue.empty();
 }
+
+/* Thread-safe operations on a map of unresolved promises
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 void unres_promises_t::set(cnst_str_r name, std::list<std::string> ids) {
   std::lock_guard<std::mutex> lock(mtx);
@@ -170,6 +185,9 @@ bool unres_promises_t::empty(cnst_str_r name) const {
   return empty;
 }
 
+/* Thread-safe operations on a map of promise id's to binding name.
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
 std::string id_name_map_t::get(cnst_str_r id) const {
   std::lock_guard<std::mutex> lock(mtx);
   auto found = id_name.find(id);
@@ -188,6 +206,9 @@ void id_name_map_t::erase(cnst_str_r id) {
   std::lock_guard<std::mutex> lock(mtx);
   id_name.erase(id);
 }
+
+/* Thread-safe operations on an ordered list of pending bind / unbind operations in the queue.
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 void pending_t::pop_front() {
   std::lock_guard<std::mutex> lock(mtx);
@@ -214,6 +235,12 @@ indices_t pending_t::indices(cnst_str_r name) const {
   return {bind_i, unbind_i};
 }
 
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆  
+ * Nested API _lib for thread-safe functions
+ * -----------------------------------------------------------------------------------------------------------
+ * Root API thread-safe functions
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
+
 engine_lists_t::cv_api_t::cv_api_t()
     : all{&queue, &bind, &eval, &unbind, &unbind_timeout} {};
 void engine_lists_t::cv_api_t::notify_all() {
@@ -221,6 +248,9 @@ void engine_lists_t::cv_api_t::notify_all() {
     this_cv->notify_all();
   }
 }
+
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+ * Root API thread-safe functions */
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_DETAIL_THREADSAFE_LISTS_CC

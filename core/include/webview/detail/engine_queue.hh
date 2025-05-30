@@ -23,20 +23,17 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_ENGINE_QUEUE_HH
-#define WEBVIEW_ENGINE_QUEUE_HH
+#ifndef WEBVIEW_DETAIL_ENGINE_QUEUE_HH
+#define WEBVIEW_DETAIL_ENGINE_QUEUE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #ifndef WEBVIEW_UNBIND_TIMEOUT
 #define WEBVIEW_UNBIND_TIMEOUT 20
 #endif
-#include "threading/threadsafe_lists.hh"
-#include "webview/detail/threading/atomic_api.hh"
-#include "webview/types/types.hh"
-#include <atomic>
-#include <thread>
+#include "webview/detail/_lib/engine_queue_api_lib.hh"
 
 using namespace webview::types;
+using namespace webview::detail::_lib;
 namespace webview {
 namespace detail {
 
@@ -46,71 +43,21 @@ public:
   ~engine_queue();
   engine_queue(engine_base *wv);
 
-  /* ************************************************************************
-   * API for `engine_queue`.
-   *
-   * Note:
-   * This is a constrained public interface to private internal functionality,
-   * which is acceptable and idiomatic in C++ for API design.
-   **************************************************************************/
-
-  struct bind_api_t : nested_api_t<engine_queue> {
-    bind_api_t(engine_queue *self) : nested_api_t(self) {}
-    /// Puts a user `bind` work unit onto the queue.
-    noresult enqueue(dispatch_fn_t fn, cnst_str_r name);
-    /// Indicates if adding a `bind` to the queue is an error, eg. duplicate name.
-    bool is_duplicate(cnst_str_r name) const;
-  };
-  struct unbind_api_t : nested_api_t<engine_queue> {
-    unbind_api_t(engine_queue *self) : nested_api_t(self) {}
-    /// Puts a user `unbind` work unit onto the queue.
-    noresult enqueue(dispatch_fn_t fn, cnst_str_r name);
-    /// Indicates if adding an `unbind` to the queue is an error, eg. bind doesn't exist.
-    bool not_found(cnst_str_r name) const;
-  };
-  struct eval_api_t : nested_api_t<engine_queue> {
-    eval_api_t(engine_queue *self) : nested_api_t(self) {}
-    /// Puts a user `eval` work unit onto the queue.
-    noresult enqueue(dispatch_fn_t fn, cnst_str_r js);
-  };
-  struct promise_api_t : nested_api_t<engine_queue> {
-    promise_api_t(engine_queue *self) : nested_api_t(self) {}
-
-    /// Takes queue action for a resolved promise
-    void resolving(cnst_str_r name, cnst_str_r id);
-    /// Sends the native work unit of a promise to a concurrent thread.
-    void resolve(cnst_str_r name, cnst_str_r id, cnst_str_r args);
-    /// Relays notifications from the frontend to relevant queue methods.
-    bool exec_system_message(cnst_str_r id, cnst_str_r method);
-  };
-  struct bindings_api_t : nested_api_t<engine_queue> {
-    bindings_api_t(engine_queue *self) : nested_api_t(self) {}
-    /// Sets the bindings map locked state
-    void locked(bool val);
-  };
-  struct public_api_t : nested_api_t<engine_queue> {
-    ~public_api_t() = default;
-    public_api_t(engine_queue *self) : nested_api_t{self} {};
-    bind_api_t bind{this->self};
-    unbind_api_t unbind{this->self};
-    eval_api_t eval{this->self};
-    promise_api_t promises{this->self};
-    bindings_api_t bindings{this->self};
-  };
-
+  /*************************************************************************
+  * API nested structure for `engine_queue`.
+  *
+  * Note:
+  * This is a constrained public interface to private internal functionality,
+  * which is acceptable and idiomatic in C++ for API design.
+  **************************************************************************/
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 
-  /// Public API for the engine_queue class instance.
+  /// API root for the engine_queue class instance.
   public_api_t queue;
-  void terminate_queue();
 
   // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
 private:
-  friend struct threading::_lib::atomic_dom_ready_t;
-  friend struct threading::_lib::atomic_done_t;
-  friend struct threading::_lib::atomic_api_t;
-
   /// Container for user work operation tags, ie. `bind`, `unbind`, `eval`
   action_ctx_t const ctx{};
 
@@ -140,9 +87,6 @@ private:
   noresult queue_work(cnst_str_r name_or_js, dispatch_fn_t fn,
                       context_t fn_ctx);
 
-  /// Sends a native promise work unit to a concurrent detached thread.
-  void resolve_work(engine_base *wv, cnst_str_r msg, cnst_str_r id);
-
   /// API to query and set various flags atomically
   threading::_lib::atomic_api_t atomic;
 
@@ -160,9 +104,18 @@ private:
 
   /// The Webview class instance;
   engine_base *wv;
+
+  friend struct threading::_lib::atomic_dom_ready_t;
+  friend struct threading::_lib::atomic_done_t;
+  friend struct threading::_lib::atomic_api_t;
+  friend struct _lib::bind_api_t;
+  friend struct _lib::unbind_api_t;
+  friend struct _lib::eval_api_t;
+  friend struct _lib::promise_api_t;
+  friend struct _lib::public_api_t;
 };
 
 } // namespace detail
 } // namespace webview
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_ENGINE_QUEUE_HH
+#endif // WEBVIEW_DETAIL_ENGINE_QUEUE_HH

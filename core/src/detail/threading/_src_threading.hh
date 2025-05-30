@@ -4,8 +4,8 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 
 #include "atomic_api.cc"
-#include "thread_queue.cc"
-#include "thread_resolve.cc"
+#include "queue_thread_constructor.cc"
+#include "resolve_thread_constructor.cc"
 #include "threadsafe_lists.cc"
 
 #endif

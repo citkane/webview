@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_ENGINE_THREAD_RESOLVE_CC
-#define WEBVIEW_ENGINE_THREAD_RESOLVE_CC
+#ifndef WEBVIEW_DETAIL_THREADING_RESOLVE_THREAD_CONSTRUCTOR_CC
+#define WEBVIEW_DETAIL_THREADING_RESOLVE_THREAD_CONSTRUCTOR_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
@@ -52,4 +52,4 @@ void engine_queue::resolve_thread_constructor(std::string name, cnst_str_r id,
 }
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_ENGINE_THREAD_RESOLVE_CC
+#endif // WEBVIEW_DETAIL_THREADING_RESOLVE_THREAD_CONSTRUCTOR_CC

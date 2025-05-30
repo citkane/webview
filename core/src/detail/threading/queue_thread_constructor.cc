@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_ENGINE_THREAD_QUEUE_CC
-#define WEBVIEW_ENGINE_THREAD_QUEUE_CC
+#ifndef WEBVIEW_DETAIL_THREADING_QUEUE_THREAD_CONSTRUCTOR_CC
+#define WEBVIEW_DETAIL_THREADING_QUEUE_THREAD_CONSTRUCTOR_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/cc_api.hh"
@@ -118,4 +118,4 @@ void engine_queue::queue_thread_constructor() {
 }
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_ENGINE_THREAD_QUEUE_CC
+#endif // WEBVIEW_DETAIL_THREADING_QUEUE_THREAD_CONSTRUCTOR_CC

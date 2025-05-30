@@ -37,6 +37,7 @@ class engine_queue;
 namespace threading {
 namespace _lib {
 
+/// Nested API to get and set if the window DOM is ready
 struct atomic_dom_ready_t : nested_api_t<engine_queue> {
   atomic_dom_ready_t(engine_queue *self) : nested_api_t(self) {}
   /// Query if the threading is ready to do work.
@@ -45,6 +46,7 @@ struct atomic_dom_ready_t : nested_api_t<engine_queue> {
   void ready(bool flag);
 };
 
+/// Nested API to get and set if various queue operations have completed
 struct atomic_done_t : nested_api_t<engine_queue> {
   atomic_done_t(engine_queue *self) : nested_api_t(self) {}
   /// Gets the bind flag state
@@ -61,12 +63,17 @@ struct atomic_done_t : nested_api_t<engine_queue> {
   void eval(bool val);
 };
 
+/// Root API to work with atomic flags
 struct atomic_api_t : nested_api_t<engine_queue> {
   atomic_api_t(engine_queue *self) : nested_api_t(self) {}
 
+  /// Get and set if the window DOM is ready
   atomic_dom_ready_t dom{this->self};
+  /// Get and set if various queue operations have completed
   atomic_done_t done{this->self};
+  /// Query if Webview is busy shutting down
   bool terminating() const;
+  /// Evaluate mutiple conditions with automatic `terminating` guard
   bool AND(std::initializer_list<bool> flags) const;
 };
 

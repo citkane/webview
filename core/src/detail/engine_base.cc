@@ -31,7 +31,6 @@
 #include "webview/detail/threading/thread_detector.hh"
 #include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
-#include <stdexcept>
 
 using namespace webview::detail;
 using namespace webview::detail::user;
@@ -39,10 +38,17 @@ using namespace webview::log;
 using namespace webview::strings;
 using namespace webview::detail::threading;
 
-/* PUBLIC ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+/* PUBLIC 
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
+
+/* Constructor
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 engine_base::engine_base(bool owns_window)
     : engine_queue{this}, m_owns_window{owns_window} {}
+
+/* API Methods
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 noresult engine_base::navigate(cnst_str_r url) {
   auto do_work = [this, url] {
@@ -59,7 +65,6 @@ noresult engine_base::navigate(cnst_str_r url) {
   }
   return {};
 }
-
 noresult engine_base::bind(cnst_str_r name, sync_binding_t fn) {
   auto wrapper = [this, fn](cnst_str_r id, cnst_str_r req, void * /*arg*/) {
     resolve(id, 0, fn(req));
@@ -72,7 +77,6 @@ noresult engine_base::bind(cnst_str_r name, sync_binding_t fn) {
   }
   return {};
 }
-
 noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg,
                            bool skip_queue) {
   trace::base.bind.start(name);
@@ -97,7 +101,6 @@ noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg,
   }
   return {};
 }
-
 noresult engine_base::unbind(cnst_str_r name, bool skip_queue) {
   trace::base.unbind.start(name);
 
@@ -121,7 +124,6 @@ noresult engine_base::unbind(cnst_str_r name, bool skip_queue) {
   }
   return {};
 }
-
 noresult engine_base::eval(cnst_str_r js, bool skip_queue) {
   trace::base.eval.start(js, skip_queue);
   auto do_work = [this, js, skip_queue] {
@@ -144,7 +146,6 @@ noresult engine_base::eval(cnst_str_r js, bool skip_queue) {
   }
   return {};
 }
-
 noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
   // Firstly get the promise binding name and
   // notify the queue that the promise is resolving.
@@ -157,38 +158,33 @@ noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
   //const char *escaped_js = js.c_str();
   return eval(js, true);
 }
-
 noresult engine_base::reject(cnst_str_r id, cnst_str_r err) {
   return resolve(id, 1, string::json.escape(err));
 }
-
 result<void *> engine_base::window() { return window_impl(); }
 result<void *> engine_base::widget() { return widget_impl(); }
 result<void *> engine_base::browser_controller() {
   return browser_controller_impl();
 }
-
 noresult engine_base::run() {
   if (!thread::is_main_thread()) {
-    throw std::runtime_error("Webview must be run from the main thread.");
+    throw exception{WEBVIEW_ERROR_INVALID_ARGUMENT,
+                    R"(Webview must be run from the main thread.)"};
   }
 
   return run_impl();
 }
-
 noresult engine_base::terminate() {
   // terminate_impl should normally be called from a child thread,
   // so we always dispatch it to the main thread.
   return dispatch([this] {
-    terminate_queue();
+    queue.terminate();
     terminate_impl();
   });
 }
-
 noresult engine_base::dispatch(std::function<void()> f) {
   return dispatch_impl(f);
 }
-
 noresult engine_base::set_title(cnst_str_r title) {
   auto do_work = [this, title] { set_title_impl(title); };
   if (thread::is_main_thread()) {
@@ -198,7 +194,6 @@ noresult engine_base::set_title(cnst_str_r title) {
   }
   return {};
 }
-
 noresult engine_base::set_size(int width, int height, webview_hint_t hints) {
   auto do_work = [this, width, height, hints] {
     set_size_impl(width, height, hints);
@@ -211,7 +206,6 @@ noresult engine_base::set_size(int width, int height, webview_hint_t hints) {
   }
   return {};
 }
-
 noresult engine_base::set_html(cnst_str_r html) {
   auto do_work = [this, html] { set_html_impl(html); };
   if (thread::is_main_thread()) {
@@ -221,7 +215,6 @@ noresult engine_base::set_html(cnst_str_r html) {
   }
   return {};
 }
-
 noresult engine_base::init(cnst_str_r js) {
   auto do_work = [this, js] { list.m_user_scripts.add(js, this); };
   if (thread::is_main_thread()) {
@@ -232,7 +225,11 @@ noresult engine_base::init(cnst_str_r js) {
   return {};
 }
 
-/* PROTECTED ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+ * PUBLIC
+ * ----------------------------------------------------------------------------------------------------------- 
+ * PROTECTED 
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
 void engine_base::replace_bind_script() {
   auto replacement_js = create_bind_script();
@@ -243,19 +240,16 @@ void engine_base::replace_bind_script() {
     m_bind_script = list.m_user_scripts.add(replacement_js, this);
   }
 }
-
 void engine_base::add_init_script(cnst_str_r post_fn) {
   auto init_js = string::js.init(post_fn);
   list.m_user_scripts.add(init_js, this);
   m_is_init_script_sent = true;
 }
-
 std::string engine_base::create_bind_script() {
   std::vector<std::string> bound_names;
   list.bindings.get_names(bound_names);
   return string::js.bind(bound_names);
 }
-
 void engine_base::on_message(cnst_str_r msg) {
   auto id = string::json.parse(msg, "id", 0);
   auto name = string::json.parse(msg, "method", 0);
@@ -280,9 +274,7 @@ void engine_base::on_message(cnst_str_r msg) {
   }
   queue.promises.resolve(name, id, args);
 }
-
 void engine_base::on_window_created() { inc_window_count(); }
-
 void engine_base::on_window_destroyed(bool skip_termination) {
   if (dec_window_count() <= 0) {
     if (!skip_termination) {
@@ -290,13 +282,11 @@ void engine_base::on_window_destroyed(bool skip_termination) {
     }
   }
 }
-
 void engine_base::deplete_run_loop_event_queue() {
   bool done{};
   dispatch([&] { done = true; });
   run_event_loop_while([&] { return !done; });
 }
-
 void engine_base::dispatch_size_default() {
   if (!owns_window() || !m_is_init_script_sent) {
     return;
@@ -307,22 +297,22 @@ void engine_base::dispatch_size_default() {
     }
   });
 }
-
 void engine_base::set_default_size_guard(bool guarded) {
   m_is_size_set = guarded;
 }
-
 bool engine_base::owns_window() const { return m_owns_window; }
-
 std::atomic_uint &engine_base::window_ref_count() {
   static std::atomic_uint ref_count{0};
   return ref_count;
 }
 
-/* PRIVATE ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+ * PROTECTED
+ * ----------------------------------------------------------------------------------------------------------- 
+ * PRIVATE
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
 unsigned int engine_base::inc_window_count() { return ++window_ref_count(); }
-
 unsigned int engine_base::dec_window_count() {
   auto &count = window_ref_count();
   if (count > 0) {
@@ -330,6 +320,9 @@ unsigned int engine_base::dec_window_count() {
   }
   return 0;
 }
+
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+ * PRIVATE */
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_DETAIL_ENGINE_BASE_CC

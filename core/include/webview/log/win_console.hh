@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_LOG_ANSI_COLOURS_HH
-#define WEBVIEW_LOG_ANSI_COLOURS_HH
+#ifndef WEBVIEW_LOG_WIN_CONSOLE_HH
+#define WEBVIEW_LOG_WIN_CONSOLE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
@@ -32,14 +32,43 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+#include <cstdio>
 #include <windows.h>
 
 namespace webview {
-namespace _lib {
-struct win_console_t {}
-} // namespace _lib
+namespace log {
+
+/// Inititialises the Windows console.
+/// When a Windows app is started in GUI mode (Winmain instead of main),
+/// the console output needs to be explicitly sent to `stdout` and `sterr`,
+class win_console {
+  static FILE *fp;
+
+public:
+  ~win_console() { static_cast<void>(fclose(fp)); }
+  win_console() = default;
+
+  static void init() {
+    if (GetConsoleWindow() != nullptr) {
+      return;
+    }
+    if (GetConsoleCP() != 0) {
+      return;
+    }
+    if (std::getenv("TEST") != nullptr) {
+      return;
+    }
+    if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+      static_cast<void>(freopen_s(&fp, "CONOUT$", "w", stdout));
+      static_cast<void>(freopen_s(&fp, "CONOUT$", "w", stderr));
+    }
+  }
+};
+FILE *win_console::fp;
+
+} // namespace log
 } // namespace webview
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_LOG_ANSI_COLOURS_HH
+#endif // WEBVIEW_LOG_WIN_CONSOLE_HH

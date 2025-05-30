@@ -23,57 +23,27 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_ENGINE_QUEUE_CC
-#define WEBVIEW_ENGINE_QUEUE_CC
+#ifndef WEBVIEW_DETAIL_ENGINE_QUEUE_CC
+#define WEBVIEW_DETAIL_ENGINE_QUEUE_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_queue.hh"
-#include "webview/cc_api.hh"
+#include "webview/errors/errors.h"
 #include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
 #include <cstdio>
 
 using namespace webview::detail;
+using namespace webview::detail::_lib;
 using namespace webview::strings;
 using namespace webview::log;
 using namespace webview::types;
 
-using public_api_t = engine_queue::public_api_t;
-using bind_api_t = engine_queue::bind_api_t;
-using unbind_api_t = engine_queue::unbind_api_t;
-using promise_api_t = engine_queue::promise_api_t;
-using eval_api_t = engine_queue::eval_api_t;
+/* Nested_API_lib
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
-engine_queue::engine_queue(engine_base *wv)
-    : queue{this}, atomic{this}, wv(wv) {
-  queue_thread = std::thread(&engine_queue::queue_thread_constructor, this);
-}
-
-engine_queue::~engine_queue() { queue_thread.join(); }
-
-void engine_queue::terminate_queue() {
-  printf("terminate_queue\n");
-  is_terminating.store(true);
-  cv.notify_all();
-  printf("Notified, is joinable:%s\n",
-         (queue_thread.joinable() ? "true" : "false"));
-  if (!queue_thread.joinable()) {
-    perror("Thread not joinable");
-    throw std::exception();
-  }
-};
-
-bool engine_queue::will_be_bound(cnst_str_r name) const {
-  auto i = list.pending.indices(name);
-  auto is_bound = list.bindings.count(name) > 0;
-  if (is_bound) {
-    auto will_be_unbound = i.unbind_i > -1 && i.unbind_i > i.bind_i;
-    return !will_be_unbound;
-  } else {
-    auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
-    return will_be_bound;
-  };
-};
+/* Nested API structure for bind operations
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 noresult bind_api_t::enqueue(dispatch_fn_t fn, cnst_str_r name) {
   return self->queue_work(name, fn, self->ctx.bind);
@@ -82,6 +52,9 @@ bool bind_api_t::is_duplicate(cnst_str_r name) const {
   return self->will_be_bound(name);
 };
 
+/* Nested API structure for unbind operations
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
 bool unbind_api_t::not_found(cnst_str_r name) const {
   return !self->will_be_bound(name);
 };
@@ -89,9 +62,15 @@ noresult unbind_api_t::enqueue(dispatch_fn_t fn, cnst_str_r name) {
   return self->queue_work(name, fn, self->ctx.unbind);
 };
 
+/* Nested API structure for eval operations
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
 noresult eval_api_t::enqueue(dispatch_fn_t fn, cnst_str_r js) {
   return self->queue_work(js, fn, self->ctx.eval);
 };
+
+/* Nested API structure for promise operations
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 void promise_api_t::resolving(cnst_str_r name, cnst_str_r id) {
   self->list.unresolved_promises.remove_id(name, id);
@@ -133,6 +112,51 @@ bool promise_api_t::exec_system_message(cnst_str_r id, cnst_str_r method) {
   return true;
 }
 
+/* Root API for engine_queue operations
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+void public_api_t::terminate() {
+  self->is_terminating.store(true);
+  self->cv.notify_all();
+  if (!self->queue_thread.joinable()) {
+    throw exception{WEBVIEW_ERROR_UNSPECIFIED,
+                    R"(Could not join the queue thread.
+This is an issue with Webview. Please report it at https://github.com/webview/webview/issues)"};
+  }
+};
+
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆  
+ * Nested_API_lib
+ * -----------------------------------------------------------------------------------------------------------
+ * PUBLIC 
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
+
+/* Constructor / Destructor
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+engine_queue::~engine_queue() { queue_thread.join(); }
+engine_queue::engine_queue(engine_base *wv)
+    : queue{this}, atomic{this}, wv(wv) {
+  queue_thread = std::thread(&engine_queue::queue_thread_constructor, this);
+}
+
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+ * PUBLIC
+ * ----------------------------------------------------------------------------------------------------------- 
+ * PRIVATE 
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
+
+bool engine_queue::will_be_bound(cnst_str_r name) const {
+  auto i = list.pending.indices(name);
+  auto is_bound = list.bindings.count(name) > 0;
+  if (is_bound) {
+    auto will_be_unbound = i.unbind_i > -1 && i.unbind_i > i.bind_i;
+    return !will_be_unbound;
+  } else {
+    auto will_be_bound = i.bind_i > -1 && i.bind_i > i.unbind_i;
+    return will_be_bound;
+  };
+};
 noresult engine_queue::queue_work(cnst_str_r name_or_js, dispatch_fn_t fn,
                                   context_t fn_ctx) {
   const auto &name = name_or_js;
@@ -148,5 +172,8 @@ noresult engine_queue::queue_work(cnst_str_r name_or_js, dispatch_fn_t fn,
   return {};
 };
 
+  /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+   * PRIVATE */
+
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_ENGINE_QUEUE_CC
+#endif // WEBVIEW_DETAIL_ENGINE_QUEUE_CC

@@ -31,6 +31,21 @@
 
 using namespace webview::detail::threading::_lib;
 
+/* Nested_API_lib
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
+
+/* Nested API to get and set if the window DOM is ready
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+bool atomic_dom_ready_t::ready() const { return self->is_dom_ready.load(); };
+void atomic_dom_ready_t::ready(bool flag) {
+  self->is_dom_ready.store(flag);
+  self->cv.queue.notify_one();
+};
+
+/* Nested API to get and set if various queue operations have completed
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
 bool atomic_done_t::bind() const { return self->bind_done.load(); }
 void atomic_done_t::bind(bool val) {
   self->bind_done.store(val);
@@ -47,14 +62,10 @@ void atomic_done_t::eval(bool val) {
   self->cv.eval.notify_one();
 }
 
-bool atomic_dom_ready_t::ready() const { return self->is_dom_ready.load(); };
-void atomic_dom_ready_t::ready(bool flag) {
-  self->is_dom_ready.store(flag);
-  self->cv.queue.notify_one();
-};
+/* Root API to work with atomic flags
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 bool atomic_api_t::terminating() const { return self->is_terminating.load(); };
-
 bool atomic_api_t::AND(std::initializer_list<bool> flags) const {
   if (self->atomic.terminating()) {
     return true;
@@ -68,6 +79,9 @@ bool atomic_api_t::AND(std::initializer_list<bool> flags) const {
   }
   return res;
 };
+
+  /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆  
+   * Nested_API_lib */
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_DETAIL_ATOMIC_API_CC

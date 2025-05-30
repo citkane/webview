@@ -57,6 +57,7 @@
 #include "webview/detail/platform/windows/string.hh"
 #include "webview/detail/platform/windows/theme.hh"
 #include "webview/detail/platform/windows/webview2/loader.hh"
+#include "webview/log/win_console.hh"
 #include "webview/types/types.hh"
 #include <atomic>
 #include <cstdlib>
@@ -68,6 +69,7 @@
 #include <windows.h>
 
 using namespace webview::types;
+using namespace webview::log;
 using namespace webview::errors;
 using namespace webview::detail::platform::windows;
 namespace webview {
@@ -308,6 +310,7 @@ namespace backend {
 class win32_edge_engine : public detail::engine_base {
 public:
   win32_edge_engine(bool debug, void *window) : engine_base{!window} {
+    win_console::init();
     window_init(window);
     window_settings(debug);
     dispatch_size_default();
