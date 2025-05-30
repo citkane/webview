@@ -1,4 +1,5 @@
 #include "webview/test_driver.hh"
+#include <string>
 
 #define WEBVIEW_VERSION_MAJOR 1
 #define WEBVIEW_VERSION_MINOR 2
@@ -65,84 +66,59 @@ TEST_CASE("Use C API to create a window, run app and terminate it") {
   webview_destroy(w);
 }
 
-namespace {
-
-// void cb_bind_increment(void *w, void *arg) {
-//   auto ctx = static_cast<context_t *>(arg);
-//   webview_bind(w, "increment", cb_increment, ctx);
-// };
-// void cb_unbind_increment(void *w, void * /*arg*/) {
-//   webview_unbind(w, "increment");
-// };
-// void cb_eval_value1(void *w, void * /*arg*/) {
-//   webview_eval(w, string::tests::js.make_call_js(1).c_str());
-// };
-// void cb_eval_value2(void *w, void * /*arg*/) {
-//   webview_eval(w, string::tests::js.make_call_js(2).c_str());
-// };
-// void cb_eval_value3(void *w, void * /*arg*/) {
-//   webview_eval(w, string::tests::js.make_call_js(3).c_str());
-// };
-
-} // namespace
-
 TEST_CASE("Use C API to test binding and unbinding") {
   tester::resolve_on_main_thread(false);
 
   struct c_context_t {
     webview_t w;
     unsigned int number;
-    void (*increment)(const char *, const char *, void *);
-  } context{};
+    bool res1;
+    bool res2;
+    bool res3;
+    bool res4;
+  } ctx{};
 
   auto static increment =
       +[](const char *seq, const char * /*req*/, void *arg) {
         auto *ctx = static_cast<c_context_t *>(arg);
         ++ctx->number;
-        webview_return(ctx->w, seq, 0, "");
+        std::string message =
+            "\"Incremented: " + std::to_string(ctx->number) + "\"";
+        webview_return(ctx->w, seq, 0, message.c_str());
       };
 
   auto static tests = +[](const char *seq, const char *req, void *arg) {
     auto ctx = static_cast<c_context_t *>(arg);
+    trace::tests.print_here(req);
     std::string req_(req);
-
     // Bind and increment number.
     if (req_ == "[0]") {
-      REQUIRE(ctx->number == 0);
-
-      //webview_dispatch(context->w, cb_bind_increment, arg);
+      ctx->res1 = (ctx->number == 0);
       webview_bind(ctx->w, "increment", increment, ctx);
-      //webview_dispatch(ctx->w, cb_eval_value1, nullptr);
       webview_eval(ctx->w, string::tests::js.make_call_js(1).c_str());
-      webview_return(ctx->w, seq, 0, "");
+      webview_return(ctx->w, seq, 0, R"("Returned: [0]")");
       return;
     }
     // Unbind and make sure that we cannot increment even if we try.
     if (req_ == "[1]") {
-      REQUIRE(ctx->number == 1);
-
-      //webview_dispatch(ctx->w, cb_unbind_increment, nullptr);
+      ctx->res2 = (ctx->number == 1);
       webview_unbind(ctx->w, "increment");
-      //webview_dispatch(ctx->w, cb_eval_value2, nullptr);
       webview_eval(ctx->w, string::tests::js.make_call_js(2).c_str());
-      webview_return(ctx->w, seq, 0, "");
+      webview_return(ctx->w, seq, 0, R"("Returned: [1]")");
       return;
     }
     // Number should not have changed but we can bind again and change the number.
     if (req_ == "[2,1]") {
-      REQUIRE(ctx->number == 1);
-
-      //webview_dispatch(ctx->w, cb_bind_increment, arg);
+      ctx->res3 = (ctx->number == 1);
       webview_bind(ctx->w, "increment", increment, ctx);
-      //webview_dispatch(ctx->w, cb_eval_value3, nullptr);
       webview_eval(ctx->w, string::tests::js.make_call_js(3).c_str());
-      webview_return(ctx->w, seq, 0, "");
+      webview_return(ctx->w, seq, 0, R"("Returned: [2,1]")");
       return;
     }
     // Finish test.
     if (req_ == "[3]") {
-      REQUIRE(ctx->number == 2);
-
+      ctx->res4 = (ctx->number == 2);
+      webview_return(ctx->w, seq, 0, R"("Returned: [3]")");
       webview_terminate(ctx->w);
       return;
     }
@@ -150,18 +126,29 @@ TEST_CASE("Use C API to test binding and unbinding") {
   };
 
   auto w = webview_create(1, nullptr);
-  context.w = w;
+  ctx.w = w;
   webview_set_html(w, "Use C API to test binding and unbinding");
   // Attempting to remove non-existing binding is OK
   webview_unbind(w, "test");
-  webview_bind(w, "test", tests, &context);
+  webview_bind(w, "test", tests, &ctx);
   // Attempting to bind multiple times only binds once
-  webview_bind(w, "test", tests, &context);
-  webview_eval(w, R"(
-    console.log(0);
-    window.test(0).then(()=>console.log("resolved 0"));
-)");
+  webview_bind(w, "test", tests, &ctx);
+  webview_eval(w, R"(window.test(0).then(m => console.log(m));)");
   webview_run(w);
+  auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4;
+
+  if (!passed) {
+    trace::tests.print_here(std::string("res1: ") +
+                            (ctx.res1 ? "true" : "false"));
+    trace::tests.print_here(std::string("res2: ") +
+                            (ctx.res2 ? "true" : "false"));
+    trace::tests.print_here(std::string("res3: ") +
+                            (ctx.res3 ? "true" : "false"));
+    trace::tests.print_here(std::string("res4: ") +
+                            (ctx.res4 ? "true" : "false"));
+  }
+
+  REQUIRE(passed);
 }
 
 TEST_CASE("Test synchronous binding and unbinding") {

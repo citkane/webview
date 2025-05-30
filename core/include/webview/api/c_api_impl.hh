@@ -30,6 +30,7 @@
 #include "webview/api/c_api_imp_lib.hh"
 #include "webview/detail/threading/thread_detector.hh"
 #include "webview/types/types.hh"
+#include <stdexcept>
 
 using namespace webview;
 using namespace webview::api::_lib;

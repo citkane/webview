@@ -29,13 +29,16 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/strings/string_maker.hh"
 #include "webview/types/types.hh"
-#include <initializer_list>
 #include <string>
-#include <vector>
 
 namespace webview {
 namespace strings {
 namespace _lib {
+
+/*
+ * Do not change any value without explixitly updating the string templates.
+ * NB!!
+ */
 
 struct tokens_t {
   tokens_t() noexcept = default;
@@ -53,8 +56,8 @@ struct tokens_t {
 
 struct sys_flags_t {
   sys_flags_t() noexcept = default;
-  std::string sysop = "_sysop_";
-  std::string testop = "_tests_";
+  std::string sysop = "_sysop";
+  std::string testop = "_testop";
 };
 
 struct sys_ops_t {
@@ -64,6 +67,11 @@ struct sys_ops_t {
   std::string unbind_done = "_unbind_done";
   std::string js_eval_start = "_frontend_eval_ready";
 };
+
+/*
+ * END NB!!
+ * Do not change any value without explixitly updating the string templates.
+ */
 
 } // namespace _lib
 

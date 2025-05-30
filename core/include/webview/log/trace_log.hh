@@ -28,6 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "ansi_colours.hh"
+#include "webview/lib/macros.h"
 #include <chrono>
 #include <mutex>
 #include <string>
@@ -49,6 +50,9 @@ namespace webview {
 namespace log {
 namespace _lib {
 
+/* Common API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+/// String manipulation methods and ANSI colour references
 struct trace_tools_t : _lib::ansi_t {
 protected:
   time_point_t get_now() const;
@@ -62,6 +66,7 @@ protected:
   void print_ansi(cnst_str_r this_col, cnst_str_r message) const;
 };
 
+/// A generic `print_here` method for user input
 class print_here_t : protected trace_tools_t {
 public:
   ~print_here_t() = default;
@@ -74,6 +79,9 @@ private:
   std::string postfix;
 };
 
+/* Queue API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+/// Common queue shared print methods
 struct queue_print_t : public print_here_t {
 public:
   queue_print_t(cnst_str_r prefix, cnst_str_r postfix)
@@ -87,6 +95,7 @@ private:
   std::string postfix;
 };
 
+/// Queue bind methods
 class queue_bind_t {
 public:
   ~queue_bind_t() = default;
@@ -99,6 +108,7 @@ public:
   } bind;
 };
 
+/// Queue unbind methods
 class queue_unbind_t {
 public:
   ~queue_unbind_t() = default;
@@ -111,6 +121,7 @@ public:
   } unbind;
 };
 
+/// Queue eval methods
 class queue_eval_t {
 public:
   ~queue_eval_t() = default;
@@ -121,6 +132,7 @@ public:
     wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : print_here_t(prefix, postfix), prefix(prefix), postfix(postfix) {}
     void start() const;
+    void wait() const;
     void done(bool done) const;
 
   private:
@@ -129,6 +141,7 @@ public:
   } eval;
 };
 
+/// Queue loop methods
 class queue_loop_t {
 public:
   ~queue_loop_t() = default;
@@ -163,6 +176,7 @@ public:
   } loop;
 };
 
+/// Queue message notification methods
 class queue_notify_t {
 public:
   ~queue_notify_t() = default;
@@ -180,6 +194,7 @@ public:
   } notify;
 };
 
+/// Queue enqueue methods
 class queue_enqueue_t {
 public:
   ~queue_enqueue_t() = default;
@@ -198,6 +213,7 @@ public:
   } enqueue;
 };
 
+/// Queue root API
 class queue_trace_t : public queue_bind_t,
                       public queue_unbind_t,
                       public queue_eval_t,
@@ -217,6 +233,9 @@ public:
         print_here_t{prefix, postfix} {};
 };
 
+/* Engine_base API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+/// Common base shared print methods
 struct base_print_t : public print_here_t {
 public:
   base_print_t(cnst_str_r prefix, cnst_str_r postfix)
@@ -230,6 +249,7 @@ private:
   std::string postfix;
 };
 
+/// Base bind methods
 class base_bind_t {
 public:
   ~base_bind_t() = default;
@@ -242,6 +262,7 @@ public:
   } bind;
 };
 
+/// Base unbind methods
 class base_unbind_t {
 public:
   ~base_unbind_t() = default;
@@ -254,6 +275,7 @@ public:
   } unbind;
 };
 
+/// Base eval methods
 class base_eval_t {
 public:
   ~base_eval_t() = default;
@@ -264,7 +286,7 @@ public:
     wrapper_t(cnst_str_r prefix, cnst_str_r postfix)
         : print_here_t{prefix, postfix}, prefix(prefix), postfix(postfix) {}
     void start(cnst_str_r js, bool skip_queue) const;
-    void work(cnst_str_r js) const;
+    void work(cnst_str_r js, bool skip_queue) const;
     void done(bool done, cnst_str_r js) const;
 
   private:
@@ -273,6 +295,7 @@ public:
   } eval;
 };
 
+/// Base root API
 class base_trace_t : public base_bind_t,
                      public base_unbind_t,
                      public base_eval_t,
@@ -286,9 +309,22 @@ public:
         print_here_t(prefix, postfix) {}
 };
 
+/* Tests API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+/// Tests root API
+class tests_trace_t : public print_here_t {
+public:
+  ~tests_trace_t() = default;
+  tests_trace_t(cnst_str_r prefix, cnst_str_r postfix = "TESTS: ")
+      : print_here_t(prefix, postfix) {}
+};
+
 } // namespace _lib
 
+/* Root API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
 using namespace _lib;
+
 class trace {
   ~trace() = default;
 #if defined(_WIN32)
@@ -299,9 +335,14 @@ class trace {
 #else
   trace() = default;
 #endif
+
 public:
+  /// Trace log methods for `engine_base` functionality
   static const base_trace_t &base;
+  /// Trace log methods for `engine_queue` functionality
   static const queue_trace_t &queue;
+  /// Trace log methods for test functionality
+  static const tests_trace_t &tests;
 
 private:
   static cnst_str_r prefix() {
@@ -315,6 +356,10 @@ private:
   static const queue_trace_t &get_queue() noexcept {
     static const queue_trace_t queue_instance = {prefix()};
     return queue_instance;
+  }
+  static const tests_trace_t &get_tests() noexcept {
+    static const tests_trace_t tests_instance = {prefix()};
+    return tests_instance;
   }
 };
 

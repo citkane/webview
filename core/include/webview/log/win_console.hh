@@ -22,8 +22,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_THREADING_THREAD_DETECTOR_HH
-#define WEBVIEW_DETAIL_THREADING_THREAD_DETECTOR_HH
+#ifndef WEBVIEW_LOG_ANSI_COLOURS_HH
+#define WEBVIEW_LOG_ANSI_COLOURS_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
@@ -33,66 +33,13 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-#endif
-
-#if defined(WEBVIEW_PLATFORM_LINUX)
-#include <sys/syscall.h>
-#include <unistd.h>
-#endif
-
-#if defined(WEBVIEW_PLATFORM_DARWIN)
-#include <pthread.h>
-#endif
 
 namespace webview {
-namespace detail {
-namespace threading {
-
-#if defined(WEBVIEW_PLATFORM_WINDOWS)
-
-class thread {
-public:
-  thread() noexcept { main_thread_id = GetCurrentThreadId(); }
-
-  static bool is_main_thread() {
-    return main_thread_id == GetCurrentThreadId();
-  }
-
-private:
-  static DWORD main_thread_id;
-};
-DWORD thread::main_thread_id;
-
 namespace _lib {
-
-// We want to statically initialise the main thread id at program start before user main.
-static const thread thread_{};
-
+struct win_console_t {}
 } // namespace _lib
-
-#endif
-
-#if defined(WEBVIEW_PLATFORM_LINUX)
-
-class thread {
-public:
-  static bool is_main_thread() { return syscall(SYS_gettid) == getpid(); };
-};
-
-#endif
-
-#if defined(WEBVIEW_PLATFORM_DARWIN)
-
-class thread {
-public:
-  static bool is_main_thread() { return pthread_main_np() != 0; };
-};
-
-#endif
-
-} // namespace threading
-} // namespace detail
 } // namespace webview
 
+#endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_THREADING_THREAD_DETECTOR_HH
+#endif // WEBVIEW_LOG_ANSI_COLOURS_HH

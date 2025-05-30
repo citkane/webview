@@ -31,6 +31,7 @@
 #include "webview/detail/threading/thread_detector.hh"
 #include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
+#include <stdexcept>
 
 using namespace webview::detail;
 using namespace webview::detail::user;
@@ -126,10 +127,10 @@ noresult engine_base::eval(cnst_str_r js, bool skip_queue) {
   auto do_work = [this, js, skip_queue] {
     if (!skip_queue) {
       auto wrapped_js = string::js.eval_wrapper(js);
-      trace::base.eval.work(wrapped_js);
+      trace::base.eval.work(wrapped_js, skip_queue);
       eval_impl(wrapped_js);
     } else {
-      trace::base.eval.work(js);
+      trace::base.eval.work(js, skip_queue);
       eval_impl(js);
     }
   };
@@ -153,8 +154,8 @@ noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
 
   auto res = result.empty() ? "undefined" : string::json.escape(result);
   auto js = string::js.onreply(id, status, res);
-  const char *escaped_js = js.c_str();
-  return eval(escaped_js, true);
+  //const char *escaped_js = js.c_str();
+  return eval(js, true);
 }
 
 noresult engine_base::reject(cnst_str_r id, cnst_str_r err) {

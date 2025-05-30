@@ -103,6 +103,7 @@ void engine_queue::queue_thread_constructor() {
     if (work_ctx == ctx.eval) {
       trace::queue.eval.start();
       wv->dispatch(work_fn);
+      trace::queue.eval.wait();
       cv.eval.wait(lock, [this] { return atomic.AND({atomic.done.eval()}); });
       if (atomic.terminating()) {
         return;
