@@ -59,7 +59,7 @@
 
     Webview_.prototype.sysop = function(command) {
       this.post(JSON.stringify({
-        id: "_sysop",
+        id: '_sysop',
         method: command,
         params: []
       }));
@@ -85,7 +85,7 @@
         try {
           result = JSON.parse(result);
         } catch (e) {
-          promise.reject(new Error("Failed to parse binding result as JSON"));
+          promise.reject(new Error('Failed to parse binding result as JSON'));
           return;
         }
       }
@@ -98,7 +98,7 @@
 
     Webview_.prototype.onBind = function(name) {
       if (window.hasOwnProperty(name)) {
-        throw new Error('Property "' + name + '" already exists');
+        throw new Error(`Binding '${name}' already exists`);
       }
       window[name] = (function() {
         var params = [name].concat(Array.prototype.slice.call(arguments));
@@ -108,7 +108,7 @@
 
     Webview_.prototype.onUnbind = function(name) {
       if (!window.hasOwnProperty(name)) {
-        throw new Error('Property "' + name + '" does not exist');
+        throw new Error(`Binding '${name}' does not exist`);
       }
       delete window[name];
     };
@@ -120,7 +120,7 @@
     const ready = document.readyState;
     if (ready === 'interactive' || ready === 'complete') {
       clearInterval(domReadyInterval);
-      window.__webview__.sysop("_dom_ready");
+      window.__webview__.sysop('_dom_ready');
     }
   })
 })()
@@ -130,11 +130,11 @@
   R"(
 if (window.__webview__) {
   try {
-    window.__webview__.onBind("_str_");
+    window.__webview__.onBind('_str_');
   } catch(err) {
     console.error(err);
   } finally {
-    window.__webview__.sysop("_bind_done");
+    window.__webview__.sysop('_bind_done');
   }
 }
 )"
@@ -143,18 +143,18 @@ if (window.__webview__) {
   R"(                               
 if (window.__webview__) {
   try {
-    window.__webview__.onUnbind("_str_");
+    window.__webview__.onUnbind('_str_');
   } catch (err) {
     console.error(err);
   } finally {
-    window.__webview__.sysop("_unbind_done");
+    window.__webview__.sysop('_unbind_done');
   }
 }
 )"
 
 #define ON_REPLY_JS                                                            \
   R"(
-window.__webview__.onReply("_id_", _status_, _result_)
+window.__webview__.onReply('_id_', _status_, _result_)
 )"
 
 #define BIND_JS                                                                \
@@ -171,13 +171,16 @@ window.__webview__.onReply("_id_", _status_, _result_)
 #define EVAL_WRAPPER_JS                                                        \
   R"(
 try {
-  /********************* Start user js *********************/
+  // User JS
+  // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
   _user_js_
-  /*********************  End user js  *********************/
+  // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+  // User JS
+  
 } catch (err) {
   console.error(err);
 } finally {
-  window.__webview__.sysop("_frontend_eval_ready");
+  window.__webview__.sysop('_frontend_eval_ready');
 }
 )"
 
@@ -185,14 +188,14 @@ try {
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 #define REJECT_UNBOUND_M                                                       \
-  R"(Promise id "_id_" was rejected because function "_str_" was unbound.)"
+  R"(Promise id '_id_' was rejected because function '_str_' was unbound.)"
 
 #define UNCAUGHT_EXP_M                                                         \
-  R"(Uncaught exception from native user callback function "_str_":
+  R"(Uncaught exception from native user callback function '_str_':
 _what_)"
 
 #define WEBVIEW_TERMINATED_M                                                   \
-  R"(Native user callback function "_str_" failed because Webview terminated before it could complete.)"
+  R"(Native user callback function '_str_' failed because Webview terminated before it could complete.)"
 
 /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
  * Webview
@@ -236,16 +239,17 @@ _what_)"
   R"(
 window.__webview__.post(
   JSON.stringify({
-    id: "_testop",
-    method: "_str_"
+    id: '_testop',
+    method: '_str_'
   })
 );
 )"
+
 #define TEST_VALUE_WRAPPER_JS_ESCAPED                                          \
   R"(
 window.__webview__.post(
   JSON.stringify({
-    id: "_testop",
+    id: '_testop',
     method: _str_
   })
 );
@@ -254,24 +258,24 @@ window.__webview__.post(
 #define TEST_MAKE_CALL_JS                                                      \
   R"(
   try {
-    console.log("calling: window.increment", _int_);
+    console.log('calling: window.increment', _int_);
     window.increment()
       .then((m) => {
-        console.log(m, "window.test", _int_);
+        console.log(m, 'window.test', _int_);
         console.warn(window.test);
         window.test(_int_);
         console.log('sent: window.test(_int_)');
       })
       .catch((err) => {
         console.error(err);
-        console.log("1: window.test(_int_, 1);");
+        console.log('1: window.test(_int_, 1)');
         console.warn(window.test);
         window.test(_int_, 1).then(m => console.log(m));
         console.log('1: sent: window.test(_int_, 1)');
       })
   } catch (err) {
     console.error(err);
-    console.log("2: window.test(_int_, 1);");
+    console.log('2: window.test(_int_, 1);');
     console.warn(window.test);
     window.test(_int_, 1).then(m => console.log(m));
     console.log('2: sent: window.test(_int_, 1)');
