@@ -35,10 +35,10 @@ using namespace webview::log::_lib;
 /* Common API utils
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
-time_point_t trace_tools_t::get_now() const {
+time_point_t trace_tools_t::get_now() {
   return std::chrono::steady_clock::now();
 }
-std::string trace_tools_t::get_ctx(char scp) const {
+std::string trace_tools_t::get_ctx(char scp) {
   if (scp == 'b') {
     return "bind   ";
   }
@@ -47,20 +47,16 @@ std::string trace_tools_t::get_ctx(char scp) const {
   }
   return "eval   ";
 }
-long trace_tools_t::elapsed_ms(time_point_t start, time_point_t end) const {
+long trace_tools_t::elapsed_ms(time_point_t start, time_point_t end) {
   return static_cast<long int>(
       std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
           .count());
 }
-std::string trace_tools_t::bool_s(bool flag) const {
-  return flag ? "true" : "false";
-}
-std::string trace_tools_t::escape_s(cnst_str_r text) const {
+std::string trace_tools_t::bool_s(bool flag) { return flag ? "true" : "false"; }
+std::string trace_tools_t::escape_s(cnst_str_r text) {
   return "\"" + text + "\"";
 }
-std::string trace_tools_t::num_s(size_t val) const {
-  return std::to_string(val);
-}
+std::string trace_tools_t::num_s(size_t val) { return std::to_string(val); }
 std::string trace_tools_t::bold(cnst_str_r this_col, cnst_str_r text) const {
   return ansi.bold + text + ansi.default_c + this_col;
 }

@@ -69,7 +69,7 @@ noresult engine_base::bind(cnst_str_r name, sync_binding_t fn) {
   auto wrapper = [this, fn](cnst_str_r id, cnst_str_r req, void * /*arg*/) {
     resolve(id, 0, fn(req));
   };
-  auto do_work = [this, name, &wrapper] { bind(name, wrapper, nullptr, true); };
+  auto do_work = [this, name, wrapper] { bind(name, wrapper, nullptr, true); };
   if (thread::is_main_thread()) {
     do_work();
   } else {
@@ -266,12 +266,6 @@ void engine_base::on_message(cnst_str_r msg) {
     return;
   }
   auto args = string::json.parse(msg, "params", 0);
-  // Keep the user defined native callback work on the main thread.
-  // Used for synchronous testing purposes
-  if (tester::resolve_on_main_thread()) {
-    dispatch([this, name, id, args] { list.bindings.at(name).call(id, args); });
-    return;
-  }
   queue.promises.resolve(name, id, args);
 }
 void engine_base::on_window_created() { inc_window_count(); }

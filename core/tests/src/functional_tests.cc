@@ -13,6 +13,8 @@
 #include <cassert>
 #include <cstdint>
 
+static const auto &tracer = trace::tests;
+
 // This test should only run on Windows to enable us to perform a controlled
 // "warm-up" of MS WebView2 in order to avoid the initial test from
 // occationally timing out in CI.
@@ -67,8 +69,6 @@ TEST_CASE("Use C API to create a window, run app and terminate it") {
 }
 
 TEST_CASE("Use C API to test binding and unbinding") {
-  tester::resolve_on_main_thread(false);
-
   struct c_context_t {
     webview_t w;
     unsigned int number;
@@ -89,7 +89,6 @@ TEST_CASE("Use C API to test binding and unbinding") {
 
   auto static tests = +[](const char *seq, const char *req, void *arg) {
     auto ctx = static_cast<c_context_t *>(arg);
-    trace::tests.print_here(req);
     std::string req_(req);
     // Bind and increment number.
     if (req_ == "[0]") {
@@ -138,24 +137,22 @@ TEST_CASE("Use C API to test binding and unbinding") {
   auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4;
 
   if (!passed) {
-    trace::tests.print_here(std::string("res1: ") +
-                            (ctx.res1 ? "true" : "false"));
-    trace::tests.print_here(std::string("res2: ") +
-                            (ctx.res2 ? "true" : "false"));
-    trace::tests.print_here(std::string("res3: ") +
-                            (ctx.res3 ? "true" : "false"));
-    trace::tests.print_here(std::string("res4: ") +
-                            (ctx.res4 ? "true" : "false"));
+    tracer.print_here(tester::res_string("res1", ctx.res1));
+    tracer.print_here(tester::res_string("res2", ctx.res2));
+    tracer.print_here(tester::res_string("res3", ctx.res3));
+    tracer.print_here(tester::res_string("res4", ctx.res4));
   }
 
   REQUIRE(passed);
 }
 
 TEST_CASE("Test synchronous binding and unbinding") {
-  tester::resolve_on_main_thread(true);
-
   webview_cc_t w(true, nullptr);
-  unsigned int number = 0;
+  int number = 0;
+  int res1;
+  int res2;
+  int res3;
+  int res4;
 
   auto increment = [&](cnst_str_r /*req*/) -> std::string {
     ++number;
@@ -165,15 +162,15 @@ TEST_CASE("Test synchronous binding and unbinding") {
   auto tests = [&](cnst_str_r req) -> std::string {
     // Bind and increment number.
     if (req == "[0]") {
-      REQUIRE(number == 0);
+      res1 = number;
       w.bind("increment", increment);
-      w.eval(string::tests::js.make_call_js(1), true);
+      w.eval(string::tests::js.make_call_js(1));
       return "";
     }
 
     // Unbind and make sure that we cannot increment even if we try.
     if (req == "[1]") {
-      REQUIRE(number == 1);
+      res2 = number;
       w.unbind("increment", true);
       w.eval(string::tests::js.make_call_js(2), true);
       return "";
@@ -181,14 +178,14 @@ TEST_CASE("Test synchronous binding and unbinding") {
     // We should have gotten an error on the JS side.
     // Number should not have changed but we can bind again and change the number.
     if (req == "[2,1]") {
-      REQUIRE(number == 1);
+      res3 = number;
       w.bind("increment", increment);
       w.eval(string::tests::js.make_call_js(3), true);
       return "";
     }
     // Finish test.
     if (req == "[3]") {
-      REQUIRE(number == 2);
+      res4 = number;
       w.terminate();
       return "";
     }
@@ -204,10 +201,17 @@ TEST_CASE("Test synchronous binding and unbinding") {
   w.bind("test", tests);
   w.set_html(string::tests::html.bind_unbind());
   w.run();
+  auto passed = res1 == 0 && res2 == 1 && res3 == 1 && res4 == 2;
+  if (!passed) {
+    tracer.print_here(tester::res_string("res1", res1));
+    tracer.print_here(tester::res_string("res2", res2));
+    tracer.print_here(tester::res_string("res3", res3));
+    tracer.print_here(tester::res_string("res4", res4));
+  }
+  REQUIRE(passed);
 }
 
 TEST_CASE("The string returned from a binding call must be JSON") {
-  tester::resolve_on_main_thread(true);
   webview_cc_t w(true, nullptr);
 
   w.bind("loadData",
@@ -225,7 +229,6 @@ TEST_CASE("The string returned from a binding call must be JSON") {
 }
 
 TEST_CASE("The string returned of a binding call must not be JS") {
-  tester::resolve_on_main_thread(true);
   webview_cc_t w(true, nullptr);
 
   w.bind("loadData", [](cnst_str_r /*req*/) -> std::string {
@@ -258,8 +261,6 @@ TEST_CASE("webview_version()") {
 }
 
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
-  tester::resolve_on_main_thread(false);
-
   webview_cc_t wv{true, nullptr};
 
   auto async_tests = std::thread([&]() {

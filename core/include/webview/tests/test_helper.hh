@@ -49,10 +49,6 @@ public:
     return cv_;
   }
 
-  /// Indicates if native promise resolution should execute on the main or a child thread.
-  static bool resolve_on_main_thread();
-  static void resolve_on_main_thread(bool val);
-
   /// Sets the returned test value.
   static void set_value(cnst_str_r val);
 
@@ -72,6 +68,10 @@ public:
 
   /// Returns the given timespan in std::chrono::seconds
   static std::chrono::seconds seconds(int seconds);
+
+  /// Format helper for a stringified "prefix: result" message
+  static std::string res_string(cnst_str_r prefix, bool val);
+  static std::string res_string(cnst_str_r prefix, int val);
 
 private:
   static std::mutex &mtx() {
@@ -94,6 +94,7 @@ private:
     static std::atomic_bool val{};
     return val;
   }
+  /// Checks if the expected and stored values match
   static void eval_values() {
     worker_proceed().store(string_expected_value() == string_value());
   }

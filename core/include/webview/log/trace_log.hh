@@ -39,14 +39,14 @@ namespace _lib {
 /* Common API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 /// String manipulation methods and ANSI colour references
-struct trace_tools_t : _lib::ansi_t {
+struct trace_tools_t : public _lib::ansi_t {
 protected:
-  time_point_t get_now() const;
-  std::string get_ctx(char scp) const;
-  long elapsed_ms(time_point_t start, time_point_t end) const;
-  std::string bool_s(bool flag) const;
-  std::string escape_s(cnst_str_r text) const;
-  std::string num_s(size_t val) const;
+  static time_point_t get_now();
+  static std::string get_ctx(char scp);
+  static long elapsed_ms(time_point_t start, time_point_t end);
+  static std::string bool_s(bool flag);
+  static std::string escape_s(cnst_str_r text);
+  static std::string num_s(size_t val);
   std::string bold(cnst_str_r this_col, cnst_str_r text) const;
   std::string dim(cnst_str_r this_col, cnst_str_r text) const;
   void print_ansi(cnst_str_r this_col, cnst_str_r message) const;
@@ -58,11 +58,12 @@ public:
   ~print_here_t() = default;
   print_here_t(cnst_str_r prefix, cnst_str_r postfix)
       : prefix(prefix), postfix(postfix) {}
+
   void print_here(cnst_str_r message) const;
 
 private:
-  std::string prefix;
-  std::string postfix;
+  const std::string prefix;
+  const std::string postfix;
 };
 
 /* Queue API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */

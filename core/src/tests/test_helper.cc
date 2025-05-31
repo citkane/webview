@@ -32,13 +32,6 @@
 
 using namespace webview::strings;
 
-bool tester::resolve_on_main_thread() {
-  return resolve_on_main_thread_().load();
-}
-void tester::resolve_on_main_thread(bool val) {
-  resolve_on_main_thread_().store(val);
-}
-
 void tester::set_value(cnst_str_r val) {
   std::lock_guard<std::mutex> lock(mtx());
   string_value() = val;
@@ -68,6 +61,13 @@ void tester::ping_value(cnst_str_r value, engine_base *wv, bool escaped) {
 
 std::chrono::seconds tester::seconds(int seconds) {
   return std::chrono::seconds(seconds);
+}
+
+std::string tester::res_string(cnst_str_r prefix, bool val) {
+  return prefix + ": " + (val ? "true" : "false");
+}
+std::string tester::res_string(cnst_str_r prefix, int val) {
+  return prefix + ": " + std::to_string(val);
 }
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

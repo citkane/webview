@@ -27,17 +27,15 @@
 #define WEBVIEW_STRINGS_STRING_TEMPLATES_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/strings/string_api.hh"
-#include "webview/types/types.hh"
 
-using namespace webview::types;
-namespace webview {
-namespace strings {
-namespace _templates {
-namespace frontend {
+/* Webview
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
-inline cnst_str_r WEVBIEW_INIT_JS() {
-  static std::string init_js = R"(
+/* JS
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+#define WEVBIEW_INIT_JS                                                        \
+  R"(
 (function() {
   'use strict';
 
@@ -126,12 +124,10 @@ inline cnst_str_r WEVBIEW_INIT_JS() {
     }
   })
 })()
-)";
-  return init_js;
-};
+)"
 
-inline cnst_str_r ON_BIND_JS() {
-  static std::string on_bind = R"(
+#define ON_BIND_JS                                                             \
+  R"(
 if (window.__webview__) {
   try {
     window.__webview__.onBind("_str_");
@@ -141,12 +137,10 @@ if (window.__webview__) {
     window.__webview__.sysop("_bind_done");
   }
 }
-)";
-  return on_bind;
-}
+)"
 
-inline cnst_str_r ON_UNBIND_JS() {
-  static std::string on_unbind = R"(                               
+#define ON_UNBIND_JS                                                           \
+  R"(                               
 if (window.__webview__) {
   try {
     window.__webview__.onUnbind("_str_");
@@ -156,19 +150,15 @@ if (window.__webview__) {
     window.__webview__.sysop("_unbind_done");
   }
 }
-)";
-  return on_unbind;
-}
+)"
 
-inline cnst_str_r ON_REPLY_JS() {
-  static std::string on_reply = R"(
+#define ON_REPLY_JS                                                            \
+  R"(
 window.__webview__.onReply("_id_", _status_, _result_)
-)";
-  return on_reply;
-}
+)"
 
-inline cnst_str_r BIND_JS() {
-  static std::string bind = R"(
+#define BIND_JS                                                                \
+  R"(
 (function() {
   'use strict';
   var methods = _js_names_;
@@ -176,12 +166,10 @@ inline cnst_str_r BIND_JS() {
     window.__webview__.onBind(name);
   });
 })()
-)";
-  return bind;
-}
+)"
 
-inline cnst_str_r EVAL_WRAPPER_JS() {
-  static std::string eval_wrapper = R"(
+#define EVAL_WRAPPER_JS                                                        \
+  R"(
 try {
   /********************* Start user js *********************/
   _user_js_
@@ -191,34 +179,32 @@ try {
 } finally {
   window.__webview__.sysop("_frontend_eval_ready");
 }
-)";
-  return eval_wrapper;
-}
+)"
 
-inline cnst_str_r REJECT_UNBOUND_M() {
-  static std::string reject_unbound_m =
-      R"(Promise id "_id_" was rejected because function "_str_" was unbound.)";
-  return reject_unbound_m;
-}
+/* Message strings
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
-inline cnst_str_r UNCAUGHT_EXP_M() {
-  static std::string uncought_exp_m =
-      R"(Uncaught exception from native user callback function "_str_":
-_what_)";
-  return uncought_exp_m;
-}
+#define REJECT_UNBOUND_M                                                       \
+  R"(Promise id "_id_" was rejected because function "_str_" was unbound.)"
 
-inline cnst_str_r WEBVIEW_TERMINATED_M() {
-  static std::string webview_terminated_m =
-      R"(Native user callback function "_str_" failed because Webview terminated before it could complete.)";
-  return webview_terminated_m;
-}
-} // namespace frontend
+#define UNCAUGHT_EXP_M                                                         \
+  R"(Uncaught exception from native user callback function "_str_":
+_what_)"
 
-namespace tests {
+#define WEBVIEW_TERMINATED_M                                                   \
+  R"(Native user callback function "_str_" failed because Webview terminated before it could complete.)"
 
-inline cnst_str_r TEST_STRING_RETURNS_HTML() {
-  static std::string html = R"(
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+ * Webview
+ * ----------------------------------------------------------------------------------------------------------- 
+ * Tests
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
+
+/* Tests HTML
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+#define TEST_STRING_RETURNS_HTML                                               \
+  R"(
 <html><body>
   <div>_str_</div>
   <script>
@@ -231,48 +217,42 @@ inline cnst_str_r TEST_STRING_RETURNS_HTML() {
     }
   </script>
 </body></html>
-)";
-  return html;
-}
+)"
 
-inline cnst_str_r TEST_BIND_UNBIND_HTML() {
-  static std::string str =
-      R"(
+#define TEST_BIND_UNBIND_HTML                                                  \
+  R"(
 <html><body>                   
   <div>Test synchronous binding and unbinding</div>
   <script>                    
   window.test(0);                 
   </script>                     
 </body></html>
-)";
-  return str;
-}
+)"
 
-inline cnst_str_r TEST_VALUE_WRAPPER_JS() {
-  static std::string str = R"(
+/* Tests JS
+ * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+
+#define TEST_VALUE_WRAPPER_JS                                                  \
+  R"(
 window.__webview__.post(
   JSON.stringify({
     id: "_testop",
     method: "_str_"
   })
 );
-)";
-  return str;
-}
-inline cnst_str_r TEST_VALUE_WRAPPER_JS_ESCAPED() {
-  static std::string str = R"(
+)"
+#define TEST_VALUE_WRAPPER_JS_ESCAPED                                          \
+  R"(
 window.__webview__.post(
   JSON.stringify({
     id: "_testop",
     method: _str_
   })
 );
-)";
-  return str;
-}
+)"
 
-inline cnst_str_r TEST_MAKE_CALL_JS() {
-  static std::string make_call = R"(
+#define TEST_MAKE_CALL_JS                                                      \
+  R"(
   try {
     console.log("calling: window.increment", _int_);
     window.increment()
@@ -296,24 +276,18 @@ inline cnst_str_r TEST_MAKE_CALL_JS() {
     window.test(_int_, 1).then(m => console.log(m));
     console.log('2: sent: window.test(_int_, 1)');
   }
-)";
-  return make_call;
-}
+)"
 
-inline cnst_str_r TEST_INIT_JS() {
-  static std::string init_js = R"(
+#define TEST_INIT_JS                                                           \
+  R"(
 window.x = 42;
 window.onload = () => {
   _post_fn_
 }
-)";
-  return init_js;
-}
+)"
 
-} // namespace tests
-} // namespace _templates
-} // namespace strings
-} // namespace webview
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+ * Tests */
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_STRINGS_STRING_TEMPLATES_HH

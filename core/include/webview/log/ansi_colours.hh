@@ -34,34 +34,80 @@ namespace webview {
 namespace log {
 namespace _lib {
 
+static std::string to_ansi_string(std::initializer_list<int> codes) {
+  std::string ansi_string;
+  for (size_t i = 0; i < codes.size(); ++i) {
+    auto code = std::to_string(*(codes.begin() + i));
+    if (i == 0 && codes.size() == 1) {
+      ansi_string += "\033[" + code;
+    } else if (i == 0) {
+      ansi_string += "\033[" + code + ";";
+    } else if (i == codes.size() - 1) {
+      ansi_string += code;
+    } else {
+      ansi_string += code + ";";
+    }
+  };
+  ansi_string += "m";
+  return ansi_string;
+}
+
 class ansi_t {
 public:
   struct ansi_colours_t {
-    std::string yellow = yellow_s();
-    std::string yellow_dim = yellow_dim_s();
-    std::string green = green_s();
-    std::string red = red_s();
-    std::string blue = blue_s();
-    std::string blue_dark = blue_dark_s();
-    std::string magenta = magenta_s();
-    std::string default_c = default_c_s();
-    std::string bold = bold_s();
-    std::string dim = dim_s();
+    const std::string yellow = yellow_s();
+    const std::string yellow_dim = yellow_dim_s();
+    const std::string green = green_s();
+    const std::string red = red_s();
+    const std::string blue = blue_s();
+    const std::string blue_dark = blue_dark_s();
+    const std::string magenta = magenta_s();
+    const std::string default_c = default_c_s();
+    const std::string bold = bold_s();
+    const std::string dim = dim_s();
   } ansi{};
 
 private:
-  static cnst_str_r yellow_s();
-  static cnst_str_r yellow_dim_s();
-  static cnst_str_r green_s();
-  static cnst_str_r red_s();
-  static cnst_str_r blue_s();
-  static cnst_str_r blue_dark_s();
-  static cnst_str_r magenta_s();
-  static cnst_str_r default_c_s();
-  static cnst_str_r bold_s();
-  static cnst_str_r dim_s();
-
-  static std::string to_ansi_string(std::initializer_list<int> codes) noexcept;
+  static const std::string &yellow_s() {
+    static const std::string instance = to_ansi_string({33});
+    return instance;
+  }
+  static const std::string &yellow_dim_s() {
+    static const std::string instance = to_ansi_string({33, 2});
+    return instance;
+  }
+  static const std::string &green_s() {
+    static const std::string instance = to_ansi_string({92});
+    return instance;
+  }
+  static const std::string &red_s() {
+    static const std::string instance = to_ansi_string({91});
+    return instance;
+  }
+  static const std::string &blue_s() {
+    static const std::string instance = to_ansi_string({94});
+    return instance;
+  }
+  static const std::string &blue_dark_s() {
+    static const std::string instance = to_ansi_string({34});
+    return instance;
+  }
+  static const std::string &magenta_s() {
+    static const std::string instance = to_ansi_string({95});
+    return instance;
+  }
+  static const std::string &default_c_s() {
+    static const std::string instance = to_ansi_string({0});
+    return instance;
+  }
+  static const std::string &bold_s() {
+    static const std::string instance = to_ansi_string({1});
+    return instance;
+  }
+  static const std::string &dim_s() {
+    static const std::string instance = to_ansi_string({90});
+    return instance;
+  }
 };
 
 } // namespace _lib
