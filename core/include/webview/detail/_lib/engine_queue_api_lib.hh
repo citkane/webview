@@ -27,8 +27,6 @@
 #define WEBVIEW_DETAIL_ENGINE_QUEUE_LIB_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/threading/atomic_api.hh"
-#include "webview/detail/threading/threadsafe_lists.hh"
 #include "webview/types/types.hh"
 #include <atomic>
 #include <thread>
@@ -36,6 +34,7 @@
 using namespace webview::types;
 namespace webview {
 namespace detail {
+class engine_queue;
 namespace _lib {
 
 /// Nested API structure for bind operations
@@ -76,8 +75,8 @@ struct promise_api_t : nested_api_t<engine_queue> {
 };
 
 /// Root API for engine_queue operations
-struct public_api_t : nested_api_t<engine_queue> {
-  public_api_t(engine_queue *self) : nested_api_t{self} {};
+struct queue_api_t : nested_api_t<engine_queue> {
+  queue_api_t(engine_queue *self) : nested_api_t{self} {};
 
   //API for bind operations
   bind_api_t bind{this->self};

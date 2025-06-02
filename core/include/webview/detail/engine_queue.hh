@@ -27,10 +27,9 @@
 #define WEBVIEW_DETAIL_ENGINE_QUEUE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#ifndef WEBVIEW_UNBIND_TIMEOUT
-#define WEBVIEW_UNBIND_TIMEOUT 20
-#endif
 #include "webview/detail/_lib/engine_queue_api_lib.hh"
+#include "webview/detail/threading/atomic.hh"
+#include "webview/detail/threading/threadsafe_lists.hh"
 
 using namespace webview::types;
 using namespace webview::detail::_lib;
@@ -38,7 +37,8 @@ namespace webview {
 namespace detail {
 
 class engine_base;
-class engine_queue : protected threading::engine_lists_t {
+class engine_queue : protected threading::engine_lists_t,
+                     protected threading::atomic_api_t {
 public:
   ~engine_queue();
   engine_queue(engine_base *wv);
@@ -53,13 +53,16 @@ public:
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 
   /// API root for the engine_queue class instance.
-  public_api_t queue;
+  queue_api_t queue;
 
   // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
 private:
-  /// Container for user work operation tags, ie. `bind`, `unbind`, `eval`
-  action_ctx_t const ctx{};
+  struct action_ctx_t {
+    context_t bind = context_t::bind_t;
+    context_t unbind = context_t::unbind_t;
+    context_t eval = context_t::eval_t;
+  } ctx{};
 
   /// @brief Constructs a thread to choreograph execution of `bind`, `unbind` or `eval` user work units.
   ///
@@ -87,29 +90,17 @@ private:
   noresult queue_work(cnst_str_r name_or_js, dispatch_fn_t fn,
                       context_t fn_ctx);
 
-  /// API to query and set various flags atomically
-  threading::_lib::atomic_api_t atomic;
-
-  std::atomic_bool is_dom_ready{};
-  std::atomic_bool unbind_done{};
-  std::atomic_bool bind_done{};
-  std::atomic_bool eval_done{};
-  std::atomic_bool is_terminating{};
-
   /// A thread to concurrently choreograph user work queueing.
   std::thread queue_thread;
 
   /// The Webview class instance;
   engine_base *wv;
 
-  friend struct threading::_lib::atomic_dom_ready_t;
-  friend struct threading::_lib::atomic_done_t;
-  friend struct threading::_lib::atomic_api_t;
   friend struct _lib::bind_api_t;
   friend struct _lib::unbind_api_t;
   friend struct _lib::eval_api_t;
   friend struct _lib::promise_api_t;
-  friend struct _lib::public_api_t;
+  friend struct _lib::queue_api_t;
 };
 
 } // namespace detail

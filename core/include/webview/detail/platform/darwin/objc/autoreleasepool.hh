@@ -27,7 +27,6 @@
 #define WEBVIEW_PLATFORM_DARWIN_OBJC_AUTORELEASEPOOL_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN)

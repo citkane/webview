@@ -120,4 +120,46 @@
 #endif // WEBVIEW_HEADER
 #endif // __cplusplus
 
+#ifdef _MSC_VER
+#define RESTORE_IGNORED_WARNINGS __pragma(warning(pop))
+#else
+#define RESTORE_IGNORED_WARNINGS _Pragma("GCC diagnostic pop")
+#endif
+
+#ifdef _MSC_VER
+#define IGNORE_DEPRECATED_DECLARATIONS                                         \
+  __pragma(warning(push)) __pragma(warning(disable : 4996))
+#else
+#define IGNORE_DEPRECATED_DECLARATIONS                                         \
+  _Pragma("GCC diagnostic push")                                               \
+      _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#endif
+
+#ifdef _MSC_VER
+#define IGNORE_CAST_FUNCTION_TYPE                                              \
+  __pragma(warning(push)) __pragma(warning(disable : 4191))
+#else
+#define IGNORE_CAST_FUNCTION_TYPE                                              \
+  _Pragma("GCC diagnostic push")                                               \
+      _Pragma("GCC diagnostic ignored \"-Wcast-function-type\"")
+#endif
+
+#ifdef _MSC_VER
+#define IGNORE_UNUSED_PARAMETERS                                               \
+  __pragma(warning(push)) __pragma(warning(disable : 4100))
+#else
+#define IGNORE_UNUSED_PARAMETERS                                               \
+  _Pragma("GCC diagnostic push")                                               \
+      _Pragma("GCC diagnostic ignored \"-Wunused-parameter\"")
+#endif
+
+#ifdef _MSC_VER
+#define IGNORE_UNUSED_FUNCTIONS                                                \
+  __pragma(warning(push)) __pragma(warning(disable : 4505))
+#else
+#define IGNORE_UNUSED_FUNCTIONS                                                \
+  _Pragma("GCC diagnostic push")                                               \
+      _Pragma("GCC diagnostic ignored \"-Wunused-function\"")
+#endif
+
 #endif // WEBVIEW_LIB_MACROS_H

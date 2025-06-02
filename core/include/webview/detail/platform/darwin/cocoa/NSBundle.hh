@@ -27,7 +27,6 @@
 #define WEBVIEW_PLATFORM_DARWIN_COCOA_NSBUNDLE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)

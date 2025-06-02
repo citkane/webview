@@ -13,7 +13,10 @@
 #include <cassert>
 #include <cstdint>
 
+using namespace webview::api;
+using namespace webview::strings;
 static const auto &tracer = trace::tests;
+static const auto &js_str = string::tests::js;
 
 // This test should only run on Windows to enable us to perform a controlled
 // "warm-up" of MS WebView2 in order to avoid the initial test from
@@ -24,51 +27,43 @@ static const auto &tracer = trace::tests;
 TEST_CASE("# Warm-up") {
   // Signal to the test runner that this may be a slow test.
   std::cerr << "[[slow]]" << std::endl; // NOLINT(performance-avoid-endl)
-  webview_cc_t w(false, nullptr);
-  w.dispatch([&]() { w.terminate(); });
-  w.run();
+  webview_cc_t wv(false, nullptr);
+  std::thread worker([&] { wv.terminate(); });
+  wv.run();
+  worker.join();
 }
 #endif
-
-TEST_CASE("Start app loop and terminate it") {
-  webview_cc_t w(false, nullptr);
-  w.dispatch([&]() { w.terminate(); });
-  w.run();
-}
 
 TEST_CASE("Detect main or child thread") {
   using namespace webview::detail::threading;
   REQUIRE(thread::is_main_thread() == true);
+  std::thread worker([] { REQUIRE(thread::is_main_thread() == false); });
+  worker.join();
+}
 
-  auto child_thread =
-      std::thread([] { REQUIRE(thread::is_main_thread() == false); });
-
-  child_thread.join();
+TEST_CASE("Start app loop and terminate it") {
+  webview_cc_t wv(false, nullptr);
+  std::thread worker([&] { wv.terminate(); });
+  wv.run();
+  worker.join();
 }
 
 TEST_CASE("Use C API to create a window, run app and terminate it") {
-  static auto cb_assert_arg = +[](webview_t w, void *arg) {
+  auto w = webview_create(false, nullptr);
+  std::thread worker([&] {
     REQUIRE(w != nullptr);
-    REQUIRE(memcmp(arg, "arg", 3) == 0);
-  };
-  static auto cb_terminate = +[](webview_t w, void *arg) {
-    REQUIRE(arg == nullptr);
+    webview_set_size(w, 480, 320, WEBVIEW_HINT_NONE);
+    webview_set_title(w, "Test");
+    webview_set_html(w, "set_html ok");
+    webview_navigate(w, "data:text/plain,navigate%20ok");
     webview_terminate(w);
-  };
+  });
 
-  webview_t w;
-  w = webview_create(false, nullptr);
-  webview_set_size(w, 480, 320, WEBVIEW_HINT_NONE);
-  webview_set_title(w, "Test");
-  webview_set_html(w, "set_html ok");
-  webview_navigate(w, "data:text/plain,navigate%20ok");
-  webview_dispatch(w, cb_assert_arg, (void *)"arg");
-  webview_dispatch(w, cb_terminate, nullptr);
   webview_run(w);
-  webview_destroy(w);
+  worker.join();
 }
 
-TEST_CASE("Use C API to test binding and unbinding") {
+TEST_CASE("Test nested C binding and unbinding") {
   struct c_context_t {
     webview_t w;
     unsigned int number;
@@ -94,7 +89,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[0]") {
       ctx->res1 = (ctx->number == 0);
       webview_bind(ctx->w, "increment", increment, ctx);
-      webview_eval(ctx->w, string::tests::js.make_call_js(1).c_str());
+      webview_eval(ctx->w, js_str.bind_unbind(1).c_str());
       webview_return(ctx->w, seq, 0, R"("Returned: [0]")");
       return;
     }
@@ -102,7 +97,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[1]") {
       ctx->res2 = (ctx->number == 1);
       webview_unbind(ctx->w, "increment");
-      webview_eval(ctx->w, string::tests::js.make_call_js(2).c_str());
+      webview_eval(ctx->w, string::tests::js.bind_unbind(2).c_str());
       webview_return(ctx->w, seq, 0, R"("Returned: [1]")");
       return;
     }
@@ -110,7 +105,7 @@ TEST_CASE("Use C API to test binding and unbinding") {
     if (req_ == "[2,1]") {
       ctx->res3 = (ctx->number == 1);
       webview_bind(ctx->w, "increment", increment, ctx);
-      webview_eval(ctx->w, string::tests::js.make_call_js(3).c_str());
+      webview_eval(ctx->w, js_str.bind_unbind(3).c_str());
       webview_return(ctx->w, seq, 0, R"("Returned: [2,1]")");
       return;
     }
@@ -126,13 +121,13 @@ TEST_CASE("Use C API to test binding and unbinding") {
 
   auto w = webview_create(1, nullptr);
   ctx.w = w;
-  webview_set_html(w, "Use C API to test binding and unbinding");
+  webview_set_html(w, "Test nested C binding and unbinding");
   // Attempting to remove non-existing binding is OK
   webview_unbind(w, "test");
   webview_bind(w, "test", tests, &ctx);
   // Attempting to bind multiple times only binds once
   webview_bind(w, "test", tests, &ctx);
-  webview_eval(w, R"(window.test(0).then(m => console.log(m));)");
+  webview_eval(w, js_str.bind_unbind_init().c_str());
   webview_run(w);
   auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4;
 
@@ -146,47 +141,56 @@ TEST_CASE("Use C API to test binding and unbinding") {
   REQUIRE(passed);
 }
 
-TEST_CASE("Test synchronous binding and unbinding") {
-  webview_cc_t w(true, nullptr);
-  int number = 0;
-  int res1;
-  int res2;
-  int res3;
-  int res4;
+TEST_CASE("Test nested CC binding and unbinding") {
+  webview_cc_t wv{true, nullptr};
 
-  auto increment = [&](cnst_str_r /*req*/) -> std::string {
-    ++number;
-    return "";
+  struct cc_context_t {
+    unsigned int number;
+    bool res1;
+    bool res2;
+    bool res3;
+    bool res4;
+  } ctx{};
+
+  auto increment = [&](cnst_str_r id, cnst_str_r /**/, void *arg) {
+    auto *ctx = static_cast<cc_context_t *>(arg);
+    ctx->number++;
+    auto message = "Incremented: " + std::to_string(ctx->number);
+    wv.resolve(id, 0, string::json.escape(message));
   };
 
-  auto tests = [&](cnst_str_r req) -> std::string {
+  auto tests = [&](cnst_str_r /**/, cnst_str_r req, void *arg) -> std::string {
+    auto *ctx = static_cast<cc_context_t *>(arg);
+
     // Bind and increment number.
     if (req == "[0]") {
-      res1 = number;
-      w.bind("increment", increment);
-      w.eval(string::tests::js.make_call_js(1));
+      ctx->res1 = ctx->number == 0;
+      wv.bind("increment", increment, ctx);
+      wv.eval(js_str.bind_unbind(1));
       return "";
     }
 
     // Unbind and make sure that we cannot increment even if we try.
     if (req == "[1]") {
-      res2 = number;
-      w.unbind("increment", true);
-      w.eval(string::tests::js.make_call_js(2), true);
+      ctx->res2 = ctx->number == 1;
+      wv.unbind("increment");
+      wv.eval(js_str.bind_unbind(2));
       return "";
     }
     // We should have gotten an error on the JS side.
     // Number should not have changed but we can bind again and change the number.
     if (req == "[2,1]") {
-      res3 = number;
-      w.bind("increment", increment);
-      w.eval(string::tests::js.make_call_js(3), true);
+      ctx->res3 = ctx->number == 1;
+      wv.bind("increment", increment, ctx);
+      wv.eval(js_str.bind_unbind(3));
       return "";
     }
     // Finish test.
     if (req == "[3]") {
-      res4 = number;
-      w.terminate();
+      ctx->res4 = ctx->number == 2;
+      wv.unbind("test");
+      wv.unbind("increment");
+      wv.terminate();
       return "";
     }
     REQUIRE(!"Should not reach here");
@@ -194,57 +198,62 @@ TEST_CASE("Test synchronous binding and unbinding") {
     return "";
   };
 
+  wv.set_html("Test nested CC binding and unbinding");
   // Attempting to remove non-existing binding is OK
-  w.unbind("test", true);
-  w.bind("test", tests);
+  wv.unbind("test");
+  wv.bind("test", tests, &ctx);
   // Attempting to bind multiple times only binds once
-  w.bind("test", tests);
-  w.set_html(string::tests::html.bind_unbind());
-  w.run();
-  auto passed = res1 == 0 && res2 == 1 && res3 == 1 && res4 == 2;
+  wv.bind("test", tests, &ctx);
+  wv.init(js_str.bind_unbind_init());
+  wv.run();
+  auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4;
   if (!passed) {
-    tracer.print_here(tester::res_string("res1", res1));
-    tracer.print_here(tester::res_string("res2", res2));
-    tracer.print_here(tester::res_string("res3", res3));
-    tracer.print_here(tester::res_string("res4", res4));
+    tracer.print_here(tester::res_string("res1", ctx.res1));
+    tracer.print_here(tester::res_string("res2", ctx.res2));
+    tracer.print_here(tester::res_string("res3", ctx.res3));
+    tracer.print_here(tester::res_string("res4", ctx.res4));
   }
   REQUIRE(passed);
 }
 
 TEST_CASE("The string returned from a binding call must be JSON") {
-  webview_cc_t w(true, nullptr);
+  webview_cc_t wv(true, nullptr);
 
-  w.bind("loadData",
-         [](cnst_str_r /*req*/) -> std::string { return "\"hello\""; });
-  w.bind("endTest", [&](cnst_str_r req) -> std::string {
-    REQUIRE(req != "[2]");
-    REQUIRE(req != "[1]");
-    REQUIRE(req == "[0]");
-    w.terminate();
-    return "";
+  wv.bind("loadData", [&](cnst_str_r id, cnst_str_r /**/, void * /**/) {
+    wv.resolve(id, 0, string::json.escape("hello"));
   });
-  w.set_html(string::tests::html.string_returns(
+  wv.bind("endTest",
+          [&](cnst_str_r /**/, cnst_str_r req, void * /**/) -> std::string {
+            REQUIRE(req != "[2]");
+            REQUIRE(req != "[1]");
+            REQUIRE(req == "[0]");
+            wv.terminate();
+            return "";
+          });
+  wv.set_html(string::tests::html.string_returned(
       "The string returned from a binding call must be JSON"));
-  w.run();
+  wv.run();
 }
 
 TEST_CASE("The string returned of a binding call must not be JS") {
-  webview_cc_t w(true, nullptr);
+  webview_cc_t wv(true, nullptr);
 
-  w.bind("loadData", [](cnst_str_r /*req*/) -> std::string {
+  wv.bind("loadData", [&](cnst_str_r id, cnst_str_r /*req*/, void * /**/) {
     // Try to load malicious JS code
-    return "(()=>{document.body.innerHTML='gotcha';return 'hello';})()";
+    wv.resolve(id, 0,
+               "(()=>{document.body.innerHTML='gotcha';return 'hello';})()");
   });
-  w.bind("endTest", [&](cnst_str_r req) -> std::string {
-    REQUIRE(req != "[0]");
-    REQUIRE(req != "[2]");
-    REQUIRE(req == "[1]");
-    w.terminate();
-    return "";
-  });
-  w.set_html(string::tests::html.string_returns(
+  wv.bind("endTest",
+          [&](cnst_str_r /*req*/, cnst_str_r req, void * /**/) -> std::string {
+            REQUIRE(req != "[0]");
+            REQUIRE(req != "[2]");
+            REQUIRE(req == "[1]");
+            wv.terminate();
+            return "";
+          });
+  wv.set_html(string::tests::html.string_returned(
       "The string returned of a binding call must not be JS"));
-  w.run();
+  wv.run();
 }
 
 TEST_CASE("webview_version()") {
@@ -263,7 +272,7 @@ TEST_CASE("webview_version()") {
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
   webview_cc_t wv{true, nullptr};
 
-  auto async_tests = std::thread([&]() {
+  auto worker = std::thread([&]() {
     std::mutex worker_mtx;
     std::unique_lock<std::mutex> lock(worker_mtx);
 
@@ -286,7 +295,7 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
   wv.init(string::tests::js.init("loaded"));
   wv.navigate(string::tests::html.navigate_encoded());
   wv.run();
-  async_tests.join();
+  worker.join();
 }
 
 TEST_CASE("Bad C API usage without crash") {
@@ -303,8 +312,6 @@ TEST_CASE("Bad C API usage without crash") {
   ASSERT_WEBVIEW_FAILED(webview_bind(w, nullptr, nullptr, nullptr));
   ASSERT_WEBVIEW_FAILED(webview_unbind(w, nullptr));
   ASSERT_WEBVIEW_FAILED(webview_return(w, nullptr, 0, nullptr));
-  ASSERT_WEBVIEW_FAILED(webview_dispatch(w, nullptr, nullptr));
   ASSERT_WEBVIEW_FAILED(webview_terminate(w));
   ASSERT_WEBVIEW_FAILED(webview_run(w));
-  ASSERT_WEBVIEW_FAILED(webview_destroy(w));
 }

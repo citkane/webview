@@ -29,6 +29,7 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/threading/thread_detector.hh"
+#include "webview/log/console_log.hh"
 #include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
 
@@ -61,26 +62,27 @@ noresult engine_base::navigate(cnst_str_r url) {
   if (thread::is_main_thread()) {
     do_work();
   } else {
-    dispatch(do_work);
+    dispatch_(do_work);
   }
   return {};
 }
 noresult engine_base::bind(cnst_str_r name, sync_binding_t fn) {
+  console.warn(
+      "Synchronous bind is deprecated and may lead to undefined behaviour");
+
   auto wrapper = [this, fn](cnst_str_r id, cnst_str_r req, void * /*arg*/) {
     resolve(id, 0, fn(req));
   };
-  auto do_work = [this, name, wrapper] { bind(name, wrapper, nullptr, true); };
+  auto do_work = [this, name, wrapper] { bind(name, wrapper, nullptr); };
   if (thread::is_main_thread()) {
     do_work();
   } else {
-    dispatch(do_work);
+    dispatch_(do_work);
   }
   return {};
 }
-noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg,
-                           bool skip_queue) {
+noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg) {
   trace::base.bind.start(name);
-
   if (queue.bind.is_duplicate(name)) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
   }
@@ -91,17 +93,15 @@ noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg,
     replace_bind_script();
     eval(string::js.onbind(name), true);
   };
-  if (!skip_queue) {
-    return queue.bind.enqueue(do_work, name);
-  }
-  if (thread::is_main_thread()) {
+  // The user may want to bind on the first tick so that they can use
+  // bindings in `webview_init` or `webview_set_html`.
+  if (thread::is_main_thread() && !atomic.dom.webview_ready()) {
     do_work();
-  } else {
-    dispatch(do_work);
+    return {};
   }
-  return {};
+  return queue.bind.enqueue(do_work, name);
 }
-noresult engine_base::unbind(cnst_str_r name, bool skip_queue) {
+noresult engine_base::unbind(cnst_str_r name) {
   trace::base.unbind.start(name);
 
   if (queue.unbind.not_found(name)) {
@@ -114,15 +114,7 @@ noresult engine_base::unbind(cnst_str_r name, bool skip_queue) {
     list.bindings.erase(name);
     replace_bind_script();
   };
-  if (!skip_queue) {
-    return queue.unbind.enqueue(do_work, name);
-  }
-  if (thread::is_main_thread()) {
-    do_work();
-  } else {
-    dispatch(do_work);
-  }
-  return {};
+  return queue.unbind.enqueue(do_work, name);
 }
 noresult engine_base::eval(cnst_str_r js, bool skip_queue) {
   trace::base.eval.start(js, skip_queue);
@@ -130,36 +122,45 @@ noresult engine_base::eval(cnst_str_r js, bool skip_queue) {
     if (!skip_queue) {
       auto wrapped_js = string::js.eval_wrapper(js);
       trace::base.eval.work(wrapped_js, skip_queue);
-      eval_impl(wrapped_js);
+      if (thread::is_main_thread()) {
+        eval_impl(wrapped_js);
+      } else {
+        dispatch_([this, wrapped_js] { eval_impl(wrapped_js); });
+      }
     } else {
       trace::base.eval.work(js, skip_queue);
-      eval_impl(js);
+      if (thread::is_main_thread()) {
+        eval_impl(js);
+      } else {
+        dispatch_([this, js] { eval_impl(js); });
+      }
     }
   };
   if (!skip_queue) {
     return queue.eval.enqueue(do_work, js);
   }
-  if (thread::is_main_thread()) {
-    do_work();
-  } else {
-    dispatch(do_work);
-  }
+  do_work();
   return {};
 }
 noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
-  // Firstly get the promise binding name and
+  // Get the promise binding name and
   // notify the queue that the promise is resolving.
   std::string name = list.id_name_map.get(id);
   queue.promises.resolving(name, id);
   list.id_name_map.erase(id);
 
+  auto res_m = result.empty() ? "undefined" : result;
+  auto action = status == 0 ? "resolving" : "rejecting";
+  auto message = "Bound function \"" + name + "\" is " + action + " promise " +
+                 id + " with result: " + res_m;
+  status == 0 ? console.info(message) : console.warn(message);
+
   auto res = result.empty() ? "undefined" : string::json.escape(result);
   auto js = string::js.onreply(id, status, res);
-  //const char *escaped_js = js.c_str();
   return eval(js, true);
 }
 noresult engine_base::reject(cnst_str_r id, cnst_str_r err) {
-  return resolve(id, 1, string::json.escape(err));
+  return resolve(id, 1, err);
 }
 result<void *> engine_base::window() { return window_impl(); }
 result<void *> engine_base::widget() { return widget_impl(); }
@@ -168,7 +169,7 @@ result<void *> engine_base::browser_controller() {
 }
 noresult engine_base::run() {
   if (!thread::is_main_thread()) {
-    throw exception{WEBVIEW_ERROR_INVALID_ARGUMENT,
+    throw exception{WEBVIEW_ERROR_INVALID_STATE,
                     R"(Webview must be run from the main thread.)"};
   }
 
@@ -177,20 +178,22 @@ noresult engine_base::run() {
 noresult engine_base::terminate() {
   // terminate_impl should normally be called from a child thread,
   // so we always dispatch it to the main thread.
-  return dispatch([this] {
+  return dispatch_([this] {
     queue.terminate();
     terminate_impl();
   });
 }
-noresult engine_base::dispatch(std::function<void()> f) {
-  return dispatch_impl(f);
-}
+
+IGNORE_DEPRECATED_DECLARATIONS
+noresult engine_base::dispatch(std::function<void()> f) { return dispatch_(f); }
+RESTORE_IGNORED_WARNINGS
+
 noresult engine_base::set_title(cnst_str_r title) {
   auto do_work = [this, title] { set_title_impl(title); };
   if (thread::is_main_thread()) {
     do_work();
   } else {
-    dispatch(do_work);
+    dispatch_(do_work);
   }
   return {};
 }
@@ -202,7 +205,7 @@ noresult engine_base::set_size(int width, int height, webview_hint_t hints) {
   if (thread::is_main_thread()) {
     do_work();
   } else {
-    dispatch(do_work);
+    dispatch_(do_work);
   }
   return {};
 }
@@ -211,16 +214,20 @@ noresult engine_base::set_html(cnst_str_r html) {
   if (thread::is_main_thread()) {
     do_work();
   } else {
-    dispatch(do_work);
+    dispatch_(do_work);
   }
   return {};
 }
 noresult engine_base::init(cnst_str_r js) {
+  if (!thread::is_main_thread()) {
+    throw exception{WEBVIEW_ERROR_INVALID_STATE,
+                    R"(Webview init must be called from the main thread.)"};
+  }
   auto do_work = [this, js] { list.m_user_scripts.add(js, this); };
   if (thread::is_main_thread()) {
     do_work();
   } else {
-    dispatch(do_work);
+    dispatch_(do_work);
   }
   return {};
 }
@@ -231,6 +238,9 @@ noresult engine_base::init(cnst_str_r js) {
  * PROTECTED 
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
+noresult engine_base::dispatch_(std::function<void()> f) {
+  return dispatch_impl(f);
+}
 void engine_base::replace_bind_script() {
   auto replacement_js = create_bind_script();
   if (m_bind_script) {
@@ -278,14 +288,14 @@ void engine_base::on_window_destroyed(bool skip_termination) {
 }
 void engine_base::deplete_run_loop_event_queue() {
   bool done{};
-  dispatch([&] { done = true; });
+  dispatch_([&] { done = true; });
   run_event_loop_while([&] { return !done; });
 }
 void engine_base::dispatch_size_default() {
   if (!owns_window() || !m_is_init_script_sent) {
     return;
   };
-  dispatch([this]() {
+  dispatch_([this]() {
     if (!m_is_size_set) {
       set_size(m_initial_width, m_initial_height, WEBVIEW_HINT_NONE);
     }

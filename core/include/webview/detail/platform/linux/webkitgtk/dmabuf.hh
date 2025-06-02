@@ -28,10 +28,9 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
-#include "webview/types/types.hh"
 
 #if defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)
-
+#include "webview/types/types.hh"
 #include <cstdlib>
 #include <string>
 
@@ -64,7 +63,7 @@ using namespace webview::types;
 namespace webview {
 namespace detail {
 namespace platform {
-namespace linux {
+namespace linuz {
 namespace webkitgtk {
 
 // Namespace containing workaround for WebKit 2.42 when using NVIDIA GPU
@@ -164,7 +163,7 @@ static inline void apply_webkit_dmabuf_workaround() {
 
 } // namespace webkit_dmabuf
 } // namespace webkitgtk
-} // namespace linux
+} // namespace linuz
 } // namespace platform
 } // namespace detail
 } // namespace webview

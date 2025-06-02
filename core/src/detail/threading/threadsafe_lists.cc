@@ -28,9 +28,11 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/threading/threadsafe_lists.hh"
 #include "webview/detail/engine_base.hh"
+#include "webview/strings/string_api.hh"
 #include <algorithm>
 #include <iterator>
 
+using namespace webview::strings;
 using namespace webview::detail::threading;
 using namespace webview::detail::threading::_lib;
 
@@ -85,13 +87,16 @@ binding_ctx_t bindings_t::at(cnst_str_r name) const {
 
 user_script *user_scripts_t::add(cnst_str_r js, engine_base *base) {
   std::lock_guard<std::mutex> lock(mtx);
+
+  auto wrapped_js = string::js.user_init_wrapper(js);
   return std::addressof(*m_user_scripts.emplace(
-      m_user_scripts.end(), base->add_user_script_impl(js)));
+      m_user_scripts.end(), base->add_user_script_impl(wrapped_js)));
 }
 user_script *user_scripts_t::replace(const user_script &old_script,
                                      cnst_str_r new_script_code,
                                      engine_base *base) {
   std::lock_guard<std::mutex> lock(mtx);
+
   base->remove_all_user_scripts_impl(m_user_scripts);
   user_script *old_script_ptr{};
   for (auto &script : m_user_scripts) {
@@ -236,21 +241,7 @@ indices_t pending_t::indices(cnst_str_r name) const {
 }
 
 /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆  
- * Nested API _lib for thread-safe functions
- * -----------------------------------------------------------------------------------------------------------
- * Root API thread-safe functions
- * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
-
-engine_lists_t::cv_api_t::cv_api_t()
-    : all{&queue, &bind, &eval, &unbind, &unbind_timeout} {};
-void engine_lists_t::cv_api_t::notify_all() {
-  for (auto &this_cv : all) {
-    this_cv->notify_all();
-  }
-}
-
-/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
- * Root API thread-safe functions */
+ * Nested API _lib for thread-safe functions */
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_DETAIL_THREADSAFE_LISTS_CC

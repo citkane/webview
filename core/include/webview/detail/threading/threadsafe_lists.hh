@@ -172,24 +172,7 @@ private:
 } // namespace _lib
 
 class engine_lists_t {
-  /// Condition variables for various stages in the event loop lifecycle
-  struct cv_api_t {
-    cv_api_t();
-    /// Controls the main queue loop
-    std::condition_variable queue;
-    /// Controls the bind section of the event loop
-    std::condition_variable bind;
-    /// Controls the eval section of the event loop
-    std::condition_variable eval;
-    /// Controls the unbind section of the event loop
-    std::condition_variable unbind;
-    /// Controls the unbind timeout section of the event loop
-    std::condition_variable unbind_timeout;
-    /// An array of all the event loop condition variables
-    std::condition_variable *all[5];
-    /// Calls `notify_all` on all event loop condition variables
-    void notify_all();
-  };
+
   /// The root API for working with thread-safe list like containers.
   struct list_t {
     /// Thread safe wrappers for the `std::map` of bindings.
@@ -207,8 +190,6 @@ class engine_lists_t {
   };
 
 protected:
-  /// Grouping of condition variables
-  cv_api_t cv{};
   /// Thread safe wrappers for list-like objects.
   list_t list{};
 };

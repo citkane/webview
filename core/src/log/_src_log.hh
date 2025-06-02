@@ -2,7 +2,6 @@
 #define WEBVIEW_AMALGAMATED_SRC_LOG_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "trace_log.cc"
 
 #endif

@@ -27,6 +27,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/log/trace_log.hh"
+#include "webview/lib/macros.h"
 #include <iostream>
 
 using namespace webview::types;
@@ -58,25 +59,8 @@ std::string trace_tools_t::escape_s(cnst_str_r text) {
   return "\"" + text + "\"";
 }
 std::string trace_tools_t::num_s(size_t val) { return std::to_string(val); }
-std::string trace_tools_t::bold(cnst_str_r this_col, cnst_str_r text) const {
-  return ansi.bold + text + ansi.default_c + this_col;
-}
-std::string trace_tools_t::dim(cnst_str_r this_col, cnst_str_r text) const {
-  return ansi.dim + text + ansi.default_c + this_col;
-}
-void trace_tools_t::print_ansi(cnst_str_r this_col, cnst_str_r message) const {
-  static std::mutex mtx;
-  std::lock_guard<std::mutex> lock(mtx);
-  std::cout << this_col << message << ansi.default_c << std::endl;
-}
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4100)
-#else
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
+IGNORE_UNUSED_PARAMETERS
 
 void print_here_t::print_here(cnst_str_r message) const {
 #if WEBVIEW_LOG_TRACE
@@ -333,11 +317,7 @@ void base_eval_t::wrapper_t::done(bool done, cnst_str_r js) const {
 #endif
 }
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#else
-#pragma GCC diagnostic pop
-#endif
+RESTORE_IGNORED_WARNINGS
 
 /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆  
  * engine Base API 

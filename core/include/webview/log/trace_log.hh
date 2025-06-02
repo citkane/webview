@@ -27,7 +27,7 @@
 #define WEBVIEW_LOG_TRACE_LOG_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "ansi_colours.hh"
+#include "webview/log/ansi_log.hh"
 #include <chrono>
 #include <mutex>
 #include <string>
@@ -47,9 +47,6 @@ protected:
   static std::string bool_s(bool flag);
   static std::string escape_s(cnst_str_r text);
   static std::string num_s(size_t val);
-  std::string bold(cnst_str_r this_col, cnst_str_r text) const;
-  std::string dim(cnst_str_r this_col, cnst_str_r text) const;
-  void print_ansi(cnst_str_r this_col, cnst_str_r message) const;
 };
 
 /// A generic `print_here` method for user input

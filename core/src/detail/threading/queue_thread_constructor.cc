@@ -34,11 +34,13 @@
 
 using namespace webview::log;
 using namespace webview::strings;
+using namespace webview::strings;
 using namespace webview::detail;
 
 void engine_queue::queue_thread_constructor() {
   std::mutex queue_thread_mtx;
   std::unique_lock<std::mutex> lock(queue_thread_mtx);
+
   while (!atomic.terminating()) {
     trace::queue.loop.wait(list.queue.size(), list.queue.empty(),
                            atomic.dom.ready());
@@ -57,7 +59,6 @@ void engine_queue::queue_thread_constructor() {
     // `bind` user work unit
     if (work_ctx == ctx.bind) {
       trace::queue.bind.start(name);
-      //wv->dispatch(work_fn);
       work_fn();
       trace::queue.bind.wait(name);
       cv.bind.wait(lock, [this] { return atomic.AND({atomic.done.bind()}); });
@@ -87,7 +88,6 @@ void engine_queue::queue_thread_constructor() {
         wv->reject(id, err);
       }
 
-      //wv->dispatch(work_fn);
       work_fn();
       cv.unbind.wait(lock,
                      [this] { return atomic.AND({atomic.done.unbind()}); });
@@ -102,7 +102,7 @@ void engine_queue::queue_thread_constructor() {
     // `eval` user work unit
     if (work_ctx == ctx.eval) {
       trace::queue.eval.start();
-      wv->dispatch(work_fn);
+      work_fn();
       trace::queue.eval.wait();
       cv.eval.wait(lock, [this] { return atomic.AND({atomic.done.eval()}); });
       if (atomic.terminating()) {

@@ -22,11 +22,14 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_LOG_ANSI_COLOURS_HH
-#define WEBVIEW_LOG_ANSI_COLOURS_HH
+#ifndef WEBVIEW_LOG_ANSI_LOG_HH
+#define WEBVIEW_LOG_ANSI_LOG_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#include "webview/lib/macros.h"
 #include "webview/types/types.hh"
+#include <iostream>
+#include <mutex>
 #include <string>
 
 using namespace webview::types;
@@ -67,44 +70,75 @@ public:
     const std::string dim = dim_s();
   } ansi{};
 
+  IGNORE_UNUSED_PARAMETERS
+  // NOLINTBEGIN(misc-unused-parameters)
+
+  std::string bold(cnst_str_r this_col, cnst_str_r text) const {
+#if WEBVIEW_LOG_ANSI
+    return ansi.bold + text + ansi.default_c + this_col;
+#else
+    return text;
+#endif
+  };
+  std::string dim(cnst_str_r this_col, cnst_str_r text) const {
+#if WEBVIEW_LOG_ANSI
+    return ansi.dim + text + ansi.default_c + this_col;
+#else
+    return text;
+#endif
+  };
+  void print_ansi(cnst_str_r this_col, cnst_str_r message) const {
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lock(mtx);
+#if WEBVIEW_LOG_ANSI
+    std::cout << this_col << message << ansi.default_c << std::endl;
+#else
+    std::cout << message << std::endl;
+#endif
+  };
+
+  RESTORE_IGNORED_WARNINGS
+
+  // NOLINTEND(misc-unused-parameters)
+
 private:
-  static const std::string &yellow_s() {
+  static cnst_str_r yellow_s() {
     static const std::string instance = to_ansi_string({33});
     return instance;
   }
-  static const std::string &yellow_dim_s() {
+  static cnst_str_r yellow_dim_s() {
     static const std::string instance = to_ansi_string({33, 2});
     return instance;
   }
-  static const std::string &green_s() {
+  static cnst_str_r green_s() {
     static const std::string instance = to_ansi_string({92});
     return instance;
   }
-  static const std::string &red_s() {
+  static cnst_str_r red_s() {
     static const std::string instance = to_ansi_string({91});
     return instance;
   }
-  static const std::string &blue_s() {
+  static cnst_str_r blue_s() {
     static const std::string instance = to_ansi_string({94});
     return instance;
   }
-  static const std::string &blue_dark_s() {
+  static cnst_str_r blue_dark_s() {
     static const std::string instance = to_ansi_string({34});
     return instance;
   }
-  static const std::string &magenta_s() {
+  static cnst_str_r magenta_s() {
     static const std::string instance = to_ansi_string({95});
     return instance;
   }
-  static const std::string &default_c_s() {
+  static cnst_str_r default_c_s() {
     static const std::string instance = to_ansi_string({0});
     return instance;
   }
-  static const std::string &bold_s() {
+  static cnst_str_r bold_s() {
     static const std::string instance = to_ansi_string({1});
     return instance;
   }
-  static const std::string &dim_s() {
+  static cnst_str_r dim_s() {
     static const std::string instance = to_ansi_string({90});
     return instance;
   }
@@ -115,4 +149,4 @@ private:
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_LOG_ANSI_COLOURS_HH
+#endif // WEBVIEW_LOG_ANSI_LOG_HH

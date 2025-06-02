@@ -22,21 +22,27 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_DETAIL_ATOMIC_API_CC
-#define WEBVIEW_DETAIL_ATOMIC_API_CC
+#ifndef WEBVIEW_DETAIL_THREADING_ATOMIC_CC
+#define WEBVIEW_DETAIL_THREADING_ATOMIC_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/threading/atomic_api.hh"
-#include "webview/detail/engine_queue.hh"
+#include "webview/detail/threading/atomic.hh"
 
+using namespace webview::detail::threading;
 using namespace webview::detail::threading::_lib;
 
 /* Nested_API_lib
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
-/* Nested API to get and set if the window DOM is ready
+/* Nested API to get and set if the Webview JS and window DOM is ready
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
+bool atomic_dom_ready_t::webview_ready() const {
+  return self->is_webview_ready.load();
+};
+void atomic_dom_ready_t::webview_ready(bool flag) {
+  self->is_webview_ready.store(flag);
+};
 bool atomic_dom_ready_t::ready() const { return self->is_dom_ready.load(); };
 void atomic_dom_ready_t::ready(bool flag) {
   self->is_dom_ready.store(flag);
@@ -62,11 +68,16 @@ void atomic_done_t::eval(bool val) {
   self->cv.eval.notify_one();
 }
 
-/* Root API to work with atomic flags
- * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆  
+   * Nested_API_lib
+ * -----------------------------------------------------------------------------------------------------------
+ * Root API 
+ * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
-bool atomic_api_t::terminating() const { return self->is_terminating.load(); };
-bool atomic_api_t::AND(std::initializer_list<bool> flags) const {
+bool atomic_api_t::api_root_t::terminating() const {
+  return self->is_terminating.load();
+};
+bool atomic_api_t::api_root_t::AND(std::initializer_list<bool> flags) const {
   if (self->atomic.terminating()) {
     return true;
   };
@@ -80,8 +91,16 @@ bool atomic_api_t::AND(std::initializer_list<bool> flags) const {
   return res;
 };
 
-  /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆  
-   * Nested_API_lib */
+atomic_api_t::cv_api_t::cv_api_t()
+    : all{&queue, &bind, &eval, &unbind, &unbind_timeout} {};
+void atomic_api_t::cv_api_t::notify_all() {
+  for (auto &this_cv : all) {
+    this_cv->notify_all();
+  }
+}
+
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+ * Root API */
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_DETAIL_ATOMIC_API_CC
+#endif // WEBVIEW_DETAIL_THREADING_ATOMIC_CC

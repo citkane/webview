@@ -27,10 +27,27 @@
 #define WEBVIEW_BACKENDS_GTK_WEBKITGTK_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)
+#include "webview/detail/engine_base.hh"
+#include "webview/detail/user/gtk_webkit_user.hh"
+#include "webview/log/trace_log.hh"
+#include <fcntl.h>
+#include <functional>
+#include <gtk/gtk.h>
+#include <list>
+#include <memory>
+#include <string>
+#include <sys/stat.h>
+
+using namespace webview::types;
+using namespace webview::errors;
+using namespace webview::platform::linuz::gtk;
+using namespace webview::platform::linuz::webkitgtk;
+namespace webview {
+namespace detail {
+namespace backend {
 
 //
 // ====================================================================
@@ -44,64 +61,6 @@
 //
 // ====================================================================
 //
-
-#include "webview/detail/engine_base.hh"
-#include "webview/detail/platform/linux/gtk/compat.hh"
-#include "webview/detail/platform/linux/webkitgtk/compat.hh"
-#include "webview/detail/platform/linux/webkitgtk/dmabuf.hh"
-#include "webview/log/trace_log.hh"
-
-#include <functional>
-#include <list>
-#include <memory>
-#include <string>
-
-#include <gtk/gtk.h>
-
-#if GTK_MAJOR_VERSION >= 4
-
-#include <jsc/jsc.h>
-#include <webkit/webkit.h>
-
-#elif GTK_MAJOR_VERSION >= 3
-
-#include <JavaScriptCore/JavaScript.h>
-#include <webkit2/webkit2.h>
-
-#endif
-
-#include <fcntl.h>
-#include <sys/stat.h>
-
-using namespace webview::types;
-using namespace webview::errors;
-using namespace webview::platform::linux::gtk;
-using namespace webview::platform::linux::webkitgtk;
-namespace webview {
-namespace detail {
-namespace user {
-
-class user_script::impl {
-public:
-  impl(WebKitUserScript *script) : m_script{script} {
-    webkit_user_script_ref(script);
-  }
-
-  ~impl() { webkit_user_script_unref(m_script); }
-
-  impl(const impl &) = delete;
-  impl &operator=(const impl &) = delete;
-  impl(impl &&) = delete;
-  impl &operator=(impl &&) = delete;
-
-  WebKitUserScript *get_native() const { return m_script; }
-
-private:
-  WebKitUserScript *m_script{};
-};
-} // namespace user
-
-namespace backend {
 
 class gtk_webkit_engine : public detail::engine_base {
 public:

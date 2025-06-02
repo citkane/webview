@@ -62,6 +62,9 @@ std::string js_string_t::bind(std::vector<std::string> &bound_names) const {
 std::string js_string_t::eval_wrapper(cnst_str_r user_js) const {
   return tokenise(js::EVAL_WRAPPER_JS(), tokens.user_js, user_js);
 }
+std::string js_string_t::user_init_wrapper(cnst_str_r user_js) const {
+  return tokenise(js::USER_INIT_WRAPPER_JS(), tokens.user_js, user_js);
+}
 
 /* Message strings
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
@@ -91,23 +94,26 @@ std::string error_message_t::webview_terminated(cnst_str_r name) const {
 
 std::string test_js_t::init(cnst_str_r init_value, bool escaped) const {
   auto init_value_js = post_value(init_value, escaped);
-  return tokenise(templates::tests::js::TEST_INIT_JS(), tokens.post_fn,
+  return tokenise(templates::tests::js::TEST_ONLOAD_JS(), tokens.post_fn,
                   init_value_js);
 }
 std::string test_js_t::post_value(cnst_str_r value, bool escaped) const {
-  auto tmplt = escaped ? templates::tests::js::TEST_VALUE_WRAPPER_JS_ESCAPED()
+  auto tmplt = escaped ? templates::tests::js::TEST_VALUE_WRAPPER_ESCAPED_JS()
                        : templates::tests::js::TEST_VALUE_WRAPPER_JS();
   return tokenise(tmplt, tokens.str, value);
 }
-std::string test_js_t::make_call_js(unsigned int result) const {
-  return tokenise(templates::tests::js::TEST_MAKE_CALL_JS(), tokens.intval,
+std::string test_js_t::bind_unbind(unsigned int result) const {
+  return tokenise(templates::tests::js::TEST_BIND_UNBIND_JS(), tokens.intval,
                   std::to_string(result));
+}
+std::string test_js_t::bind_unbind_init() const {
+  return templates::tests::js::TEST_BIND_UNBIND_INIT_JS();
 }
 
 /* Tests HTML
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
-std::string test_html_t::string_returns(cnst_str_r title) const {
+std::string test_html_t::string_returned(cnst_str_r title) const {
   return tokenise(templates::tests::html::TEST_STRING_RETURNS_HTML(),
                   tokens.str, title);
 }
@@ -118,9 +124,6 @@ std::string test_html_t::navigate_encoded() const {
       "20code%20and%"
       "20vice%20versa%3C%2Fhtml%3E";
   return encoding + html;
-}
-std::string test_html_t::bind_unbind() const {
-  return templates::tests::html::TEST_BIND_UNBIND_HTML();
 }
 
 /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆

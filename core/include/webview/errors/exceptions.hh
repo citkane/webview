@@ -27,7 +27,6 @@
 #define WEBVIEW_ERRORS_EXCEPTIONS_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include <exception>
 
 namespace webview {

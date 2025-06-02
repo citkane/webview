@@ -27,7 +27,6 @@
 #define WEBVIEW_BACKENDS_COCOA_WEBKIT_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
@@ -442,7 +441,7 @@ private:
     m_widget = nullptr;
     m_webview = nullptr;
     m_window = nullptr;
-    dispatch([this] { on_window_destroyed(); });
+    dispatch_([this] { on_window_destroyed(); });
   }
   void window_settings(bool debug) {
     objc::autoreleasepool arp;

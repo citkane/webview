@@ -27,18 +27,14 @@
 #define WEBVIEW_STRINGS_STRING_TEMPLATES_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#include "webview/lib/macros.h"
+#include <string>
 
 namespace webview {
 namespace strings {
 namespace templates {
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4505)
-#else
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
-#endif
+IGNORE_UNUSED_FUNCTIONS
 
 /* Webview
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
@@ -47,8 +43,8 @@ namespace js {
 /* JS
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
-static const char *WEVBIEW_INIT_JS() {
-  return R"(
+static const std::string &WEVBIEW_INIT_JS() {
+  static std::string str = R"(
 (function() {
   'use strict';
 
@@ -129,6 +125,8 @@ static const char *WEVBIEW_INIT_JS() {
   })();
 
   window.__webview__ = new Webview();
+  window.__webview__.sysop('_webview_ready');
+
   const domReadyInterval = setInterval(()=>{
     const ready = document.readyState;
     if (ready === 'interactive' || ready === 'complete') {
@@ -136,12 +134,14 @@ static const char *WEVBIEW_INIT_JS() {
       window.__webview__.sysop('_dom_ready');
     }
   })
+
 })()
 )";
+  return str;
 }
 
-static const char *ON_BIND_JS() {
-  return R"(
+static const std::string &ON_BIND_JS() {
+  static std::string str = R"(
 if (window.__webview__) {
   try {
     window.__webview__.onBind('_str_');
@@ -152,10 +152,11 @@ if (window.__webview__) {
   }
 }
 )";
+  return str;
 }
 
-static const char *ON_UNBIND_JS() {
-  return R"(
+static const std::string &ON_UNBIND_JS() {
+  static std::string str = R"(
   if (window.__webview__) {
   try {
     window.__webview__.onUnbind('_str_');
@@ -166,16 +167,18 @@ static const char *ON_UNBIND_JS() {
   }
 }
 )";
+  return str;
 }
 
-static const char *ON_REPLY_JS() {
-  return R"(
+static const std::string &ON_REPLY_JS() {
+  static std::string str = R"(
 window.__webview__.onReply('_id_', _status_, _result_)
 )";
+  return str;
 }
 
-static const char *BIND_JS() {
-  return R"(
+static const std::string &BIND_JS() {
+  static std::string str = R"(
 (function() {
   'use strict';
   var methods = _js_names_;
@@ -184,10 +187,11 @@ static const char *BIND_JS() {
   });
 })()
 )";
+  return str;
 }
 
-static const char *EVAL_WRAPPER_JS() {
-  return R"(
+static const std::string &EVAL_WRAPPER_JS() {
+  static std::string str = R"(
 try {
   // User JS
   // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
@@ -201,6 +205,23 @@ try {
   window.__webview__.sysop('_frontend_eval_ready');
 }
 )";
+  return str;
+}
+
+static const std::string &USER_INIT_WRAPPER_JS() {
+  static std::string str = R"(
+try {
+  // User JS
+  // ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+  _user_js_
+  // ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+  // User JS
+
+} catch (err) {
+  console.error(err);
+}
+)";
+  return str;
 }
 
 } // namespace js
@@ -209,17 +230,23 @@ namespace messages {
 /* Message strings
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
-static const char *REJECT_UNBOUND_M() {
-  return R"(Promise id '_id_' was rejected because function '_str_' was unbound.)";
+static const std::string &REJECT_UNBOUND_M() {
+  static std::string str =
+      R"(Promise id '_id_' was rejected because function '_str_' was unbound.)";
+  return str;
 }
 
-static const char *UNCAUGHT_EXP_M() {
-  return R"(Uncaught exception from native user callback function '_str_':
+static const std::string &UNCAUGHT_EXP_M() {
+  static std::string str =
+      R"(Uncaught exception from native user callback function '_str_':
 _what_)";
+  return str;
 }
 
-static const char *WEBVIEW_TERMINATED_M() {
-  return R"(Native user callback function '_str_' failed because Webview terminated before it could complete.)";
+static const std::string &WEBVIEW_TERMINATED_M() {
+  static std::string str =
+      R"(Native user callback function '_str_' failed because Webview terminated before it could complete.)";
+  return str;
 };
 
 } // namespace messages
@@ -236,32 +263,26 @@ namespace html {
 /* Tests HTML
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
-static const char *TEST_STRING_RETURNS_HTML() {
-  return R"(
+static const std::string &TEST_STRING_RETURNS_HTML() {
+  static std::string str = R"(
 <html><body>
   <div>_str_</div>
   <script>
-    try {
-      window.loadData()
-        .then(() => window.endTest(0))
-        .catch(() => window.endTest(1));
-    } catch {
-      window.endTest(2);
-    }
+  try {
+    window.loadData()
+      .then(() => window.endTest(0))
+      .catch((err) => {
+        console.error(err);
+        window.endTest(1);
+      });
+  } catch (err) {
+    console.error(err);
+    window.endTest(2);
+  }
   </script>
 </body></html>
 )";
-}
-
-static const char *TEST_BIND_UNBIND_HTML() {
-  return R"(
-<html><body>
-  <div>Test synchronous binding and unbinding</div>
-  <script>
-  window.test(0);
-  </script>
-</body></html>
-)";
+  return str;
 }
 
 } // namespace html
@@ -271,8 +292,17 @@ namespace js {
 /* Tests JS
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
-static const char *TEST_VALUE_WRAPPER_JS() {
-  return R"(
+static const std::string &TEST_BIND_UNBIND_INIT_JS() {
+  static std::string str = R"(
+window.test(0)
+  .then(m => console.log(m))
+  .catch(err => console.error(err));
+)";
+  return str;
+}
+
+static const std::string &TEST_VALUE_WRAPPER_JS() {
+  static std::string str = R"(
 window.__webview__.post(
   JSON.stringify({
     id: '_testop',
@@ -280,10 +310,11 @@ window.__webview__.post(
   })
 )
 )";
+  return str;
 }
 
-static const char *TEST_VALUE_WRAPPER_JS_ESCAPED() {
-  return R"(
+static const std::string &TEST_VALUE_WRAPPER_ESCAPED_JS() {
+  static std::string str = R"(
 window.__webview__.post(
   JSON.stringify({
     id: '_testop',
@@ -291,43 +322,43 @@ window.__webview__.post(
   })
 )
 )";
+  return str;
 }
 
-static const char *TEST_MAKE_CALL_JS() {
-  return R"(
+static const std::string &TEST_BIND_UNBIND_JS() {
+  static std::string str = R"(
 try {
-  console.log('calling: window.increment', _int_);
   window.increment()
-    .then((m) => {
-      console.log(m, 'window.test', _int_);
-      console.warn(window.test);
-      window.test(_int_);
-      console.log('sent: window.test(_int_)');
+    .then(m => {
+      console.log(m);
+      window.test(_int_)
+        .then(m => console.log(m))
+        .catch(err => console.error(err));
     })
-    .catch((err) => {
+    .catch(err => {
       console.error(err);
-      console.log('1: window.test(_int_, 1)');
-      console.warn(window.test);
-      window.test(_int_, 1).then(m => console.log(m));
-      console.log('1: sent: window.test(_int_, 1)');
+      window.test(_int_, 1)
+        .then(m => console.log(m))
+        .catch(err => console.error(err));
     })
 } catch (err) {
   console.error(err);
-  console.log('2: window.test(_int_, 1);');
-  console.warn(window.test);
-  window.test(_int_, 1).then(m => console.log(m));
-  console.log('2: sent: window.test(_int_, 1)');
+  window.test(_int_, 1)
+    .then(m => console.log(m))
+    .catch(err => console.error(err));
 }
 )";
+  return str;
 };
 
-static const char *TEST_INIT_JS() {
-  return R"(
+static const std::string &TEST_ONLOAD_JS() {
+  static std::string str = R"(
 window.x = 42;
 window.onload = () => {
   _post_fn_
 }
 )";
+  return str;
 }
 
 } // namespace js
@@ -336,11 +367,7 @@ window.onload = () => {
 /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
  * Tests */
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#else
-#pragma GCC diagnostic pop
-#endif
+RESTORE_IGNORED_WARNINGS
 
 } // namespace templates
 } // namespace strings

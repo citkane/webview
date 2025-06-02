@@ -27,31 +27,25 @@
 #define WEBVIEW_PLATFORM_LINUX_GTK_COMPAT_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)
-
 #include <gtk/gtk.h>
 
 #if GTK_MAJOR_VERSION >= 4
-
 #ifdef GDK_WINDOWING_X11
 #include <gdk/x11/gdkx.h>
 #endif
-
 #elif GTK_MAJOR_VERSION >= 3
-
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
-
 #endif
 
 namespace webview {
 namespace detail {
 namespace platform {
-namespace linux {
+namespace linuz {
 namespace gtk {
 
 /**
@@ -133,7 +127,7 @@ public:
 };
 
 } // namespace gtk
-} // namespace linux
+} // namespace linuz
 } // namespace platform
 } // namespace detail
 } // namespace webview

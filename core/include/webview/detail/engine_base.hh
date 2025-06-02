@@ -29,6 +29,7 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_queue.hh"
 #include "webview/detail/user/user_script.hh"
+#include "webview/lib/macros.h"
 #include "webview/tests/test_helper.hh"
 #include "webview/types/types.h"
 #include "webview/types/types.hh"
@@ -48,7 +49,7 @@ namespace detail {
 /// - cocoa_webkit
 /// - gtk_webkitgtk
 /// - win32_edge
-class engine_base : public detail::engine_queue {
+class engine_base : public engine_queue {
 
 public:
   virtual ~engine_base() = default;
@@ -56,13 +57,20 @@ public:
 
   /// Internal API implementation of public \ref webview_navigate
   noresult navigate(cnst_str_r url);
-  /// Internal API implementation of public \ref webview_bind (synchronous)
+
+  WEBVIEW_DEPRECATED(R"(
+Webview >= 0.13.0 is thread-safe and guarantees ordered execution of user instructions.
+Execution of native promise resolution is daemonised and concurrent thus synchronous bind
+is no longer required and may cause undefined behaviour for a multi-threaded runtime.
+
+Use `bind` with the @ref webview::detail::user::binding_t function signature instead.
+)")
   noresult bind(cnst_str_r name, sync_binding_t fn);
-  /// Internal API implementation of public \ref webview_bind (asynchronous)
-  noresult bind(cnst_str_r name, binding_t fn, void *arg,
-                bool skip_queue = false);
+
+  /// Internal API implementation of public \ref webview_bind
+  noresult bind(cnst_str_r name, binding_t fn, void *arg = nullptr);
   /// Internal API implementation of public \ref webview_unbind
-  noresult unbind(cnst_str_r name, bool skip_queue = false);
+  noresult unbind(cnst_str_r name);
   /// Internal API implementation of public \ref webview_eval
   noresult eval(cnst_str_r js, bool skip_queue = false);
   /// Internal API implementation of public \ref webview_return
@@ -79,7 +87,23 @@ public:
   noresult run();
   /// Internal API implementation of public \ref webview_terminate
   noresult terminate();
-  /// Internal API implementation of public \ref webview_dispatch
+
+  WEBVIEW_DEPRECATED(R"(
+Webview >= 0.13.0 is thread-safe and guarantees ordered execution of user instructions.
+Execution of native promise resolution is from now daemonised and concurrent.
+
+Use of `dispatch` should thus be avoided in favour of a child thread pattern, ie.
+```C++
+auto wv = webview::api::webview_cc_t{false, nullptr};
+std::thread child([&]{
+  wv.set_title("title");
+  ... etc ...
+  wv.terminate();
+});
+wv.run();
+child.join();
+```
+)")
   noresult dispatch(std::function<void()> f);
   /// Internal API implementation of public \ref webview_set_title
   noresult set_title(cnst_str_r title);
@@ -91,7 +115,7 @@ public:
   noresult init(cnst_str_r js);
 
 protected:
-  friend struct threading::_lib::user_scripts_t;
+  noresult dispatch_(std::function<void()> f);
   /// Platform specific implementation for \ref navigate
   virtual noresult navigate_impl(cnst_str_r url) = 0;
   /// Platform specific implementation for \ref window
@@ -155,6 +179,8 @@ protected:
   void set_default_size_guard(bool guarded);
   /// Gets a flag for whether the Webview window is embedded, or is owned by the user process.
   bool owns_window() const;
+
+  friend struct threading::_lib::user_scripts_t;
 
 private:
   /// Keeps track of the number of platform window instances.

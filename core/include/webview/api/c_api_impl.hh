@@ -29,15 +29,18 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/api/c_api_imp_lib.hh"
 #include "webview/detail/threading/thread_detector.hh"
+#include "webview/errors/errors.h"
+#include "webview/log/console_log.hh"
 #include "webview/types/types.hh"
 
-using namespace webview;
+using namespace webview::api;
 using namespace webview::api::_lib;
 using namespace webview::detail::threading;
+using namespace webview::log;
 
 WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
   if (!thread::is_main_thread()) {
-    throw exception{WEBVIEW_ERROR_INVALID_ARGUMENT,
+    throw exception{WEBVIEW_ERROR_INVALID_STATE,
                     R"(Webview must be created from the main thread.)"};
   };
 
@@ -50,23 +53,23 @@ WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
   if (err == WEBVIEW_ERROR_OK) {
     return w;
   }
+  console.error("Failed to create Webview", WEBVIEW_ERROR_UNSPECIFIED);
   return nullptr;
 }
 
+WEBVIEW_DEPRECATED(R"(
+Redundant, ambiguous and dangerous. Can result in Segfault at shutdown.
+)")
 WEBVIEW_API webview_error_t webview_destroy(webview_t w) {
-  return api_filter([=]() -> noresult {
-    auto wv = cast_to_webview(w);
-    auto do_work = [&] {
-      wv->queue.terminate();
-      delete wv;
-    };
-    if (!thread::is_main_thread()) {
-      wv->dispatch(do_work);
-    } else {
-      do_work();
-    }
-    return {};
-  });
+  if (thread::is_main_thread()) {
+    delete cast_to_webview(w);
+  } else {
+    auto wv = static_cast<webview::detail::engine_base *>(w);
+    IGNORE_DEPRECATED_DECLARATIONS
+    wv->dispatch([&] { delete wv; });
+    RESTORE_IGNORED_WARNINGS
+  }
+  return {};
 }
 
 WEBVIEW_API webview_error_t webview_run(webview_t w) {
@@ -77,15 +80,35 @@ WEBVIEW_API webview_error_t webview_terminate(webview_t w) {
   return api_filter([=] { return cast_to_webview(w)->terminate(); });
 }
 
+IGNORE_DEPRECATED_DECLARATIONS
+WEBVIEW_DEPRECATED(R"(
+Webview >= 0.13.0 is thread-safe and guarantees ordered execution of user instructions.
+Execution of native promise resolution is daemonised and concurrent.
+Use of `webview_dispatch` should thus be avoided in favour of a child thread pattern, eg.
+```
+auto w = webview_create(false, nullptr);
+std::thread child([&]{
+  webview_set_title(w, "title");
+  ... etc ...
+  webview_terminate(w);
+});
+webview_run(w);
+webview_destroy();
+child.join();
+```
+)")
 WEBVIEW_API webview_error_t webview_dispatch(webview_t w,
                                              void (*fn)(webview_t, void *),
                                              void *arg) {
   if (!fn) {
+    console.error("No `fn` argument was passed to webview_dispatch",
+                  WEBVIEW_ERROR_INVALID_ARGUMENT);
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
   return api_filter(
       [=] { return cast_to_webview(w)->dispatch([=]() { fn(w, arg); }); });
 }
+RESTORE_IGNORED_WARNINGS
 
 WEBVIEW_API void *webview_get_window(webview_t w) {
   void *window = nullptr;
@@ -94,6 +117,7 @@ WEBVIEW_API void *webview_get_window(webview_t w) {
   if (err == WEBVIEW_ERROR_OK) {
     return window;
   }
+  console.error("Failed to get a valid `window` handle", err);
   return nullptr;
 }
 
@@ -118,11 +142,16 @@ WEBVIEW_API void *webview_get_native_handle(webview_t w,
   if (err == WEBVIEW_ERROR_OK) {
     return handle;
   }
+  console.error("Failed to get a valid `" + console.util.get_handle_kind(kind) +
+                    "` handle",
+                err);
   return nullptr;
 }
 
 WEBVIEW_API webview_error_t webview_set_title(webview_t w, const char *title) {
   if (!title) {
+    console.warn("No `title` argument was passed to webview_set_title: Command "
+                 "ignored!");
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
   return api_filter([=] { return cast_to_webview(w)->set_title(title); });
@@ -136,6 +165,8 @@ WEBVIEW_API webview_error_t webview_set_size(webview_t w, int width, int height,
 
 WEBVIEW_API webview_error_t webview_navigate(webview_t w, const char *url) {
   if (!url) {
+    console.warn(
+        "No `url` argument was passed to webview_navigate: Command ignored!");
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
   return api_filter([=] { return cast_to_webview(w)->navigate(url); });
@@ -143,6 +174,8 @@ WEBVIEW_API webview_error_t webview_navigate(webview_t w, const char *url) {
 
 WEBVIEW_API webview_error_t webview_set_html(webview_t w, const char *html) {
   if (!html) {
+    console.warn(
+        "No `html` argument was passed to webview_set_html: Command ignored!");
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
   return api_filter([=] { return cast_to_webview(w)->set_html(html); });
@@ -150,6 +183,8 @@ WEBVIEW_API webview_error_t webview_set_html(webview_t w, const char *html) {
 
 WEBVIEW_API webview_error_t webview_init(webview_t w, const char *js) {
   if (!js) {
+    console.warn(
+        "No `js` argument was passed to webview_init: Command ignored!");
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
   return api_filter([=] { return cast_to_webview(w)->init(js); });
@@ -157,6 +192,8 @@ WEBVIEW_API webview_error_t webview_init(webview_t w, const char *js) {
 
 WEBVIEW_API webview_error_t webview_eval(webview_t w, const char *js) {
   if (!js) {
+    console.warn(
+        "No `js` argument was passed to webview_eval: Command ignored!");
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
   return api_filter([=] { return cast_to_webview(w)->eval(js); });
@@ -167,6 +204,14 @@ WEBVIEW_API webview_error_t webview_bind(webview_t w, const char *name,
                                                     const char *req, void *arg),
                                          void *arg) {
   if (!name || !fn) {
+    if (!name) {
+      console.warn(
+          "No `name` argument was passed  to webview_bind: Command ignored!");
+    }
+    if (!fn) {
+      console.warn(
+          "No `fn` argument was passed to webview_bind: Command ignored!");
+    }
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
   return api_filter([=] {
@@ -181,6 +226,8 @@ WEBVIEW_API webview_error_t webview_bind(webview_t w, const char *name,
 
 WEBVIEW_API webview_error_t webview_unbind(webview_t w, const char *name) {
   if (!name) {
+    console.warn(
+        "No `name` argument was passed to webview_unbind: Command ignored!");
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
   return api_filter([=] { return cast_to_webview(w)->unbind(name); });
@@ -189,6 +236,14 @@ WEBVIEW_API webview_error_t webview_unbind(webview_t w, const char *name) {
 WEBVIEW_API webview_error_t webview_return(webview_t w, const char *id,
                                            int status, const char *result) {
   if (!id || !result) {
+    if (!id) {
+      console.warn(
+          "No `id` argument was passed to webview_return: Command ignored!");
+    }
+    if (!result) {
+      console.warn("No `result` argument was passed to webview_return: Command "
+                   "ignored!");
+    }
     return WEBVIEW_ERROR_INVALID_ARGUMENT;
   }
   return api_filter(

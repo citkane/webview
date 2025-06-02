@@ -99,18 +99,14 @@ public:
 #endif
 
     if (is_loaded()) {
+      IGNORE_CAST_FUNCTION_TYPE
       // This cast is required by the Windows API and is safe if the symbol matches the expected signature.
       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
       return reinterpret_cast<typename Symbol::type>(
           GetProcAddress(m_handle, symbol.get_name()));
+      RESTORE_IGNORED_WARNINGS
     }
     return nullptr;
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#else
-#pragma GCC diagnostic pop
-#endif
   }
 
   // Returns true if the library is currently loaded; otherwise false.

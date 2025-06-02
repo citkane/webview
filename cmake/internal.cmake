@@ -347,6 +347,8 @@ macro(webview_internal_options)
     option(WEBVIEW_STRICT_CLANG_FORMAT "Make clang-format check strict" ${WEBVIEW_STRICT_CHECKS})
     option(WEBVIEW_STRICT_CLANG_TIDY "Make clang-tidy check strict" ${WEBVIEW_STRICT_CHECKS})
     option(WEBVIEW_LOG_TRACE "Print a detailed execution trace to stdout" OFF)
+    option(WEBVIEW_LOG "Print execution logs to stdout" OFF)
+    option(WEBVIEW_LOG_ANSI "Print logs in ANSI colours" ON)
 
 endmacro()
 

@@ -23,30 +23,54 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_DARWIN_COCOA_NSPOINT_HH
-#define WEBVIEW_PLATFORM_DARWIN_COCOA_NSPOINT_HH
+#ifndef WEBVIEW_DETAIL_USER_GTK_WEBKITGTK_USER_HH
+#define WEBVIEW_DETAIL_USER_GTK_WEBKITGTK_USER_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
 
-#if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
+#if defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)
+#include "webview/detail/platform/linux/gtk/compat.hh"
+#include "webview/detail/platform/linux/webkitgtk/compat.hh"
+#include "webview/detail/platform/linux/webkitgtk/dmabuf.hh"
+#include "webview/detail/user/user_script.hh"
 
-#include <CoreGraphics/CoreGraphics.h>
+#if GTK_MAJOR_VERSION >= 4
+#include <jsc/jsc.h>
+#include <webkit/webkit.h>
+
+#elif GTK_MAJOR_VERSION >= 3
+#include <JavaScriptCore/JavaScript.h>
+#include <webkit2/webkit2.h>
+
+#endif
 
 namespace webview {
 namespace detail {
-namespace cocoa {
+namespace user {
 
-using NSPoint = CGPoint;
+class user_script::impl {
+public:
+  impl(WebKitUserScript *script) : m_script{script} {
+    webkit_user_script_ref(script);
+  }
 
-constexpr inline NSPoint NSPointMake(CGFloat x, CGFloat y) {
-  return CGPointMake(x, y);
-}
+  ~impl() { webkit_user_script_unref(m_script); }
 
-} // namespace cocoa
+  impl(const impl &) = delete;
+  impl &operator=(const impl &) = delete;
+  impl(impl &&) = delete;
+  impl &operator=(impl &&) = delete;
+
+  WebKitUserScript *get_native() const { return m_script; }
+
+private:
+  WebKitUserScript *m_script{};
+};
+} // namespace user
 } // namespace detail
 } // namespace webview
 
-#endif // defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
+#endif // defined(WEBVIEW_PLATFORM_LINUX) && defined(WEBVIEW_GTK)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_DARWIN_COCOA_NSPOINT_HH
+#endif // WEBVIEW_DETAIL_USER_GTK_WEBKITGTK_USER_HH

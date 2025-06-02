@@ -42,7 +42,7 @@ using namespace webview::types;
 /* Nested_API_lib
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
-/* Nested API structure for bind operations
+/* Nested API for bind operations
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 noresult bind_api_t::enqueue(dispatch_fn_t fn, cnst_str_r name) {
@@ -52,7 +52,7 @@ bool bind_api_t::is_duplicate(cnst_str_r name) const {
   return self->will_be_bound(name);
 };
 
-/* Nested API structure for unbind operations
+/* Nested API for unbind operations
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 bool unbind_api_t::not_found(cnst_str_r name) const {
@@ -62,14 +62,14 @@ noresult unbind_api_t::enqueue(dispatch_fn_t fn, cnst_str_r name) {
   return self->queue_work(name, fn, self->ctx.unbind);
 };
 
-/* Nested API structure for eval operations
+/* Nested API for eval operations
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 noresult eval_api_t::enqueue(dispatch_fn_t fn, cnst_str_r js) {
   return self->queue_work(js, fn, self->ctx.eval);
 };
 
-/* Nested API structure for promise operations
+/* Nested API for promise operations
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 void promise_api_t::resolving(cnst_str_r name, cnst_str_r id) {
@@ -93,6 +93,10 @@ bool promise_api_t::exec_system_message(cnst_str_r id, cnst_str_r method) {
   if (id != sys_flags.sysop) {
     return false;
   };
+  if (method == sys_ops.webview_ready) {
+    trace::queue.notify.on_message(method);
+    self->atomic.dom.webview_ready(true);
+  }
   if (method == sys_ops.dom_ready) {
     trace::queue.notify.on_message(method);
     self->atomic.dom.ready(true);
@@ -115,7 +119,7 @@ bool promise_api_t::exec_system_message(cnst_str_r id, cnst_str_r method) {
 /* Root API for engine_queue operations
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
-void public_api_t::terminate() {
+void queue_api_t::terminate() {
   self->is_terminating.store(true);
   self->cv.notify_all();
   if (!self->queue_thread.joinable()) {
@@ -135,8 +139,7 @@ This is an issue with Webview. Please report it at https://github.com/webview/we
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 engine_queue::~engine_queue() { queue_thread.join(); }
-engine_queue::engine_queue(engine_base *wv)
-    : queue{this}, atomic{this}, wv(wv) {
+engine_queue::engine_queue(engine_base *wv) : queue{this}, wv(wv) {
   queue_thread = std::thread(&engine_queue::queue_thread_constructor, this);
 }
 

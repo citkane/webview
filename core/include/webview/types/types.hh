@@ -27,7 +27,6 @@
 #define WEBVIEW_TYPES_TYPES_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-
 #include "webview/errors/errors.hh"
 #include "webview/types/basic_result.hh"
 #include "webview/types/optional.hh"
@@ -39,11 +38,6 @@ namespace webview {
 namespace types {
 
 enum context_t { bind_t = 'b', unbind_t = 'u', eval_t = 'e' };
-struct action_ctx_t {
-  context_t bind = context_t::bind_t;
-  context_t unbind = context_t::unbind_t;
-  context_t eval = context_t::eval_t;
-};
 
 template <typename T> struct nested_api_t {
   T *self;

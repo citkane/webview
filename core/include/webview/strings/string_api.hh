@@ -63,6 +63,7 @@ struct sys_flags_t {
 struct sys_ops_t {
   sys_ops_t() noexcept = default;
   std::string dom_ready = "_dom_ready";
+  std::string webview_ready = "_webview_ready";
   std::string bind_done = "_bind_done";
   std::string unbind_done = "_unbind_done";
   std::string js_eval_start = "_frontend_eval_ready";
