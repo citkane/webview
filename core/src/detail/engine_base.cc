@@ -93,9 +93,10 @@ noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg) {
     replace_bind_script();
     eval(string::js.onbind(name), true);
   };
-  // The user may want to bind on the first tick so that they can use
+  // The user may want to bind before running so that they can use
   // bindings in `webview_init` or `webview_set_html`.
-  if (thread::is_main_thread() && !atomic.dom.webview_ready()) {
+  // In this scenario, we execute `bind` directly.
+  if (thread::is_main_thread() && !atomic.dom.ready()) {
     do_work();
     return {};
   }
