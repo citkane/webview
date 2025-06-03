@@ -234,8 +234,10 @@ WEBVIEW_API webview_error_t webview_return(webview_t w, const char *id,
  */
 WEBVIEW_API const webview_version_info_t *webview_version(void);
 
-WEBVIEW_API const char *json_parse(const char *s, const char *key, int index);
-WEBVIEW_API const char *json_escape(const char *s, bool add_quotes);
+WEBVIEW_API webview_error_t json_parse(char **buffer, const char *json_str,
+                                       const char *key, int index);
+WEBVIEW_API webview_error_t json_escape(char **buffer, const char *str,
+                                        bool add_quotes);
 
 #ifdef __cplusplus
 }

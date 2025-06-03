@@ -42,11 +42,15 @@ int random_number() {
   return dist(gen);
 }
 
-#else
+#else // !defined(__cplusplus)
+
+#include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #ifndef _WIN32
 #include <unistd.h>
 #endif
@@ -76,16 +80,24 @@ int int_length(int n) {
   return count + 1;
 }
 
-const char *to_string(int value) {
-  char result_str[int_length(value)];
-  (void)sprintf(result_str, "%d", value);
-  const char *result_char = result_str;
-  return result_char;
+int to_int(void *str_) {
+  const char *str = (const char *)str_;
+  int val = atoi(str); // NOLINT(cert-err34-c)
+  printf("atoi: %d string: %s\n", val, str);
+  return val;
 }
 
-const char *random_number(void) {
-  srand((unsigned int)time(NULL));
-  int random_num = rand() % 10001;
+char *to_string(int value) {
+  int len = snprintf(NULL, 0, "%d", value);
+  char *buffer = malloc(len + 1);
+  (void)sprintf(buffer, "%d", value);
+  return buffer;
+}
+
+char *random_number(void) {
+  struct timespec ts;
+  srand(ts.tv_nsec ^ ts.tv_sec);
+  int random_num = rand() % 10001; // NOLINT(cert-msc30-c, cert-msc50-cpp)
   return to_string(random_num);
 }
 

@@ -26,12 +26,12 @@
 #ifndef WEBVIEW_C_API_IMPL_HH
 #define WEBVIEW_C_API_IMPL_HH
 
-#include "webview/strings/json.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/api/c_api_imp_lib.hh"
 #include "webview/detail/threading/thread_detector.hh"
 #include "webview/errors/errors.h"
 #include "webview/log/console_log.hh"
+#include "webview/strings/json.hh"
 #include "webview/types/types.hh"
 
 using namespace webview::api;
@@ -238,16 +238,33 @@ WEBVIEW_API const webview_version_info_t *webview_version(void) {
   return &library_version_info;
 }
 
-WEBVIEW_API const char *json_parse(const char *s, const char *key,
-                                   const int index) {
-  auto result = webview::strings::json.parse(s, key, index);
-  auto result_c = result.c_str();
-  return result_c;
+WEBVIEW_API webview_error_t json_parse(char **buffer, const char *json_str,
+                                       const char *key, int index) {
+  std::string parsed_res;
+  try {
+    parsed_res = webview::strings::json.parse(json_str, key, index);
+  } catch (...) {
+    console.error("Failed to JSON parse the string", WEBVIEW_ERROR_UNSPECIFIED);
+    return WEBVIEW_ERROR_UNSPECIFIED;
+  }
+  *buffer = static_cast<char *>(malloc(parsed_res.size() + 1));
+  std::strcpy(*buffer, parsed_res.c_str());
+  return WEBVIEW_ERROR_OK;
 }
-WEBVIEW_API const char *json_escape(const char *s, bool add_quotes) {
-  auto result = webview::strings::json.escape(s, add_quotes);
-  auto result_c = result.c_str();
-  return result_c;
+
+WEBVIEW_API webview_error_t json_escape(char **buffer, const char *str,
+                                        bool add_quotes) {
+  std::string escaped_res;
+  try {
+    escaped_res = webview::strings::json.escape(str, add_quotes);
+  } catch (...) {
+    console.error("Failed to JSON escape the string",
+                  WEBVIEW_ERROR_UNSPECIFIED);
+    return WEBVIEW_ERROR_UNSPECIFIED;
+  }
+  *buffer = static_cast<char *>(malloc(escaped_res.size() + 1));
+  std::strcpy(*buffer, escaped_res.c_str());
+  return WEBVIEW_ERROR_OK;
 }
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

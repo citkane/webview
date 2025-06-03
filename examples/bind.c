@@ -12,17 +12,26 @@ void compute(const char *id, const char *req, void *arg) {
 
   example_ctx_t *ctx = (example_ctx_t *)arg;
   sleep(3);
-  webview_return(ctx->w, id, 0, random_number());
+  char *random_nbr_string = random_number();
+
+  webview_return(ctx->w, id, 0, random_nbr_string);
+  free(random_nbr_string);
 }
 RESTORE_IGNORED_WARNINGS
 
 static void count(const char *id, const char *req, void *arg) {
   example_ctx_t *ctx = (example_ctx_t *)arg;
+
+  char *increment_str = NULL;
   // We use the inbuilt Webview JSON utility from the C api.
-  const char *increment_str = json_parse(req, "", 0);
-  int increment = atoi(increment_str);
+  json_parse(&increment_str, req, "", 0);
+  int increment = to_int(increment_str);
   int result = ctx->count += increment;
-  webview_return(ctx->w, id, 0, to_string(result));
+  char *result_string = to_string(result);
+
+  webview_return(ctx->w, id, 0, result_string);
+  free(result_string);
+  free(increment_str);
 }
 
 #ifdef _WIN32
