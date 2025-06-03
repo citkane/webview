@@ -94,11 +94,12 @@ char *to_string(int value) {
   return buffer;
 }
 
+struct timespec const ts;
 char *random_number(void) {
-  struct timespec ts;
-  srand(ts.tv_nsec ^ ts.tv_sec);
+  srand(ts.tv_nsec + ts.tv_sec);
   int random_num = rand() % 10001; // NOLINT(cert-msc30-c, cert-msc50-cpp)
-  return to_string(random_num);
+  char *rnd_num = to_string(random_num);
+  return rnd_num;
 }
 
 #endif
