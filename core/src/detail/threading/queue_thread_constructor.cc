@@ -25,7 +25,6 @@
 #ifndef WEBVIEW_DETAIL_THREADING_QUEUE_THREAD_CONSTRUCTOR_CC
 #define WEBVIEW_DETAIL_THREADING_QUEUE_THREAD_CONSTRUCTOR_CC
 
-#include <string>
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/cc_api.hh"
 #include "webview/detail/engine_queue.hh"
