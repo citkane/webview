@@ -27,14 +27,17 @@
 
 #include <string>
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#ifndef WEBVIEW_UNBIND_TIMEOUT
-#define WEBVIEW_UNBIND_TIMEOUT = 40
-#endif
 #include "webview/cc_api.hh"
 #include "webview/detail/engine_queue.hh"
 #include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
 #include <mutex>
+
+#ifndef WEBVIEW_UNBIND_TIMEOUT
+static const unsigned int webview_unbind_timeout = 40;
+#else
+static const unsigned int webview_unbind_timeout = WEBVIEW_UNBIND_TIMEOUT;
+#endif
 
 using namespace webview::log;
 using namespace webview::strings;
@@ -79,7 +82,7 @@ void engine_queue::queue_thread_constructor() {
     // `unbind` user work unit
     if (work_ctx == ctx.unbind) {
       trace::queue.unbind.wait(name);
-      auto timeout = std::chrono::milliseconds(WEBVIEW_UNBIND_TIMEOUT);
+      auto timeout = std::chrono::milliseconds(webview_unbind_timeout);
       cv.unbind_timeout.wait_for(lock, timeout, [this, name] {
         return atomic.AND({list.unresolved_promises.empty(name)});
       });
