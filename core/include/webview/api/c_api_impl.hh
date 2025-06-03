@@ -244,6 +244,11 @@ WEBVIEW_API const char *json_parse(const char *s, const char *key,
   auto result_c = result.c_str();
   return result_c;
 }
+WEBVIEW_API const char *json_escape(const char *s, bool add_quotes) {
+  auto result = webview::strings::json.escape(s, add_quotes);
+  auto result_c = result.c_str();
+  return result_c;
+}
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_C_API_IMPL_HH

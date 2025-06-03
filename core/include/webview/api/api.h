@@ -30,7 +30,9 @@
 #include "webview/lib/macros.h"
 #include "webview/strings/json.hh"
 #include "webview/types/types.h"
-
+#ifndef __cplusplus
+#include <stdbool.h>
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -233,6 +235,7 @@ WEBVIEW_API webview_error_t webview_return(webview_t w, const char *id,
 WEBVIEW_API const webview_version_info_t *webview_version(void);
 
 WEBVIEW_API const char *json_parse(const char *s, const char *key, int index);
+WEBVIEW_API const char *json_escape(const char *s, bool add_quotes);
 
 #ifdef __cplusplus
 }
