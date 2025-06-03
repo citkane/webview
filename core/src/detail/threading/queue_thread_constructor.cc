@@ -25,7 +25,11 @@
 #ifndef WEBVIEW_DETAIL_THREADING_QUEUE_THREAD_CONSTRUCTOR_CC
 #define WEBVIEW_DETAIL_THREADING_QUEUE_THREAD_CONSTRUCTOR_CC
 
+#include <string>
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
+#ifndef WEBVIEW_UNBIND_TIMEOUT
+#define WEBVIEW_UNBIND_TIMEOUT = 40
+#endif
 #include "webview/cc_api.hh"
 #include "webview/detail/engine_queue.hh"
 #include "webview/log/trace_log.hh"
@@ -50,6 +54,7 @@ void engine_queue::queue_thread_constructor() {
     if (atomic.terminating()) {
       return;
     }
+
     trace::queue.loop.start(list.queue.size());
     auto action = list.queue.front();
     context_t &work_ctx = action.ctx;
