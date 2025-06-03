@@ -1,42 +1,7 @@
+#include "bind_lib.h"
 #include "webview/webview.h"
-
 #include <chrono>
 #include <iostream>
-#include <string>
-#include <thread>
-
-constexpr const auto html =
-    R"html(
-<div>
-  <button id="increment">+</button>
-  <button id="decrement">−</button>
-  <span>Counter: <span id="counterResult">0</span></span>
-</div>
-<hr />
-<div>
-  <button id="compute">Compute</button>
-  <span>Result: <span id="computeResult">(not started)</span></span>
-</div>
-<script type="module">
-  const getElements = ids => Object.assign({}, ...ids.map(
-    id => ({ [id]: document.getElementById(id) })));
-  const ui = getElements([
-    "increment", "decrement", "counterResult", "compute",
-    "computeResult"
-  ]);
-  ui.increment.addEventListener("click", async () => {
-    ui.counterResult.textContent = await window.count(1);
-  });
-  ui.decrement.addEventListener("click", async () => {
-    ui.counterResult.textContent = await window.count(-1);
-  });
-  ui.compute.addEventListener("click", async () => {
-    ui.compute.disabled = true;
-    ui.computeResult.textContent = "(pending)";
-    ui.computeResult.textContent = await window.compute(6, 7);
-    ui.compute.disabled = false;
-  });
-</script>)html";
 
 #ifdef _WIN32
 int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
@@ -45,36 +10,31 @@ int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrevInst*/,
 int main() {
 #endif
   try {
-    long count = 0;
+    webview_cc_t wv(true, nullptr);
+    int count = 0;
 
-    webview_cc_t w(true, nullptr);
-    w.set_title("Bind Example");
-    w.set_size(480, 320, WEBVIEW_HINT_NONE);
+    wv.set_title("Bind Example");
+    wv.set_size(480, 320, WEBVIEW_HINT_NONE);
 
     // A binding that counts up or down and immediately returns the new value.
-    w.bind("count", [&](cnst_str_r req) -> std::string {
-      // Imagine that req is properly parsed or use your own JSON parser.
-      auto direction = std::stol(req.substr(1, req.size() - 1));
-      return std::to_string(count += direction);
+    wv.bind("count", [&](cnst_str_r id, cnst_str_r req, void * /*arg*/) {
+      // We use the inbuilt Webview JSON utility from webview::strings::json
+      auto increment = std::stoi(json.parse(req, "", 0));
+      wv.resolve(id, 0, count += increment);
     });
 
-    // A binding that creates a new thread and returns the result at a later time.
-    w.bind(
+    // A binding that does computational work and returns the result at a later time.
+    wv.bind(
         "compute",
-        [&](cnst_str_r id, cnst_str_r req, void * /*arg*/) {
-          // Create a thread and forget about it for the sake of simplicity.
-          std::thread([&, id, req] {
-            // Simulate load.
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-            // Imagine that req is properly parsed or use your own JSON parser.
-            const auto *result = "42";
-            w.resolve(id, 0, result);
-          }).detach();
+        [&](cnst_str_r id, cnst_str_r /*req*/, void * /*arg*/) {
+          // Simulate load.
+          std::this_thread::sleep_for(std::chrono::seconds(3));
+          wv.resolve(id, 0, random_number());
         },
         nullptr);
 
-    w.set_html(html);
-    w.run();
+    wv.set_html(WEBVIEW_BIND_EXAMPLE_HTML);
+    wv.run();
   } catch (const webview::errors::exception &e) {
     std::cerr << e.what() << '\n';
     return 1;

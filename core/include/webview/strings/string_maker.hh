@@ -26,9 +26,11 @@
 #define WEBVIEW_STRINGS_STRING_FACTORY_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/strings/json.hh"
+#include "webview/types/types.hh"
+#include <string>
 #include <vector>
 
+using namespace webview::types;
 namespace webview {
 namespace strings {
 namespace _lib {

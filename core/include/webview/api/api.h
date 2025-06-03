@@ -28,6 +28,7 @@
 
 #include "webview/errors/errors.h"
 #include "webview/lib/macros.h"
+#include "webview/strings/json.hh"
 #include "webview/types/types.h"
 
 #ifdef __cplusplus
@@ -59,11 +60,7 @@ extern "C" {
  */
 WEBVIEW_API webview_t webview_create(int debug, void *window);
 
-/**
- * Destroys a webview instance and closes the native window.
- *
- * @param w The webview instance.
- */
+WEBVIEW_DEPRECATED(DEPRECATE_WEBVIEW_DESTROY)
 WEBVIEW_API webview_error_t webview_destroy(webview_t w);
 
 /**
@@ -81,17 +78,7 @@ WEBVIEW_API webview_error_t webview_run(webview_t w);
  */
 WEBVIEW_API webview_error_t webview_terminate(webview_t w);
 
-/**
- * Schedules a function to be invoked on the thread with the run/event loop.
- *
- * Since library functions generally do not have thread safety guarantees,
- * this function can be used to schedule code to execute on the main/GUI
- * thread and thereby make that execution safe in multi-threaded applications.
- *
- * @param w The webview instance.
- * @param fn The function to be invoked.
- * @param arg An optional argument passed along to the callback function.
- */
+WEBVIEW_DEPRECATED(DEPRECATE_WEBVIEW_DISPATCH)
 WEBVIEW_API webview_error_t webview_dispatch(webview_t w,
                                              void (*fn)(webview_t w, void *arg),
                                              void *arg);
@@ -244,6 +231,8 @@ WEBVIEW_API webview_error_t webview_return(webview_t w, const char *id,
  * @since 0.10
  */
 WEBVIEW_API const webview_version_info_t *webview_version(void);
+
+WEBVIEW_API const char *json_parse(const char *s, const char *key, int index);
 
 #ifdef __cplusplus
 }

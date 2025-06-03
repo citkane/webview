@@ -26,6 +26,7 @@
 #ifndef WEBVIEW_C_API_IMPL_HH
 #define WEBVIEW_C_API_IMPL_HH
 
+#include "webview/strings/json.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/api/c_api_imp_lib.hh"
 #include "webview/detail/threading/thread_detector.hh"
@@ -57,9 +58,7 @@ WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
   return nullptr;
 }
 
-WEBVIEW_DEPRECATED(R"(
-Redundant, ambiguous and dangerous. Can result in Segfault at shutdown.
-)")
+WEBVIEW_DEPRECATED(DEPRECATE_WEBVIEW_DESTROY)
 WEBVIEW_API webview_error_t webview_destroy(webview_t w) {
   if (thread::is_main_thread()) {
     delete cast_to_webview(w);
@@ -81,22 +80,7 @@ WEBVIEW_API webview_error_t webview_terminate(webview_t w) {
 }
 
 IGNORE_DEPRECATED_DECLARATIONS
-WEBVIEW_DEPRECATED(R"(
-Webview >= 0.13.0 is thread-safe and guarantees ordered execution of user instructions.
-Execution of native promise resolution is daemonised and concurrent.
-Use of `webview_dispatch` should thus be avoided in favour of a child thread pattern, eg.
-```
-auto w = webview_create(false, nullptr);
-std::thread child([&]{
-  webview_set_title(w, "title");
-  ... etc ...
-  webview_terminate(w);
-});
-webview_run(w);
-webview_destroy();
-child.join();
-```
-)")
+WEBVIEW_DEPRECATED(DEPRECATE_WEBVIEW_DISPATCH)
 WEBVIEW_API webview_error_t webview_dispatch(webview_t w,
                                              void (*fn)(webview_t, void *),
                                              void *arg) {
@@ -252,6 +236,13 @@ WEBVIEW_API webview_error_t webview_return(webview_t w, const char *id,
 
 WEBVIEW_API const webview_version_info_t *webview_version(void) {
   return &library_version_info;
+}
+
+WEBVIEW_API const char *json_parse(const char *s, const char *key,
+                                   const int index) {
+  auto result = webview::strings::json.parse(s, key, index);
+  auto result_c = result.c_str();
+  return result_c;
 }
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

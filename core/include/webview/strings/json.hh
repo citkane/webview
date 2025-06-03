@@ -37,9 +37,9 @@ using namespace webview::types;
 namespace webview {
 namespace strings {
 namespace _lib {
-namespace frontend {
 
-struct json_t {
+class json_t {
+public:
   json_t() noexcept = default;
 
   std::string escape(cnst_str_r s, bool add_quotes = true) const {
@@ -102,7 +102,6 @@ struct json_t {
     assert(required_length == result.size());
     return result;
   }
-
   std::string parse(cnst_str_r s, cnst_str_r key, const int index) const {
     const char *value;
     size_t value_sz;
@@ -351,8 +350,10 @@ private:
   bool is_ascii_control_char(char c) const { return c >= 0 && c <= 0x1f; }
 };
 
-} // namespace frontend
 } // namespace _lib
+
+const _lib::json_t json{};
+
 } // namespace strings
 } // namespace webview
 

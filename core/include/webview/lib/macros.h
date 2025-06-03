@@ -102,14 +102,34 @@
 #endif
 #endif
 
+#endif // WEBVIEW_HEADER
+#endif // __cplusplus
+
+#if defined(__cplusplus) && __cplusplus >= 201402L
+
 #ifndef WEBVIEW_DEPRECATED
-#if __cplusplus >= 201402L
 #define WEBVIEW_DEPRECATED(reason) [[deprecated(reason)]]
-#elif defined(_MSC_VER)
-#define WEBVIEW_DEPRECATED(reason) __declspec(deprecated(reason))
-#else
+#endif
+
+#elif defined(__GNUC__) || defined(__clang__)
+
+#ifndef WEBVIEW_DEPRECATED
 #define WEBVIEW_DEPRECATED(reason) __attribute__((deprecated(reason)))
 #endif
+
+#elif defined(_MSC_VER)
+
+#ifndef WEBVIEW_DEPRECATED
+#define WEBVIEW_DEPRECATED(reason) __declspec(deprecated(reason))
+#endif
+
+#else
+
+#ifndef WEBVIEW_DEPRECATED
+#pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+#define WEBVIEW_DEPRECATED(reason)
+#endif
+
 #endif
 
 #ifndef WEBVIEW_DEPRECATED_PRIVATE
@@ -117,8 +137,31 @@
   WEBVIEW_DEPRECATED("Private API should not be used")
 #endif
 
-#endif // WEBVIEW_HEADER
-#endif // __cplusplus
+#ifndef DEPRECATE_WEBVIEW_DESTROY
+#define DEPRECATE_WEBVIEW_DESTROY                                              \
+  "\nRedundant, ambiguous and dangerous. Can result in Segfault at "           \
+  "shutdown.\n"
+#endif
+#ifndef DEPRECATE_WEBVIEW_DISPATCH
+#define DEPRECATE_WEBVIEW_DISPATCH                                             \
+  "\nWebview >= 0.13.0 is thread-safe and guarantees ordered execution of "    \
+  "user instructions.\n"                                                       \
+  "Execution of native promise resolution is now daemonised and concurrent.\n" \
+  "Use of `webview_dispatch` should thus be avoided in favour of a child "     \
+  "thread pattern, eg.\n"                                                      \
+  "```\n"                                                                      \
+  "auto w = webview_create(false, nullptr);\n"                                 \
+  "std::thread child([&]{\n"                                                   \
+  "  webview_set_title(w, \"title\");\n"                                       \
+  "  ... etc ...\n"                                                            \
+  "  webview_terminate(w);\n"                                                  \
+  "});\n"                                                                      \
+  "webview_run(w);\n"                                                          \
+  "child.join();\n"                                                            \
+  "```\n\n"                                                                    \
+  "Use of `webview_dispatch` (C) or `wv.dispatch` (C++) is likely to cause "   \
+  "undefined behaviour."
+#endif
 
 #ifdef _MSC_VER
 #define RESTORE_IGNORED_WARNINGS __pragma(warning(pop))

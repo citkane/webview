@@ -115,7 +115,6 @@ class string {
 public:
   static const js_string_t js;
   static const error_message_t err;
-  static const json_t json;
   struct tests {
     static const test_html_t html;
     static const test_js_t js;
@@ -124,7 +123,6 @@ public:
 
 const js_string_t string::js{};
 const error_message_t string::err{};
-const json_t string::json{};
 const test_html_t string::tests::html{};
 const test_js_t string::tests::js{};
 

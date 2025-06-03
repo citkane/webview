@@ -31,6 +31,7 @@
 #include "webview/detail/threading/thread_detector.hh"
 #include "webview/log/console_log.hh"
 #include "webview/log/trace_log.hh"
+#include "webview/strings/json.hh"
 #include "webview/strings/string_api.hh"
 
 using namespace webview::detail;
@@ -143,6 +144,20 @@ noresult engine_base::eval(cnst_str_r js, bool skip_queue) {
   do_work();
   return {};
 }
+template <typename T>
+typename std::enable_if<std::is_arithmetic<T>::value &&
+                            !std::is_same<T, bool>::value,
+                        noresult>::type
+engine_base::resolve(cnst_str_r id, int status, T result) {
+  return resolve(id, status, std::to_string(result));
+};
+template <typename T>
+typename std::enable_if<std::is_same<T, bool>::value, noresult>::type
+engine_base::resolve(cnst_str_r id, int status, T result) {
+  std::string bool_string = result ? "true" : "false";
+  return resolve(id, status, bool_string);
+};
+
 noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
   // Get the promise binding name and
   // notify the queue that the promise is resolving.
@@ -156,7 +171,7 @@ noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
                  id + " with result: " + res_m;
   status == 0 ? console.info(message) : console.warn(message);
 
-  auto res = result.empty() ? "undefined" : string::json.escape(result);
+  auto res = result.empty() ? "undefined" : json.escape(result);
   auto js = string::js.onreply(id, status, res);
   return eval(js, true);
 }
@@ -262,8 +277,8 @@ std::string engine_base::create_bind_script() {
   return string::js.bind(bound_names);
 }
 void engine_base::on_message(cnst_str_r msg) {
-  auto id = string::json.parse(msg, "id", 0);
-  auto name = string::json.parse(msg, "method", 0);
+  auto id = json.parse(msg, "id", 0);
+  auto name = json.parse(msg, "method", 0);
   if (id == sys_flags.testop) {
     tester::set_value(name);
     return;
@@ -276,7 +291,7 @@ void engine_base::on_message(cnst_str_r msg) {
     reject(id, message);
     return;
   }
-  auto args = string::json.parse(msg, "params", 0);
+  auto args = json.parse(msg, "params", 0);
   queue.promises.resolve(name, id, args);
 }
 void engine_base::on_window_created() { inc_window_count(); }

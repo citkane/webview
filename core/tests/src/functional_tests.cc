@@ -156,7 +156,7 @@ TEST_CASE("Test nested CC binding and unbinding") {
     auto *ctx = static_cast<cc_context_t *>(arg);
     ctx->number++;
     auto message = "Incremented: " + std::to_string(ctx->number);
-    wv.resolve(id, 0, string::json.escape(message));
+    wv.resolve(id, 0, json.escape(message));
   };
 
   auto tests = [&](cnst_str_r /**/, cnst_str_r req, void *arg) -> std::string {
@@ -220,7 +220,7 @@ TEST_CASE("The string returned from a binding call must be JSON") {
   webview_cc_t wv(true, nullptr);
 
   wv.bind("loadData", [&](cnst_str_r id, cnst_str_r /**/, void * /**/) {
-    wv.resolve(id, 0, string::json.escape("hello"));
+    wv.resolve(id, 0, json.escape("hello"));
   });
   wv.bind("endTest",
           [&](cnst_str_r /**/, cnst_str_r req, void * /**/) -> std::string {

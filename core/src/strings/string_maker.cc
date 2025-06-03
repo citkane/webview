@@ -27,11 +27,13 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/strings/string_maker.hh"
+#include "webview/strings/json.hh"
 #include "webview/strings/string_api.hh"
 #include "webview/strings/string_templates.hh"
 
 using namespace webview::strings;
 using namespace webview::strings::templates;
+using namespace webview::strings::_lib::frontend;
 
 /* Frontend
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
@@ -56,7 +58,7 @@ std::string js_string_t::init(cnst_str_r post_fn) const {
   return tokenise(js::WEVBIEW_INIT_JS(), tokens.post_fn, post_fn);
 }
 std::string js_string_t::bind(std::vector<std::string> &bound_names) const {
-  auto js_names = string::json.to_list(bound_names);
+  auto js_names = json.to_list(bound_names);
   return tokenise(js::BIND_JS(), tokens.js_names, js_names);
 }
 std::string js_string_t::eval_wrapper(cnst_str_r user_js) const {

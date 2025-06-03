@@ -75,6 +75,14 @@ Use `bind` with the @ref webview::detail::user::binding_t function signature ins
   noresult eval(cnst_str_r js, bool skip_queue = false);
   /// Internal API implementation of public \ref webview_return
   noresult resolve(cnst_str_r id, int status, cnst_str_r result);
+  template <typename T>
+  typename std::enable_if<std::is_arithmetic<T>::value &&
+                              !std::is_same<T, bool>::value,
+                          noresult>::type
+  resolve(cnst_str_r id, int status, T result);
+  template <typename T>
+  typename std::enable_if<std::is_same<T, bool>::value, noresult>::type
+  resolve(cnst_str_r id, int status, T result);
   /// Helper to reject a promise through \ref resolve
   noresult reject(cnst_str_r id, cnst_str_r err);
   /// Internal API implementation of public \ref webview_get_window
@@ -88,22 +96,7 @@ Use `bind` with the @ref webview::detail::user::binding_t function signature ins
   /// Internal API implementation of public \ref webview_terminate
   noresult terminate();
 
-  WEBVIEW_DEPRECATED(R"(
-Webview >= 0.13.0 is thread-safe and guarantees ordered execution of user instructions.
-Execution of native promise resolution is from now daemonised and concurrent.
-
-Use of `dispatch` should thus be avoided in favour of a child thread pattern, ie.
-```C++
-auto wv = webview::api::webview_cc_t{false, nullptr};
-std::thread child([&]{
-  wv.set_title("title");
-  ... etc ...
-  wv.terminate();
-});
-wv.run();
-child.join();
-```
-)")
+  WEBVIEW_DEPRECATED(DEPRECATE_WEBVIEW_DISPATCH)
   noresult dispatch(std::function<void()> f);
   /// Internal API implementation of public \ref webview_set_title
   noresult set_title(cnst_str_r title);
