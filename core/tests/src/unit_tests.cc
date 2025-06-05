@@ -1,6 +1,8 @@
 #include "webview/test_driver.hh"
 #include "webview/webview.h"
 
+using namespace webview::detail;
+
 TEST_CASE("Ensure that JSON parsing works") {
 
   // Valid input with expected output
@@ -114,7 +116,6 @@ TEST_CASE("noresult class") {
 
 #if _WIN32
 TEST_CASE("Ensure that version number parsing works on Windows") {
-  using namespace webview::detail;
   auto v = parse_version("");
   REQUIRE(v.size() == 4);
   REQUIRE(v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0);
@@ -144,7 +145,6 @@ TEST_CASE("Ensure that version number parsing works on Windows") {
 }
 
 TEST_CASE("Ensure that narrow/wide string conversion works on Windows") {
-  using namespace webview::detail;
   REQUIRE(widen_string("").empty());
   REQUIRE(narrow_string(L"").empty());
   REQUIRE(widen_string("foo") == L"foo");

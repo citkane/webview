@@ -40,23 +40,14 @@
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "version.lib")
 #endif
-
-//
-// ====================================================================
-//
-// This implementation uses Win32 API to create a native window. It
-// uses Edge/Chromium webview2 backend as a browser engine.
-//
-// ====================================================================
-//
-
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/platform/windows/com_init_wrapper.hh"
 #include "webview/detail/platform/windows/dpi.hh"
-#include "webview/detail/platform/windows/iid.hh"
 #include "webview/detail/platform/windows/string.hh"
 #include "webview/detail/platform/windows/theme.hh"
 #include "webview/detail/platform/windows/webview2/loader.hh"
+#include "webview/detail/user/win32_edge_user.hh"
+#include "webview/log/console_log.hh"
 #include "webview/log/win_console.hh"
 #include "webview/types/types.hh"
 #include <atomic>
@@ -68,243 +59,21 @@
 #include <shlwapi.h>
 #include <windows.h>
 
+//
+// ====================================================================
+//
+// This implementation uses Win32 API to create a native window. It
+// uses Edge/Chromium webview2 backend as a browser engine.
+//
+// ====================================================================
+//
+
 using namespace webview::types;
 using namespace webview::log;
 using namespace webview::errors;
-using namespace webview::detail::platform::windows;
+using namespace webview::detail::platform::_lib::windows;
 namespace webview {
 namespace detail {
-namespace user {
-
-using msg_cb_t = std::function<void(const std::string)>;
-
-class webview2_com_handler
-    : public ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler,
-      public ICoreWebView2CreateCoreWebView2ControllerCompletedHandler,
-      public ICoreWebView2WebMessageReceivedEventHandler,
-      public ICoreWebView2PermissionRequestedEventHandler {
-  using webview2_com_handler_cb_t =
-      std::function<void(ICoreWebView2Controller *, ICoreWebView2 *webview)>;
-
-public:
-  webview2_com_handler(HWND hwnd, msg_cb_t msgCb, webview2_com_handler_cb_t cb)
-      : m_window(hwnd), m_msgCb(msgCb), m_cb(cb) {}
-
-  virtual ~webview2_com_handler() = default;
-  webview2_com_handler(const webview2_com_handler &other) = delete;
-  webview2_com_handler &operator=(const webview2_com_handler &other) = delete;
-  webview2_com_handler(webview2_com_handler &&other) = delete;
-  webview2_com_handler &operator=(webview2_com_handler &&other) = delete;
-
-  ULONG STDMETHODCALLTYPE AddRef() { return ++m_ref_count; }
-  ULONG STDMETHODCALLTYPE Release() {
-    if (m_ref_count > 1) {
-      return --m_ref_count;
-    }
-    delete this;
-    return 0;
-  }
-  HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, LPVOID *ppv) {
-    using namespace mswebview2::cast_info;
-
-    if (!ppv) {
-      return E_POINTER;
-    }
-
-    // All of the COM interfaces we implement should be added here regardless
-    // of whether they are required.
-    // This is just to be on the safe side in case the WebView2 Runtime ever
-    // requests a pointer to an interface we implement.
-    // The WebView2 Runtime must at the very least be able to get a pointer to
-    // ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler when we use
-    // our custom WebView2 loader implementation, and observations have shown
-    // that it is the only interface requested in this case. None have been
-    // observed to be requested when using the official WebView2 loader.
-
-    if (cast_if_equal_iid(this, riid, controller_completed(), ppv) ||
-        cast_if_equal_iid(this, riid, environment_completed(), ppv) ||
-        cast_if_equal_iid(this, riid, message_received(), ppv) ||
-        cast_if_equal_iid(this, riid, permission_requested(), ppv)) {
-      return S_OK;
-    }
-
-    return E_NOINTERFACE;
-  }
-  HRESULT STDMETHODCALLTYPE Invoke(HRESULT res, ICoreWebView2Environment *env) {
-    if (SUCCEEDED(res)) {
-      res = env->CreateCoreWebView2Controller(m_window, this);
-      if (SUCCEEDED(res)) {
-        return S_OK;
-      }
-    }
-    try_create_environment();
-    return S_OK;
-  }
-  HRESULT STDMETHODCALLTYPE Invoke(HRESULT res,
-                                   ICoreWebView2Controller *controller) {
-    if (FAILED(res)) {
-      // See try_create_environment() regarding
-      // HRESULT_FROM_WIN32(ERROR_INVALID_STATE).
-      // The result is E_ABORT if the parent window has been destroyed already.
-      switch (res) {
-      case HRESULT_FROM_WIN32(ERROR_INVALID_STATE):
-      case E_ABORT:
-        return S_OK;
-      }
-
-      try_create_environment();
-      return S_OK;
-    }
-
-    ICoreWebView2 *webview;
-    ::EventRegistrationToken token;
-    controller->get_CoreWebView2(&webview);
-    webview->add_WebMessageReceived(this, &token);
-    webview->add_PermissionRequested(this, &token);
-
-    m_cb(controller, webview);
-    return S_OK;
-  }
-  HRESULT STDMETHODCALLTYPE
-  Invoke(ICoreWebView2 * /*sender*/,
-         ICoreWebView2WebMessageReceivedEventArgs *args) {
-    LPWSTR message{};
-    auto res = args->TryGetWebMessageAsString(&message);
-    if (SUCCEEDED(res)) {
-      m_msgCb(narrow_string(message));
-    }
-
-    CoTaskMemFree(message);
-    return S_OK;
-  }
-  HRESULT STDMETHODCALLTYPE
-  Invoke(ICoreWebView2 * /*sender*/,
-         ICoreWebView2PermissionRequestedEventArgs *args) {
-    COREWEBVIEW2_PERMISSION_KIND kind;
-    args->get_PermissionKind(&kind);
-    if (kind == COREWEBVIEW2_PERMISSION_KIND_CLIPBOARD_READ) {
-      args->put_State(COREWEBVIEW2_PERMISSION_STATE_ALLOW);
-    }
-    return S_OK;
-  }
-
-  // Set the function that will perform the initiating logic for creating
-  // the WebView2 environment.
-  void set_attempt_handler(std::function<HRESULT()> attempt_handler) noexcept {
-    m_attempt_handler = attempt_handler;
-  }
-
-  // Retry creating a WebView2 environment.
-  // The initiating logic for creating the environment is defined by the
-  // caller of set_attempt_handler().
-  void try_create_environment() noexcept {
-    // WebView creation fails with HRESULT_FROM_WIN32(ERROR_INVALID_STATE) if
-    // a running instance using the same user data folder exists, and the
-    // Environment objects have different EnvironmentOptions.
-    // Source: https://docs.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2environment?view=webview2-1.0.1150.38
-    if (m_attempts < m_max_attempts) {
-      ++m_attempts;
-      auto res = m_attempt_handler();
-      if (SUCCEEDED(res)) {
-        return;
-      }
-      // Not entirely sure if this error code only applies to
-      // CreateCoreWebView2Controller so we check here as well.
-      if (res == HRESULT_FROM_WIN32(ERROR_INVALID_STATE)) {
-        return;
-      }
-      // Wait for m_sleep_ms before trying again.
-      Sleep(m_sleep_ms);
-      try_create_environment();
-      return;
-    }
-    // Give up.
-    m_cb(nullptr, nullptr);
-  }
-
-private:
-  HWND m_window;
-  msg_cb_t m_msgCb;
-  webview2_com_handler_cb_t m_cb;
-  std::atomic<ULONG> m_ref_count{1};
-  std::function<HRESULT()> m_attempt_handler;
-  unsigned int m_max_attempts = 60;
-  unsigned int m_sleep_ms = 200;
-  unsigned int m_attempts = 0;
-};
-
-class webview2_user_script_added_handler
-    : public ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler {
-public:
-  using callback_fn = std::function<void(HRESULT errorCode, LPCWSTR id)>;
-
-  webview2_user_script_added_handler(callback_fn cb) : m_cb{cb} {}
-
-  virtual ~webview2_user_script_added_handler() = default;
-  webview2_user_script_added_handler(
-      const webview2_user_script_added_handler &other) = delete;
-  webview2_user_script_added_handler &
-  operator=(const webview2_user_script_added_handler &other) = delete;
-  webview2_user_script_added_handler(
-      webview2_user_script_added_handler &&other) = delete;
-  webview2_user_script_added_handler &
-  operator=(webview2_user_script_added_handler &&other) = delete;
-
-  ULONG STDMETHODCALLTYPE AddRef() { return ++m_ref_count; }
-  ULONG STDMETHODCALLTYPE Release() {
-    if (m_ref_count > 1) {
-      return --m_ref_count;
-    }
-    delete this;
-    return 0;
-  }
-
-  HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, LPVOID *ppv) {
-    using namespace mswebview2::cast_info;
-
-    if (!ppv) {
-      return E_POINTER;
-    }
-
-    if (cast_if_equal_iid(this, riid,
-                          add_script_to_execute_on_document_created_completed(),
-                          ppv)) {
-      return S_OK;
-    }
-
-    return E_NOINTERFACE;
-  }
-
-  HRESULT STDMETHODCALLTYPE Invoke(HRESULT res, LPCWSTR id) {
-    m_cb(res, id);
-    return S_OK;
-  }
-
-private:
-  callback_fn m_cb;
-  std::atomic<ULONG> m_ref_count{1};
-};
-
-class user_script::impl {
-public:
-  impl(const std::wstring &id, const std::wstring &code)
-      : m_id{id}, m_code{code} {}
-
-  impl(const impl &) = delete;
-  impl &operator=(const impl &) = delete;
-  impl(impl &&) = delete;
-  impl &operator=(impl &&) = delete;
-
-  const std::wstring &get_id() const { return m_id; }
-  const std::wstring &get_code() const { return m_code; }
-
-private:
-  std::wstring m_id;
-  std::wstring m_code;
-};
-
-} // namespace user
-
 namespace backend {
 
 class win32_edge_engine : public detail::engine_base {
@@ -466,6 +235,12 @@ protected:
     webview2_user_script_added_handler handler{[&](HRESULT res, LPCWSTR id) {
       if (SUCCEEDED(res)) {
         script_id = id;
+        // We need a reload, else the user script will never execute unless the user explicitly calls
+        // `navigate` after `init`
+        reload_browser_window();
+      } else {
+        console.error("Failed to add user script.",
+                      static_cast<webview_error_t>(res));
       }
       done = true;
     }};
@@ -482,6 +257,9 @@ protected:
         set_default_size_guard(false);
         dispatch_size_default();
       }
+    } else {
+      console.error("Failed to add user script.",
+                    static_cast<webview_error_t>(res));
     }
     // TODO: There's a non-zero chance that we didn't get the script ID.
     //       We need to convey the error somehow.
@@ -803,7 +581,12 @@ private:
     }
     return {};
   }
-
+  void reload_browser_window() {
+    LPWSTR current_uri;
+    m_webview->get_Source(&current_uri);
+    current_uri == nullptr ? m_webview->NavigateToString(L"about:blank")
+                           : m_webview->Navigate(current_uri);
+  }
   void resize_widget() {
     if (m_widget) {
       RECT r{};

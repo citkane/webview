@@ -55,6 +55,7 @@
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 
 inline bool is_per_monitor_v2_awareness_available() {
@@ -154,6 +155,7 @@ inline SIZE make_window_frame_size(HWND window, int width, int height,
 }
 
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

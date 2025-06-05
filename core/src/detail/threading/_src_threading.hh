@@ -1,5 +1,5 @@
-#ifndef WEBVIEW_AMALGAMATED_SRC_THREADING_HH
-#define WEBVIEW_AMALGAMATED_SRC_THREADING_HH
+#ifndef WEBVIEW_SRC_THREADING_HH
+#define WEBVIEW_SRC_THREADING_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "atomic.cc"

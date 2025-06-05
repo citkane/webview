@@ -46,6 +46,7 @@
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 
 // Parses a version string with 1-4 integral components, e.g. "1.2.3.4".
@@ -143,6 +144,7 @@ inline int compare_os_version(unsigned int major, unsigned int minor,
 }
 
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

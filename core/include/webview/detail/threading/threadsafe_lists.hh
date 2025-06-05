@@ -38,12 +38,16 @@
 #include <vector>
 
 using namespace webview::types;
+using namespace webview::detail;
 using namespace webview::detail::user;
 namespace webview {
 namespace detail {
+// forward declaration
 class engine_base;
-namespace threading {
+} // namespace detail
 namespace _lib {
+namespace detail {
+namespace threading {
 
 /// Structure to hold information about a queued action.
 struct action_t {
@@ -169,24 +173,29 @@ private:
   std::deque<std::string> pending_bind_unbind;
   std::mutex mutable mtx;
 };
+} // namespace threading
+} // namespace detail
 } // namespace _lib
+namespace detail {
+namespace threading {
+using namespace _lib::detail::threading;
 
 class engine_lists_t {
 
   /// The root API for working with thread-safe list like containers.
   struct list_t {
     /// Thread safe wrappers for the `std::map` of bindings.
-    _lib::bindings_t bindings{};
+    bindings_t bindings{};
     /// Thread safe wrappers for the `std::list` of user scripts.
-    _lib::user_scripts_t m_user_scripts{};
+    user_scripts_t m_user_scripts{};
     /// Thread safe wrappers for the `std::deque` of user actions.
-    _lib::queue_t queue{};
+    queue_t queue{};
     /// Thread safe wrappers for the `std::unordered_map` of unresolved promises.
-    _lib::unres_promises_t unresolved_promises{};
+    unres_promises_t unresolved_promises{};
     /// Thread safe wrappers for the `std::unordered_map` of promise ids to bound names.
-    _lib::id_name_map_t id_name_map{};
+    id_name_map_t id_name_map{};
     /// Thread safe wrappers for the `std::deque` of pending bind / unbind names
-    _lib::pending_t pending{};
+    pending_t pending{};
   };
 
 protected:

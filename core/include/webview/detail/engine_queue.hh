@@ -27,12 +27,12 @@
 #define WEBVIEW_DETAIL_ENGINE_QUEUE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/_lib/engine_queue_api_lib.hh"
+#include "webview/detail/engine_queue_lib.hh"
 #include "webview/detail/threading/atomic.hh"
 #include "webview/detail/threading/threadsafe_lists.hh"
+#include <thread>
 
 using namespace webview::types;
-using namespace webview::detail::_lib;
 namespace webview {
 namespace detail {
 
@@ -53,7 +53,7 @@ public:
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 
   /// API root for the engine_queue class instance.
-  queue_api_t queue;
+  _lib::detail::queue_api_t queue;
 
   // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
@@ -66,7 +66,7 @@ private:
 
   /// @brief Constructs a thread to choreograph execution of `bind`, `unbind` or `eval` user work units.
   ///
-  /// We do not want user work to stall the main / app thread.
+  /// @details We do not want user work to stall the main / app thread.
   /// We need user work units to execute sequentially and atomically:
   /// - work must automatically queue until the DOM `__webview__` method is ready,
   /// - `unbind` must only execute after preceding `bind` work is completely registered,
@@ -77,9 +77,8 @@ private:
 
   /// @brief Constructs a child thread for each native work unit of a bound JS promise.
   ///
-  /// We want native promise work units to run concurrently.
+  /// @details We want native promise work units to run concurrently.
   /// We do not want native promise work to stall execution of the main / app thread.
-  /// @todo hardware concurrency limit queue.
   void resolve_thread_constructor(std::string name, cnst_str_r id,
                                   cnst_str_r args);
 
@@ -96,11 +95,11 @@ private:
   /// The Webview class instance;
   engine_base *wv;
 
-  friend struct _lib::bind_api_t;
-  friend struct _lib::unbind_api_t;
-  friend struct _lib::eval_api_t;
-  friend struct _lib::promise_api_t;
-  friend struct _lib::queue_api_t;
+  friend struct _lib::detail::bind_api_t;
+  friend struct _lib::detail::unbind_api_t;
+  friend struct _lib::detail::eval_api_t;
+  friend struct _lib::detail::promise_api_t;
+  friend struct _lib::detail::queue_api_t;
 };
 
 } // namespace detail

@@ -43,6 +43,7 @@
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 
 template <typename T> struct cast_info_t {
@@ -69,6 +70,7 @@ To *cast_if_equal_iid(From *from, REFIID riid, const cast_info_t<To> &info,
 }
 
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

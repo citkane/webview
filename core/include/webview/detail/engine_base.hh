@@ -58,13 +58,7 @@ public:
   /// Internal API implementation of public \ref webview_navigate
   noresult navigate(cnst_str_r url);
 
-  WEBVIEW_DEPRECATED(R"(
-Webview >= 0.13.0 is thread-safe and guarantees ordered execution of user instructions.
-Execution of native promise resolution is daemonised and concurrent thus synchronous bind
-is no longer required and may cause undefined behaviour for a multi-threaded runtime.
-
-Use `bind` with the @ref webview::detail::user::binding_t function signature instead.
-)")
+  WEBVIEW_DEPRECATED(DEPRECATE_WEBVIEW_BIND_SYNC)
   noresult bind(cnst_str_r name, sync_binding_t fn);
 
   /// Internal API implementation of public \ref webview_bind
@@ -173,7 +167,7 @@ protected:
   /// Gets a flag for whether the Webview window is embedded, or is owned by the user process.
   bool owns_window() const;
 
-  friend struct threading::_lib::user_scripts_t;
+  friend struct _lib::detail::threading::user_scripts_t;
 
 private:
   /// Keeps track of the number of platform window instances.

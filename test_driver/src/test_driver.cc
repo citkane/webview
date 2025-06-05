@@ -52,7 +52,7 @@ int driver::cmd_list() {
   return failure_exit_codes::success;
 }
 
-int driver::cmd_run_test(cnst_str_r test_name) {
+int driver::cmd_run_test(const std::string &test_name) {
   auto &tests{auto_test_reg::tests()};
   auto found{tests.find(test_name)};
   if (found == tests.end()) {

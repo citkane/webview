@@ -32,8 +32,8 @@
 #include <string>
 
 namespace webview {
-namespace strings {
 namespace _lib {
+namespace strings {
 
 /*
  * Do not change any value without explixitly updating the string templates.
@@ -74,11 +74,12 @@ struct sys_ops_t {
  * Do not change any value without explixitly updating the string templates.
  */
 
+} // namespace strings
 } // namespace _lib
-
-using namespace _lib;
-using namespace _lib::frontend;
-using namespace _lib::tests;
+namespace strings {
+using namespace _lib::strings;
+using namespace _lib::strings::frontend;
+using namespace _lib::strings::tests;
 
 tokens_t const tokens{};
 sys_flags_t const sys_flags{};

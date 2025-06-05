@@ -1,3 +1,4 @@
+
 #ifndef WEBVIEW_BIND_EXAMPLE_HTML
 #define WEBVIEW_BIND_EXAMPLE_HTML                                              \
   "<div>\n"                                                                    \
@@ -25,8 +26,8 @@
   "  });\n"                                                                    \
   "  ui.compute.addEventListener(\"click\", async () => {\n"                   \
   "    ui.compute.disabled = true;\n"                                          \
-  "    ui.computeResult.textContent = \"(pending)\";\n"                        \
-  "    ui.computeResult.textContent = await window.compute(6, 7);\n"           \
+  "    ui.computeResult.innerHTML = \"(pending)\";\n"                          \
+  "    ui.computeResult.innerHTML = await window.compute();\n"                 \
   "    ui.compute.disabled = false;\n"                                         \
   "  });\n"                                                                    \
   "</script>"
@@ -35,23 +36,23 @@
 #if defined(__cplusplus)
 #include <random>
 
-int random_number() {
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<> dist(0, 10000);
-  return dist(gen);
+std::string question_machine() {
+  return "<br><p><strong>42:</strong> is the answer.</p><p>Would you like to "
+         "know the question, Dave?</p>";
 }
 
 #else // !defined(__cplusplus)
-
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#ifdef _WIN32
+#include <synchapi.h>
+#include <windows.h>
 
-#ifndef _WIN32
+#else
 #include <unistd.h>
 #endif
 
@@ -83,7 +84,6 @@ int int_length(int n) {
 int to_int(void *str_) {
   const char *str = (const char *)str_;
   int val = atoi(str); // NOLINT(cert-err34-c)
-  printf("atoi: %d string: %s\n", val, str);
   return val;
 }
 
@@ -95,11 +95,9 @@ char *to_string(int value) {
 }
 
 struct timespec const ts;
-char *random_number(void) {
-  srand(ts.tv_nsec + ts.tv_sec);
-  int random_num = rand() % 10001; // NOLINT(cert-msc30-c, cert-msc50-cpp)
-  char *rnd_num = to_string(random_num);
-  return rnd_num;
+char *question_machine(void) {
+  return "<br><p><strong>42:</strong> is the answer.</p><p>Would you like to "
+         "know the question, Dave?</p>";
 }
 
-#endif
+#endif // !defined(__cplusplus)

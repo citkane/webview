@@ -28,27 +28,15 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
 
-#if defined(WEBVIEW_PLATFORM_WINDOWS)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#endif
-
-#if defined(WEBVIEW_PLATFORM_LINUX)
-#include <sys/syscall.h>
-#include <unistd.h>
-#endif
-
-#if defined(WEBVIEW_PLATFORM_DARWIN)
-#include <pthread.h>
-#endif
-
 namespace webview {
 namespace detail {
 namespace threading {
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
 
 class thread {
 public:
@@ -62,36 +50,43 @@ private:
   static DWORD main_thread_id;
 };
 DWORD thread::main_thread_id;
-
-namespace _lib {
-
-// We want to statically initialise the main thread id at program start before user main.
-static const thread thread_{};
-
-} // namespace _lib
-
-#endif
+#endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 
 #if defined(WEBVIEW_PLATFORM_LINUX)
+#include <sys/syscall.h>
+#include <unistd.h>
 
 class thread {
 public:
   static bool is_main_thread() { return syscall(SYS_gettid) == getpid(); };
 };
-
-#endif
+#endif // defined(WEBVIEW_PLATFORM_LINUX)
 
 #if defined(WEBVIEW_PLATFORM_DARWIN)
+#include <pthread.h>
 
 class thread {
 public:
   static bool is_main_thread() { return pthread_main_np() != 0; };
 };
-
-#endif
+#endif // defined(WEBVIEW_PLATFORM_DARWIN)
 
 } // namespace threading
 } // namespace detail
+
+#if defined(WEBVIEW_PLATFORM_WINDOWS)
+using namespace detail::threading;
+namespace _lib {
+namespace detail {
+namespace threading {
+// We want to statically initialise the main thread id at program start before user main.
+// There is no practical use for this instance, so we put it in the `_lib` namespace.
+static const thread thread_{};
+} // namespace threading
+} // namespace detail
+} // namespace _lib
+#endif
+
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

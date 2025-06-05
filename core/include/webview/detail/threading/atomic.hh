@@ -34,8 +34,14 @@ using namespace webview::types;
 namespace webview {
 namespace detail {
 namespace threading {
+// forward declaration
 class atomic_api_t;
+} // namespace threading
+} // namespace detail
+using namespace detail::threading;
 namespace _lib {
+namespace detail {
+namespace threading {
 
 /// Nested API to get and set if the window DOM is ready
 struct atomic_dom_ready_t : nested_api_t<atomic_api_t> {
@@ -67,16 +73,19 @@ struct atomic_done_t : nested_api_t<atomic_api_t> {
   /// Sets the eval flag state
   void eval(bool val);
 };
+} // namespace threading
+} // namespace detail
 } // namespace _lib
-
-using namespace _lib;
+namespace detail {
+namespace threading {
+using namespace _lib::detail::threading;
 
 /// Root API to work with atomic flags
 class atomic_api_t {
 
   /// The nested root API
   struct api_root_t : nested_api_t<atomic_api_t> {
-    api_root_t(atomic_api_t *self) : nested_api_t(self){};
+    api_root_t(atomic_api_t *self) : nested_api_t(self) {};
 
     /// Get and set if the Webview JS and window DOM is ready
     atomic_dom_ready_t dom{self};
@@ -119,8 +128,8 @@ protected:
   cv_api_t cv{};
   api_root_t atomic{this};
 
-  friend struct _lib::atomic_done_t;
-  friend struct _lib::atomic_dom_ready_t;
+  friend struct _lib::detail::threading::atomic_done_t;
+  friend struct _lib::detail::threading::atomic_dom_ready_t;
 };
 
 } // namespace threading

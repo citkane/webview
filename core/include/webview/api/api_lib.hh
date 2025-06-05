@@ -23,49 +23,41 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_WINDOWS_DWMAPI_HH
-#define WEBVIEW_PLATFORM_WINDOWS_DWMAPI_HH
+#ifndef WEBVIEW_API_LIB_HH
+#define WEBVIEW_API_LIB_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/lib/macros.h"
+#include "webview/cc_api.hh"
+#include "webview/errors/errors.h"
+#include "webview/lib/version.h"
+#include "webview/types/types.h"
 
-#if defined(WEBVIEW_PLATFORM_WINDOWS)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#include "webview/detail/platform/windows/native_library.hh"
-#include <windows.h>
-
+using namespace webview::api;
 namespace webview {
-namespace detail {
-namespace platform {
 namespace _lib {
-namespace windows {
-namespace dwmapi_symbols {
+namespace api {
 
-typedef enum {
-  // This undocumented value is used instead of DWMWA_USE_IMMERSIVE_DARK_MODE
-  // on Windows 10 older than build 19041 (2004/20H1).
-  DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_V10_0_19041 = 19,
-  // Documented as being supported since Windows 11 build 22000 (21H2) but it
-  // works since Windows 10 build 19041 (2004/20H1).
-  DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-} DWMWINDOWATTRIBUTE;
+// The library's version information.
+constexpr const webview_version_info_t library_version_info{
+    {WEBVIEW_VERSION_MAJOR, WEBVIEW_VERSION_MINOR, WEBVIEW_VERSION_PATCH},
+    WEBVIEW_VERSION_NUMBER,
+    WEBVIEW_VERSION_PRE_RELEASE,
+    WEBVIEW_VERSION_BUILD_METADATA};
 
-using DwmSetWindowAttribute_t = HRESULT(WINAPI *)(HWND, DWORD, LPCVOID, DWORD);
+template <typename WorkFn, typename ResultFn>
+webview_error_t api_filter(WorkFn &&do_work, ResultFn &&put_result) noexcept;
 
-constexpr library_symbol<DwmSetWindowAttribute_t> DwmSetWindowAttribute() {
-  return library_symbol<DwmSetWindowAttribute_t>("DwmSetWindowAttribute");
-}
+template <typename WorkFn>
+webview_error_t api_filter(WorkFn &&do_work) noexcept;
 
-} // namespace dwmapi_symbols
-} // namespace windows
+inline webview_cc_t *cast_to_webview(void *w);
+
+webview_error_t alloc_string_buffer(char **buffer, types::cnst_str_r str,
+                                    types::cnst_str_r err_mess);
+
+} // namespace api
 } // namespace _lib
-} // namespace platform
-} // namespace detail
 } // namespace webview
 
-#endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_WINDOWS_DWMAPI_HH
+#endif // WEBVIEW_API_LIB_HH

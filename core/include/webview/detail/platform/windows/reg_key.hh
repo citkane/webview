@@ -44,6 +44,7 @@
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 
 class reg_key {
@@ -128,6 +129,7 @@ private:
 };
 
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

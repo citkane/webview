@@ -34,7 +34,7 @@
 #include <cstdio>
 
 using namespace webview::detail;
-using namespace webview::detail::_lib;
+using namespace webview::_lib::detail;
 using namespace webview::strings;
 using namespace webview::log;
 using namespace webview::types;
@@ -83,10 +83,16 @@ void promise_api_t::resolve(cnst_str_r name, cnst_str_r id, cnst_str_r args) {
   self->list.id_name_map.set(id, name);
   self->list.unresolved_promises.add_id(name, id);
   self->cv.unbind_timeout.notify_one();
-  // Send the user defined native callback work to a detached thread.
-  // @todo Thread pooling and resource management.
+  // We send the user defined native callback work to a detached thread.
+  // @todo High frequency user operations may consume all the process threads, thus degrading overall performance.
+  // Consider:
+  // - Thread management and pooling
+  // - Upgrade Webview to C++20 to allow thread termination on promise rejection or termination (`std::stop_source`, `std::jthread`)
+  // - Explore offloading native user work to Wasm in the browser.
   std::thread resolver = std::thread(&engine_queue::resolve_thread_constructor,
                                      self, name, id, args);
+  // We daemonise (detach) the thread because C++11 has no mechanism to terminate threaded code execution,
+  // thus we cannot join the thread at termination or promise rejection.
   resolver.detach();
 }
 bool promise_api_t::exec_system_message(cnst_str_r id, cnst_str_r method) {
@@ -175,7 +181,7 @@ noresult engine_queue::queue_work(cnst_str_r name_or_js, dispatch_fn_t fn,
   return {};
 };
 
-  /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
+/* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
    * PRIVATE */
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

@@ -38,7 +38,7 @@ class engine_base;
 
 } // namespace detail
 
-using namespace webview::detail;
+using namespace detail;
 namespace test {
 
 /// Test utilities class

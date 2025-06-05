@@ -28,7 +28,6 @@
 
 #include "webview/errors/errors.h"
 #include "webview/lib/macros.h"
-#include "webview/strings/json.hh"
 #include "webview/types/types.h"
 #ifndef __cplusplus
 #include <stdbool.h>
@@ -70,7 +69,7 @@ WEBVIEW_API webview_error_t webview_destroy(webview_t w);
  *
  * @param w The webview instance.
  */
-WEBVIEW_API webview_error_t webview_run(webview_t w);
+WEBVIEW_API int webview_run(webview_t w);
 
 /**
  * Stops the main loop. It is safe to call this function from another other
@@ -169,7 +168,7 @@ WEBVIEW_API webview_error_t webview_set_html(webview_t w, const char *html);
  * @param w The webview instance.
  * @param js JS content.
  */
-WEBVIEW_API webview_error_t webview_init(webview_t w, const char *js);
+WEBVIEW_API int webview_init(webview_t w, const char *js);
 
 /**
  * Evaluates arbitrary JavaScript code.
@@ -213,7 +212,6 @@ WEBVIEW_API webview_error_t webview_unbind(webview_t w, const char *name);
 /**
  * Responds to a binding call from the JS side.
  *
- * This function is safe to call from another thread.
  *
  * @param w The webview instance.
  * @param id The identifier of the binding call. Pass along the value received
@@ -234,8 +232,32 @@ WEBVIEW_API webview_error_t webview_return(webview_t w, const char *id,
  */
 WEBVIEW_API const webview_version_info_t *webview_version(void);
 
+/**
+ * Get a value from a JSON string by object key or array index
+ *
+ * @param buffer A `char*` buffer that the returned value will be placed into.
+ * It is the user's responsiblity to free this memory when done.
+ * @param json_str The JSON string to be parsed.
+ * @param key For JSON arrays, pass "", else the name of the object key for
+ * which the value is to be returned.
+ * @param index For JSON arrays, pass the index for which the value is to be returned, else 0.
+ *
+ * @since 0.13.0
+ **/
 WEBVIEW_API webview_error_t json_parse(char **buffer, const char *json_str,
                                        const char *key, int index);
+
+/**
+ * Escape characters in a string to provide a parsible C JSON string
+ *
+ * @param buffer A char* buffer that the returned value will be placed into.
+ * It is the user's responsiblity to free this memory when done.
+ * @param str The string to be escaped
+ * @param add_quotes bool indicating if the string should be double wrapped 
+ * in quotes, ie. "\"I am a string, not a number or an object\""
+ *
+ * @since 0.13.0
+ **/
 WEBVIEW_API webview_error_t json_escape(char **buffer, const char *str,
                                         bool add_quotes);
 

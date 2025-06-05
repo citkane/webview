@@ -28,18 +28,16 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/log/ansi_log.hh"
-#include <chrono>
-#include <mutex>
 #include <string>
 
 namespace webview {
-namespace log {
 namespace _lib {
+namespace log {
 
 /* Common API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 /// String manipulation methods and ANSI colour references
-struct trace_tools_t : public _lib::ansi_t {
+struct trace_tools_t : public ansi_t {
 protected:
   static time_point_t get_now();
   static std::string get_ctx(char scp);
@@ -303,11 +301,13 @@ public:
       : print_here_t(prefix, postfix) {}
 };
 
+} // namespace log
 } // namespace _lib
 
-/* Root API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
+namespace log {
+using namespace _lib::log;
 
-using namespace _lib;
+/* Root API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 class trace {
 public:

@@ -33,6 +33,7 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <cstdio>
+#include <cstdlib>
 #include <windows.h>
 
 namespace webview {
@@ -42,7 +43,18 @@ namespace log {
 /// When a Windows app is started in GUI mode (Winmain instead of main),
 /// the console output needs to be explicitly sent to `stdout` and `sterr`,
 class win_console {
+
   static FILE *fp;
+  static bool is_env_var_set(const char *varname) {
+#ifdef _MSC_VER
+    size_t requiredSize = 0;
+    errno_t err = getenv_s(&requiredSize, nullptr, 0, varname);
+    return (err == 0 && requiredSize > 0);
+#else
+    // For non-MSVC, use standard getenv
+    return std::getenv(varname) != nullptr;
+#endif
+  }
 
 public:
   ~win_console() { static_cast<void>(fclose(fp)); }
@@ -55,10 +67,11 @@ public:
     if (GetConsoleCP() != 0) {
       return;
     }
-    if (std::getenv("TEST") != nullptr) {
+    if (is_env_var_set("TEST")) {
       return;
     }
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
+      SetConsoleOutputCP(65001);
       static_cast<void>(freopen_s(&fp, "CONOUT$", "w", stdout));
       static_cast<void>(freopen_s(&fp, "CONOUT$", "w", stderr));
     }

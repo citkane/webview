@@ -32,8 +32,8 @@
 
 using namespace webview::types;
 namespace webview {
-namespace strings {
 namespace _lib {
+namespace strings {
 namespace frontend {
 
 /* Frontend
@@ -128,8 +128,8 @@ struct test_html_t {
  * Tests */
 
 } // namespace tests
-} // namespace _lib
 } // namespace strings
+} // namespace _lib
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

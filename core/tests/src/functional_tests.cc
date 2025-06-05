@@ -35,7 +35,6 @@ TEST_CASE("# Warm-up") {
 #endif
 
 TEST_CASE("Detect main or child thread") {
-  using namespace webview::detail::threading;
   REQUIRE(thread::is_main_thread() == true);
   std::thread worker([] { REQUIRE(thread::is_main_thread() == false); });
   worker.join();

@@ -34,7 +34,7 @@
 
 using namespace webview::strings;
 using namespace webview::detail::threading;
-using namespace webview::detail::threading::_lib;
+using namespace webview::_lib::detail::threading;
 
 /* Nested API _lib for thread-safe functions
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
@@ -88,9 +88,9 @@ binding_ctx_t bindings_t::at(cnst_str_r name) const {
 user_script *user_scripts_t::add(cnst_str_r js, engine_base *base) {
   std::lock_guard<std::mutex> lock(mtx);
 
-  auto wrapped_js = string::js.user_init_wrapper(js);
+  //auto wrapped_js = string::js.user_init_wrapper(js);
   return std::addressof(*m_user_scripts.emplace(
-      m_user_scripts.end(), base->add_user_script_impl(wrapped_js)));
+      m_user_scripts.end(), base->add_user_script_impl(js)));
 }
 user_script *user_scripts_t::replace(const user_script &old_script,
                                      cnst_str_r new_script_code,

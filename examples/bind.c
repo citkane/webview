@@ -11,11 +11,12 @@ IGNORE_UNUSED_PARAMETERS
 void compute(const char *id, const char *req, void *arg) {
 
   example_ctx_t *ctx = (example_ctx_t *)arg;
-  sleep(3);
-  char *random_nbr_string = random_number();
+  thread_sleep(3);
+  char *answer_string = NULL;
+  json_escape(&answer_string, question_machine(), true);
 
-  webview_return(ctx->w, id, 0, random_nbr_string);
-  free(random_nbr_string);
+  webview_return(ctx->w, id, 0, answer_string);
+  free(answer_string);
 }
 RESTORE_IGNORED_WARNINGS
 

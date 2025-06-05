@@ -27,13 +27,15 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/strings/string_maker.hh"
+#include "webview/log/trace_log.hh"
 #include "webview/strings/json.hh"
 #include "webview/strings/string_api.hh"
 #include "webview/strings/string_templates.hh"
 
+using namespace webview::log;
 using namespace webview::strings;
 using namespace webview::strings::templates;
-using namespace webview::strings::_lib::frontend;
+using namespace webview::_lib::strings::frontend;
 
 /* Frontend
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */

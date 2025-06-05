@@ -57,7 +57,7 @@ int main(int argc, const char *argv[]) {
 #endif
   try {
     if (args.size() > 1) {
-      cnst_str_r arg{args.at(1)};
+      const std::string &arg{args.at(1)};
       if (arg == "--help") {
         return cmd_help();
       }

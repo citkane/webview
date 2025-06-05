@@ -43,7 +43,7 @@ Deprecated since 0.13.0.
 This type naming is ambigious for both humans and machines alike, and will be removed in future releases.
 Use @ref webview::api::webview_cc_t instead.
 )")
-typedef webview::detail::backend::browser_engine webview;
+typedef detail::backend::browser_engine webview;
 
 } // namespace webview
 

@@ -47,7 +47,12 @@ using namespace webview::detail::threading;
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
 engine_base::engine_base(bool owns_window)
-    : engine_queue{this}, m_owns_window{owns_window} {}
+    : engine_queue{this}, m_owns_window{owns_window} {
+  if (!thread::is_main_thread()) {
+    throw exception{WEBVIEW_ERROR_INVALID_STATE,
+                    "Webview must be created from the main thread."};
+  };
+}
 
 /* API Methods
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
@@ -105,7 +110,6 @@ noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg) {
 }
 noresult engine_base::unbind(cnst_str_r name) {
   trace::base.unbind.start(name);
-
   if (queue.unbind.not_found(name)) {
     return error_info{WEBVIEW_ERROR_NOT_FOUND};
   }
@@ -186,7 +190,7 @@ result<void *> engine_base::browser_controller() {
 noresult engine_base::run() {
   if (!thread::is_main_thread()) {
     throw exception{WEBVIEW_ERROR_INVALID_STATE,
-                    R"(Webview must be run from the main thread.)"};
+                    "Webview must be run from the main thread."};
   }
 
   return run_impl();
@@ -237,14 +241,9 @@ noresult engine_base::set_html(cnst_str_r html) {
 noresult engine_base::init(cnst_str_r js) {
   if (!thread::is_main_thread()) {
     throw exception{WEBVIEW_ERROR_INVALID_STATE,
-                    R"(Webview init must be called from the main thread.)"};
+                    "Webview init must be called from the main thread."};
   }
-  auto do_work = [this, js] { list.m_user_scripts.add(js, this); };
-  if (thread::is_main_thread()) {
-    do_work();
-  } else {
-    dispatch_(do_work);
-  }
+  list.m_user_scripts.add(js, this);
   return {};
 }
 

@@ -41,6 +41,7 @@
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 
 inline bool is_dark_theme_enabled() {
@@ -73,6 +74,7 @@ inline void apply_window_theme(HWND window) {
 }
 
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

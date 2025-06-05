@@ -205,6 +205,7 @@ try {
   window.__webview__.sysop('_frontend_eval_ready');
 }
 )";
+
   return str;
 }
 
@@ -294,9 +295,10 @@ namespace js {
 
 static const std::string &TEST_BIND_UNBIND_INIT_JS() {
   static std::string str = R"(
-window.test(0)
-  .then(m => console.log(m))
-  .catch(err => console.error(err));
+  console.log('loaded');
+  window.test(0)
+    .then(m => console.log(m))
+    .catch(err => console.error(err));
 )";
   return str;
 }

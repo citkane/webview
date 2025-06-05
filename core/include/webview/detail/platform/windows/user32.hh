@@ -40,6 +40,7 @@
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 namespace user32_symbols {
 
@@ -95,6 +96,7 @@ AreDpiAwarenessContextsEqual() {
 
 } // namespace user32_symbols
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

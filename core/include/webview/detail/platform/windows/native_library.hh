@@ -42,6 +42,7 @@ using namespace webview::types;
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 
 // Holds a symbol name and associated type for code clarity.
@@ -132,6 +133,7 @@ private:
 };
 
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

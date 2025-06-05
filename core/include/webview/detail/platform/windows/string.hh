@@ -35,6 +35,8 @@
 #endif
 
 #include "webview/types/types.hh"
+#include <codecvt>
+#include <locale>
 #include <string>
 #include <windows.h>
 
@@ -42,61 +44,23 @@ using namespace webview::types;
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 
 // Converts a narrow (UTF-8-encoded) string into a wide (UTF-16-encoded) string.
 inline std::wstring widen_string(cnst_str_r input) {
-  if (input.empty()) {
-    return {};
-  }
-  UINT cp = CP_UTF8;
-  DWORD flags = MB_ERR_INVALID_CHARS;
-  auto input_c = input.c_str();
-  auto input_length = static_cast<int>(input.size());
-  auto required_length =
-      MultiByteToWideChar(cp, flags, input_c, input_length, nullptr, 0);
-  if (required_length > 0) {
-    std::wstring output(static_cast<std::size_t>(required_length), L'\0');
-    // NOLINTNEXTLINE(readability-container-data-pointer)
-    if (MultiByteToWideChar(cp, flags, input_c, input_length, &output[0],
-                            required_length) > 0) {
-      return output;
-    }
-  }
-  // Failed to convert string from UTF-8 to UTF-16
-  return {};
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+  return converter.from_bytes(input);
 }
 
 // Converts a wide (UTF-16-encoded) string into a narrow (UTF-8-encoded) string.
 inline std::string narrow_string(const std::wstring &input) {
-  struct wc_flags {
-    enum TYPE : unsigned int {
-      // WC_ERR_INVALID_CHARS
-      err_invalid_chars = 0x00000080U
-    };
-  };
-  if (input.empty()) {
-    return {};
-  }
-  UINT cp = CP_UTF8;
-  DWORD flags = wc_flags::err_invalid_chars;
-  auto input_c = input.c_str();
-  auto input_length = static_cast<int>(input.size());
-  auto required_length = WideCharToMultiByte(cp, flags, input_c, input_length,
-                                             nullptr, 0, nullptr, nullptr);
-  if (required_length > 0) {
-    std::string output(static_cast<std::size_t>(required_length), '\0');
-    // NOLINTNEXTLINE(readability-container-data-pointer)
-    if (WideCharToMultiByte(cp, flags, input_c, input_length, &output[0],
-                            required_length, nullptr, nullptr) > 0) {
-      return output;
-    }
-  }
-  // Failed to convert string from UTF-16 to UTF-8
-  return {};
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+  return converter.to_bytes(input);
 }
 
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

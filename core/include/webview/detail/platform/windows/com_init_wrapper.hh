@@ -55,6 +55,7 @@ using namespace webview::errors;
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 
 /**
@@ -116,6 +117,7 @@ private:
 };
 
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

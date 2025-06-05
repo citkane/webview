@@ -40,6 +40,7 @@
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 namespace shcore_symbols {
 
@@ -52,6 +53,7 @@ constexpr library_symbol<SetProcessDpiAwareness_t> SetProcessDpiAwareness() {
 
 } // namespace shcore_symbols
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview

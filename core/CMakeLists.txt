@@ -1,11 +1,16 @@
 # Core header library
+
 add_library(webview_core_headers INTERFACE)
 add_library(webview::core ALIAS webview_core_headers)
-target_include_directories(
-    webview_core_headers
-    INTERFACE
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+target_include_directories(webview_core_headers INTERFACE
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
+if(MSWebView2_INCLUDE_DIR)
+    target_include_directories(webview_core_headers INTERFACE
+        "$<BUILD_INTERFACE:${MSWebView2_INCLUDE_DIR}>"
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
+endif()
+
 target_link_libraries(webview_core_headers INTERFACE ${WEBVIEW_DEPENDENCIES})
 # Note that we also use CMAKE_CXX_STANDARD which can override this
 target_compile_features(webview_core_headers INTERFACE cxx_std_11)
@@ -85,6 +90,11 @@ if(WEBVIEW_BUILD_STATIC_LIBRARY)
 endif()
 
 if(WEBVIEW_BUILD_TESTS)
+    target_include_directories(
+        webview_core_headers
+        INTERFACE
+            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../test_driver/include>"
+            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
     add_subdirectory(tests)
 endif()
 

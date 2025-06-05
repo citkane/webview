@@ -29,14 +29,14 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/types/types.hh"
 #include <cassert>
-#include <cstring>
+#include <string.h>
 #include <string>
 #include <vector>
 
 using namespace webview::types;
 namespace webview {
-namespace strings {
 namespace _lib {
+namespace strings {
 
 class json_t {
 public:
@@ -350,9 +350,12 @@ private:
   bool is_ascii_control_char(char c) const { return c >= 0 && c <= 0x1f; }
 };
 
+} // namespace strings
 } // namespace _lib
+namespace strings {
+using namespace _lib::strings;
 
-const _lib::json_t json{};
+const json_t json{};
 
 } // namespace strings
 } // namespace webview

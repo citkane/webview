@@ -49,6 +49,7 @@
 namespace webview {
 namespace detail {
 namespace platform {
+namespace _lib {
 namespace windows {
 
 // Enable built-in WebView2Loader implementation by default.
@@ -384,9 +385,9 @@ add_script_to_execute_on_document_created_completed() {
 }
 
 } // namespace cast_info
-
 } // namespace mswebview2
 } // namespace windows
+} // namespace _lib
 } // namespace platform
 } // namespace detail
 } // namespace webview
