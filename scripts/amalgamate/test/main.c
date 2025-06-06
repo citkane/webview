@@ -1,14 +1,9 @@
-#include "webview_amalgamation.h"
+#include "../../amalgamate/generated/webview_amalgamation.h"
 #include <stddef.h>
-
-static void terminate_webview(webview_t w, void * /*arg*/) {
-  webview_terminate(w);
-}
 
 int main(void) {
   webview_t w = webview_create(0, NULL);
-  webview_dispatch(w, terminate_webview, NULL);
+  webview_terminate(w);
   webview_run(w);
-  webview_destroy(w);
   return 0;
 }
