@@ -30,6 +30,8 @@
 #include "webview/lib/macros.h"
 #include <string>
 
+extern "C" {
+
 namespace webview {
 namespace strings {
 namespace templates {
@@ -374,6 +376,7 @@ RESTORE_IGNORED_WARNINGS
 } // namespace templates
 } // namespace strings
 } // namespace webview
+} // extern "C"
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #endif // WEBVIEW_STRINGS_STRING_TEMPLATES_HH
