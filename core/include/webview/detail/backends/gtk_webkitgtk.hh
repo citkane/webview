@@ -196,6 +196,7 @@ protected:
         js, user_script::impl_ptr{new user_script::impl{wk_script},
                                   [](user_script::impl *p) { delete p; }}};
     webkit_user_script_unref(wk_script);
+    reload_browser_window();
     return script;
   }
 
@@ -299,6 +300,11 @@ function(message) {\n\
     while (fn()) {
       g_main_context_iteration(nullptr, TRUE);
     }
+  }
+
+  void reload_browser_window() {
+    auto uri = webkit_web_view_get_uri(WEBKIT_WEB_VIEW(m_webview));
+    uri ? navigate_impl(uri) : navigate_impl("about:blank");
   }
 
   GtkWidget *m_window{};

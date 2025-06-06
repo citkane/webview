@@ -581,12 +581,7 @@ private:
     }
     return {};
   }
-  void reload_browser_window() {
-    LPWSTR current_uri;
-    m_webview->get_Source(&current_uri);
-    current_uri == nullptr ? m_webview->NavigateToString(L"about:blank")
-                           : m_webview->Navigate(current_uri);
-  }
+
   void resize_widget() {
     if (m_widget) {
       RECT r{};
@@ -610,6 +605,13 @@ private:
     if (m_controller) {
       m_controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC);
     }
+  }
+
+  void reload_browser_window() {
+    LPWSTR current_uri;
+    m_webview->get_Source(&current_uri);
+    current_uri == nullptr ? m_webview->NavigateToString(L"about:blank")
+                           : m_webview->Navigate(current_uri);
   }
 
   bool is_webview2_available() const noexcept {
