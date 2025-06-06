@@ -139,44 +139,47 @@
 
 #ifndef DEPRECATE_WEBVIEW_DESTROY
 #define DEPRECATE_WEBVIEW_DESTROY                                              \
-  "\nRedundant, ambiguous and dangerous. Can result in Segfault at "           \
-  "shutdown.\n"
+  "\n\
+Redundant, ambiguous and dangerous. Can result in Segfault at shutdown."
 #endif
 #ifndef DEPRECATE_WEBVIEW_DISPATCH
 #define DEPRECATE_WEBVIEW_DISPATCH                                             \
-  "\n@since >= 0.13.0\n"                                                       \
-  "Webview is thread-safe and guarantees ordered execution of user "           \
-  "instructions.\n"                                                            \
-  "Execution of native promise resolution is daemonised and concurrent.\n"     \
-  "Use of `webview_dispatch` must thus be avoided in favour of a child "       \
-  "thread pattern, eg.\n"                                                      \
-  "```\n"                                                                      \
-  "auto w = webview_create(false, nullptr);\n"                                 \
-  "std::thread child([&]{\n"                                                   \
-  "  webview_set_title(w, \"title\");\n"                                       \
-  "  ... etc ...\n"                                                            \
-  "  webview_terminate(w);\n"                                                  \
-  "});\n"                                                                      \
-  "webview_run(w);\n"                                                          \
-  "child.join();\n"                                                            \
-  "```\n\n"                                                                    \
-  "Use of `webview_dispatch` (C) or `wv.dispatch` (C++) is likely to cause "   \
-  "undefined behaviour."
+  "\n\
+@since >= 0.13.0\n\
+Webview is thread-safe and guarantees ordered execution of user instructions.\n\
+Execution of native promise resolution is daemonised and concurrent.\n\
+Use of `webview_dispatch` must thus be avoided in favour of a child thread pattern, eg.\n\
+```\n\
+auto w = webview_create(false, nullptr);\n\
+std::thread child([&]{\n\
+  webview_set_title(w, \"title\");\n\
+  ... etc ...\n\
+  webview_terminate(w);\n\
+});\n\
+webview_run(w);\n\
+child.join();\n\
+```\n\
+\n\
+Use of `webview_dispatch` (C) or `wv.dispatch` (C++) is likely to cause undefined behaviour."
 #endif
 #ifndef DEPRECATE_WEBVIEW_BIND_SYNC
 #define DEPRECATE_WEBVIEW_BIND_SYNC                                            \
-  "\n@since >= 0.13.0\n"                                                       \
-  "Webview is thread-safe and guarantees ordered execution of user "           \
-  "instructions.\n"                                                            \
-  "Execution of native promise resolution is daemonised and concurrent, "      \
-  "thus synchronous bind is no longer required.\n\n"                           \
-  "Calling `bind` from the main thread before Webview is running will "        \
-  "automaticly execute synchronously, thus fulfilling any calls to bindings "  \
-  "defined in `init` and `set_html`.\n\n"                                      \
-  "Always use `bind` with the @ref webview::detail::user::binding_t function " \
-  "signature. The synchronous function signature overload is deprecated and "  \
-  "may cause undefined behaviour.\n"
+  "\n\
+@since >= 0.13.0\n\
+Webview is thread-safe and guarantees ordered execution of user instructions.\n\
+Execution of native promise resolution is daemonised and concurrent, thus synchronous bind is no longer required.\n\
+\n\
+Calling `bind` from the main thread before Webview is running will automaticly execute synchronously, thus fulfilling any calls to bindings defined in `init` and `set_html`.\n\
+\n\
+Always use `bind` with the @ref webview::detail::user::binding_t function signature. The synchronous function signature overload is deprecated and may cause undefined behaviour."
+#endif
 
+#ifndef DEPRECATE_WEBVIEW_WEBVIEW
+#define DEPRECATE_WEBVIEW_WEBVIEW                                              \
+  "\n\
+Deprecated since 0.13.0\n\
+This type naming is ambigious for both humans and machines alike, and will be removed in future releases.\n\
+Use @ref webview::api::webview_cc_t instead."
 #endif
 
 #ifdef _MSC_VER

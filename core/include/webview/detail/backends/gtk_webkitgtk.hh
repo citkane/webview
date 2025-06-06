@@ -263,9 +263,10 @@ private:
         [this](WebKitUserContentManager *, cnst_str_r r) { on_message(r); });
     webkitgtk_compat::user_content_manager_register_script_message_handler(
         manager, "__webview__");
-    add_init_script(R"(function(message) {
-                return window.webkit.messageHandlers.__webview__.postMessage(message);
-            })");
+    add_init_script("\
+function(message) {\n\
+  return window.webkit.messageHandlers.__webview__.postMessage(message);\n\
+}");
   }
 
   void window_settings(bool debug) {

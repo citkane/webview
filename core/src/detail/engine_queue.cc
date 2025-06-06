@@ -129,9 +129,9 @@ void queue_api_t::terminate() {
   self->is_terminating.store(true);
   self->cv.notify_all();
   if (!self->queue_thread.joinable()) {
-    throw exception{WEBVIEW_ERROR_UNSPECIFIED,
-                    R"(Could not join the queue thread.
-This is an issue with Webview. Please report it at https://github.com/webview/webview/issues)"};
+    throw exception{WEBVIEW_ERROR_UNSPECIFIED, "\
+Could not join the queue thread.\n\
+This is an issue with Webview. Please report it at https://github.com/webview/webview/issues"};
   }
 };
 

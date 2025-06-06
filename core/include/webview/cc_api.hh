@@ -38,11 +38,7 @@ namespace api {
 using webview_cc_t = detail::backend::browser_engine;
 } // namespace api
 
-WEBVIEW_DEPRECATED(R"(
-Deprecated since 0.13.0.
-This type naming is ambigious for both humans and machines alike, and will be removed in future releases.
-Use @ref webview::api::webview_cc_t instead.
-)")
+WEBVIEW_DEPRECATED(DEPRECATE_WEBVIEW_WEBVIEW)
 typedef detail::backend::browser_engine webview;
 
 } // namespace webview
