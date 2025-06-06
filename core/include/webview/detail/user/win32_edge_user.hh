@@ -35,7 +35,6 @@
 #include "webview/detail/user/user_script.hh"
 #include <atomic>
 
-
 using namespace webview::detail::platform::_lib::windows;
 namespace webview {
 namespace detail {

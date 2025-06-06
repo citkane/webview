@@ -85,7 +85,7 @@ class atomic_api_t {
 
   /// The nested root API
   struct api_root_t : nested_api_t<atomic_api_t> {
-    api_root_t(atomic_api_t *self) : nested_api_t(self) {};
+    api_root_t(atomic_api_t *self) : nested_api_t(self){};
 
     /// Get and set if the Webview JS and window DOM is ready
     atomic_dom_ready_t dom{self};
