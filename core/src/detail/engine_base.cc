@@ -175,8 +175,11 @@ noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
                  id + " with result: " + res_m;
   status == 0 ? console.info(message) : console.warn(message);
 
-  auto res = result.empty() ? "undefined" : json.escape(result);
-  auto js = string::js.onreply(id, status, res);
+  auto res_escaped = result.empty() ? "undefined" : json.escape(result);
+
+  trace::base.eval.print_here(res_escaped);
+
+  auto js = string::js.onreply(id, status, res_escaped);
   return eval(js, true);
 }
 noresult engine_base::reject(cnst_str_r id, cnst_str_r err) {

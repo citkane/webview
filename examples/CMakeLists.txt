@@ -1,5 +1,3 @@
-find_package(Threads REQUIRED)
-
 set(COPYRIGHT "Copyright [year], Your Name")
 set(VENDOR "Your Name")
 set(DESCRIPTION "Example app made with webview")

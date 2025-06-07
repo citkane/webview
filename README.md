@@ -233,9 +233,7 @@ target_link_libraries(example PRIVATE webview::core_static)
 
 #ifdef _WIN32
 #include <windows.h>
-#endif
 
-#ifdef _WIN32
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine,
                    int nCmdShow) {
   (void)hInst;
@@ -260,8 +258,8 @@ int main(void) {
 Library functions guarantee thread safety except for following, which MUST happen on the main thread:
 - `webview_t w = webview_create(...)` (C API instance ref),
 - `webview_cc_t wv{...}` (C++ API instance),
-- calling `webview_run(w)` or `wv.run()` from a child thread, 
-- calling `webview_init(w, js)` or `wv.init(js)` from a child thread.
+- calling `webview_run(w)` or `wv.run()`, 
+- calling `webview_init(w, js)` or `wv.init(js)`.
 
 Any of these executed on a child thread will throw an exception.
 

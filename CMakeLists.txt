@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(WEBVIEW_UNBIND_TIMEOUT_DEFAULT 40)
-
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/internal.cmake")
 webview_extract_version()
 
