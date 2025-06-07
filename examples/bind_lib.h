@@ -1,3 +1,5 @@
+#ifndef WEBVIEW_EXAMPLES_BIND_LIB
+#define WEBVIEW_EXAMPLES_BIND_LIB
 
 #ifndef WEBVIEW_BIND_EXAMPLE_HTML
 #define WEBVIEW_BIND_EXAMPLE_HTML                                              \
@@ -35,6 +37,7 @@
 
 #if defined(__cplusplus)
 #include <random>
+#include <string>
 
 std::string question_machine() {
   return "<br><p><strong>42:</strong> is the answer.</p><p>Would you like to "
@@ -42,19 +45,19 @@ std::string question_machine() {
 }
 
 #else // !defined(__cplusplus)
+#ifdef _WIN32
+#include <windows.h>
+
+#include <synchapi.h>
+#else
+#include <unistd.h>
+#endif
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#ifdef _WIN32
-#include <synchapi.h>
-#include <windows.h>
-
-#else
-#include <unistd.h>
-#endif
 
 // Make the current thread sleep for the given number of seconds.
 void thread_sleep(int seconds) {
@@ -101,3 +104,4 @@ char *question_machine(void) {
 }
 
 #endif // !defined(__cplusplus)
+#endif // WEBVIEW_EXAMPLES_BIND_LIB
