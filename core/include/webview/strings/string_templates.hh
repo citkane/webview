@@ -85,8 +85,10 @@
         try {\n\
           result = JSON.parse(result);\n\
         } catch (e) {\n\
-          promise.reject(new Error('Failed to parse binding result as JSON'));\n\
-          return;\n\
+          if(typeof result !== 'string'){\n\
+            promise.reject(new Error('Failed to parse binding result as JSON'));\n\
+            return;\n\
+          }\n\
         }\n\
       }\n\
       if (status === 0) {\n\
