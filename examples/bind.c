@@ -37,6 +37,7 @@ static void count(const char *id, const char *req, void *arg) {
 
 #ifdef _WIN32
 #include <windows.h>
+
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine,
                    int nCmdShow) {
   (void)hInst;
