@@ -37,7 +37,6 @@
 using namespace webview::detail;
 using namespace webview::detail::user;
 using namespace webview::log;
-using namespace webview::strings;
 using namespace webview::detail::threading;
 
 /* PUBLIC 
@@ -97,7 +96,7 @@ noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg) {
     trace::base.bind.work(name);
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
-    eval(string::js.onbind(name), true);
+    eval(strings::js.onbind(name), true);
   };
   // The user may want to bind before running so that they can use
   // bindings in `webview_init` or `webview_set_html`.
@@ -116,7 +115,7 @@ noresult engine_base::unbind(cnst_str_r name) {
 
   auto do_work = [this, name]() {
     trace::base.unbind.work(name);
-    eval(string::js.onunbind(name), true);
+    eval(strings::js.onunbind(name), true);
     list.bindings.erase(name);
     replace_bind_script();
   };
@@ -126,7 +125,7 @@ noresult engine_base::eval(cnst_str_r js, bool skip_queue) {
   trace::base.eval.start(js, skip_queue);
   auto do_work = [this, js, skip_queue] {
     if (!skip_queue) {
-      auto wrapped_js = string::js.eval_wrapper(js);
+      auto wrapped_js = strings::js.eval_wrapper(js);
       trace::base.eval.work(wrapped_js, skip_queue);
       if (thread::is_main_thread()) {
         eval_impl(wrapped_js);
@@ -175,11 +174,12 @@ noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
                  id + " with result: " + res_m;
   status == 0 ? console.info(message) : console.warn(message);
 
-  auto res_escaped = result.empty() ? "undefined" : json.escape(result);
+  auto res_escaped =
+      result.empty() ? "undefined" : strings::json.escape(result);
 
   trace::base.eval.print_here(res_escaped);
 
-  auto js = string::js.onreply(id, status, res_escaped);
+  auto js = strings::js.onreply(id, status, res_escaped);
   return eval(js, true);
 }
 noresult engine_base::reject(cnst_str_r id, cnst_str_r err) {
@@ -269,19 +269,19 @@ void engine_base::replace_bind_script() {
   }
 }
 void engine_base::add_init_script(cnst_str_r post_fn) {
-  auto init_js = string::js.init(post_fn);
+  auto init_js = strings::js.init(post_fn);
   list.m_user_scripts.add(init_js, this);
   m_is_init_script_sent = true;
 }
 std::string engine_base::create_bind_script() {
   std::vector<std::string> bound_names;
   list.bindings.get_names(bound_names);
-  return string::js.bind(bound_names);
+  return strings::js.bind(bound_names);
 }
 void engine_base::on_message(cnst_str_r msg) {
-  auto id = json.parse(msg, "id", 0);
-  auto name = json.parse(msg, "method", 0);
-  if (id == sys_flags.testop) {
+  auto id = strings::json.parse(msg, "id", 0);
+  auto name = strings::json.parse(msg, "method", 0);
+  if (id == strings::sys_flags.testop) {
     tester::set_value(name);
     return;
   }
@@ -289,11 +289,11 @@ void engine_base::on_message(cnst_str_r msg) {
     return;
   }
   if (!list.bindings.has_name(name)) {
-    auto message = string::err.reject_unbound(id, name);
+    auto message = strings::err.reject_unbound(id, name);
     reject(id, message);
     return;
   }
-  auto args = json.parse(msg, "params", 0);
+  auto args = strings::json.parse(msg, "params", 0);
   queue.promises.resolve(name, id, args);
 }
 void engine_base::on_window_created() { inc_window_count(); }

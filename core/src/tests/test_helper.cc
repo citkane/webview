@@ -28,9 +28,11 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/tests/test_helper.hh"
 #include "webview/detail/engine_base.hh"
+#include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
 
 using namespace webview::strings;
+using namespace webview::log;
 
 void tester::set_value(cnst_str_r val) {
   std::lock_guard<std::mutex> lock(mtx());
@@ -54,9 +56,9 @@ std::string tester::get_value() {
   return string_value();
 }
 
-void tester::ping_value(cnst_str_r value, engine_base *wv, bool escaped) {
+void tester::ping_value(cnst_str_r value, engine_base *wv) {
   std::lock_guard<std::mutex> lock(mtx());
-  wv->eval(string::tests::js.post_value(value, escaped));
+  wv->eval(test_js.post_value(value));
 }
 
 std::chrono::seconds tester::seconds(int seconds) {

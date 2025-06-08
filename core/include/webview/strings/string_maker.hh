@@ -34,6 +34,46 @@ using namespace webview::types;
 namespace webview {
 namespace _lib {
 namespace strings {
+
+/*
+ * Do not change any value without explixitly updating the string templates.
+ * NB!!
+ */
+
+struct tokens_t {
+  tokens_t() noexcept = default;
+  std::string str = "_str_";
+  std::string intval = "_int_";
+  std::string var = "_var_";
+  std::string id = "_id_";
+  std::string status = "_status_";
+  std::string result = "_result_";
+  std::string post_fn = "_post_fn_";
+  std::string js_names = "_js_names_";
+  std::string user_js = "_user_js_";
+  std::string what = "_what_";
+};
+
+struct sys_flags_t {
+  sys_flags_t() noexcept = default;
+  std::string sysop = "_sysop";
+  std::string testop = "_testop";
+};
+
+struct sys_ops_t {
+  sys_ops_t() noexcept = default;
+  std::string dom_ready = "_dom_ready";
+  std::string webview_ready = "_webview_ready";
+  std::string bind_done = "_bind_done";
+  std::string unbind_done = "_unbind_done";
+  std::string js_eval_start = "_frontend_eval_ready";
+};
+
+/*
+ * END NB!!
+ * Do not change any value without explixitly updating the string templates.
+ */
+
 namespace frontend {
 
 /* Frontend
@@ -103,10 +143,10 @@ namespace tests {
 struct test_js_t {
   test_js_t() noexcept = default;
 
-  std::string init(cnst_str_r init_value, bool escaped = false) const;
+  std::string init(cnst_str_r init_value) const;
 
   /// Wraps a string value in evaluable JS
-  std::string post_value(cnst_str_r value, bool escaped = false) const;
+  std::string post_value(cnst_str_r value) const;
 
   std::string bind_unbind(unsigned int result) const;
 

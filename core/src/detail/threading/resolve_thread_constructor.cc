@@ -44,10 +44,10 @@ void engine_queue::resolve_thread_constructor(std::string name, cnst_str_r id,
     if (atomic.terminating()) {
       return;
     }
-    auto err = string::err.uncaught_exception(name, err_.what());
+    auto err = strings::err.uncaught_exception(name, err_.what());
     wv->reject(id, err);
   } catch (...) {
-    perror(string::err.webview_terminated(name).c_str());
+    perror(strings::err.webview_terminated(name).c_str());
   };
 }
 

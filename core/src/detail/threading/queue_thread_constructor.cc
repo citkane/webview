@@ -91,7 +91,7 @@ void engine_queue::queue_thread_constructor() {
       trace::queue.unbind.start(name);
       auto promises = list.unresolved_promises.get_copy(name);
       for (auto &id : promises) {
-        auto err = string::err.reject_unbound(id, name);
+        auto err = strings::err.reject_unbound(id, name);
         wv->reject(id, err);
       }
 

@@ -34,6 +34,7 @@
 
 using namespace webview::log;
 using namespace webview::strings;
+using namespace webview::_lib::strings::tests;
 using namespace webview::_lib::strings::frontend;
 
 /* Frontend
@@ -95,14 +96,12 @@ std::string error_message_t::webview_terminated(cnst_str_r name) const {
 /* Tests JS
  * ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
-std::string test_js_t::init(cnst_str_r init_value, bool escaped) const {
-  auto init_value_js = post_value(init_value, escaped);
+std::string test_js_t::init(cnst_str_r init_value) const {
+  auto init_value_js = post_value(init_value);
   return tokenise(TEMPLATE_TEST_ONLOAD_JS, tokens.post_fn, init_value_js);
 }
-std::string test_js_t::post_value(cnst_str_r value, bool escaped) const {
-  auto tmplt = escaped ? TEMPLATE_TEST_VALUE_WRAPPER_ESCAPED_JS
-                       : TEMPLATE_TEST_VALUE_WRAPPER_JS;
-  return tokenise(tmplt, tokens.str, value);
+std::string test_js_t::post_value(cnst_str_r value) const {
+  return tokenise(TEMPLATE_TEST_VALUE_WRAPPER_JS, tokens.str, value);
 }
 std::string test_js_t::bind_unbind(unsigned int result) const {
   return tokenise(TEMPLATE_TEST_BIND_UNBIND_JS, tokens.intval,

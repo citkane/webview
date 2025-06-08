@@ -37,7 +37,7 @@
 #include <list>
 
 using namespace webview::types;
-using namespace webview::test;
+using namespace webview::tests;
 using namespace webview::detail::user;
 namespace webview {
 namespace detail {

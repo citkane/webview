@@ -316,7 +316,7 @@ public:
   /// Trace log methods for `engine_queue` functionality
   static const queue_trace_t &queue;
   /// Trace log methods for test functionality
-  static const tests_trace_t &tests;
+  static const tests_trace_t &test;
 
 private:
   static cnst_str_r prefix() {

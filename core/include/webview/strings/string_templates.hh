@@ -261,17 +261,7 @@ window.test(0)\n\
 window.__webview__.post(\n\
   JSON.stringify({\n\
     id: '_testop',\n\
-    method: '_str_'\n\
-  })\n\
-)\n\
-"
-
-#define TEMPLATE_TEST_VALUE_WRAPPER_ESCAPED_JS                                 \
-  "\n\
-window.__webview__.post(\n\
-  JSON.stringify({\n\
-    id: '_testop',\n\
-    method: _str_\n\
+    method: `_str_`\n\
   })\n\
 )\n\
 "

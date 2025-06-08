@@ -328,7 +328,7 @@ RESTORE_IGNORED_WARNINGS
 
 const base_trace_t &trace::base = get_base();
 const queue_trace_t &trace::queue = get_queue();
-const tests_trace_t &trace::tests = get_tests();
+const tests_trace_t &trace::test = get_tests();
 
 /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
  * Root API */

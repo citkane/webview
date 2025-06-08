@@ -35,11 +35,9 @@ namespace webview {
 namespace detail {
 // forward declaration
 class engine_base;
-
 } // namespace detail
-
 using namespace detail;
-namespace test {
+namespace tests {
 
 /// Test utilities class
 class tester {
@@ -63,8 +61,7 @@ public:
 
   /// Pings the frontend with a test value.
   /// @param parameter-escaped Is the provided value string already escaped?
-  static void ping_value(cnst_str_r value, engine_base *wv,
-                         bool escaped = false);
+  static void ping_value(cnst_str_r value, engine_base *wv);
 
   /// Returns the given timespan in std::chrono::seconds
   static std::chrono::seconds seconds(int seconds);
@@ -100,7 +97,7 @@ private:
   }
 };
 
-} // namespace test
+} // namespace tests
 } // namespace webview
 
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)

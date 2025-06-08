@@ -88,7 +88,6 @@ binding_ctx_t bindings_t::at(cnst_str_r name) const {
 user_script *user_scripts_t::add(cnst_str_r js, engine_base *base) {
   std::lock_guard<std::mutex> lock(mtx);
 
-  //auto wrapped_js = string::js.user_init_wrapper(js);
   return std::addressof(*m_user_scripts.emplace(
       m_user_scripts.end(), base->add_user_script_impl(js)));
 }

@@ -7,6 +7,7 @@
 #define WEBVIEW_VERSION_PRE_RELEASE "-test"
 #define WEBVIEW_VERSION_BUILD_METADATA "+gaabbccd"
 
+#include "webview/strings/string_api.hh"
 #include "webview/tests/test_helper.hh"
 #include "webview/types/types.hh"
 #include "webview/webview.h"
@@ -15,8 +16,8 @@
 
 using namespace webview::api;
 using namespace webview::strings;
-static const auto &tracer = trace::tests;
-static const auto &js_str = string::tests::js;
+using namespace webview::log;
+static const auto &trace_ = trace::test;
 
 // This test should only run on Windows to enable us to perform a controlled
 // "warm-up" of MS WebView2 in order to avoid the initial test from
@@ -76,8 +77,7 @@ TEST_CASE("Test nested C binding and unbinding") {
       +[](const char *seq, const char * /*req*/, void *arg) {
         auto *ctx = static_cast<c_context_t *>(arg);
         ++ctx->number;
-        std::string message =
-            "\"Incremented: " + std::to_string(ctx->number) + "\"";
+        std::string message = "Incremented: " + std::to_string(ctx->number);
         webview_return(ctx->w, seq, 0, message.c_str());
       };
 
@@ -88,30 +88,30 @@ TEST_CASE("Test nested C binding and unbinding") {
     if (req_ == "[0]") {
       ctx->res1 = (ctx->number == 0);
       webview_bind(ctx->w, "increment", increment, ctx);
-      webview_eval(ctx->w, js_str.bind_unbind(1).c_str());
-      webview_return(ctx->w, seq, 0, R"("Returned: [0]")");
+      webview_eval(ctx->w, test_js.bind_unbind(1).c_str());
+      webview_return(ctx->w, seq, 0, "Returned: [0]");
       return;
     }
     // Unbind and make sure that we cannot increment even if we try.
     if (req_ == "[1]") {
       ctx->res2 = (ctx->number == 1);
       webview_unbind(ctx->w, "increment");
-      webview_eval(ctx->w, string::tests::js.bind_unbind(2).c_str());
-      webview_return(ctx->w, seq, 0, R"("Returned: [1]")");
+      webview_eval(ctx->w, test_js.bind_unbind(2).c_str());
+      webview_return(ctx->w, seq, 0, "Returned: [1]");
       return;
     }
     // Number should not have changed but we can bind again and change the number.
     if (req_ == "[2,1]") {
       ctx->res3 = (ctx->number == 1);
       webview_bind(ctx->w, "increment", increment, ctx);
-      webview_eval(ctx->w, js_str.bind_unbind(3).c_str());
-      webview_return(ctx->w, seq, 0, R"("Returned: [2,1]")");
+      webview_eval(ctx->w, test_js.bind_unbind(3).c_str());
+      webview_return(ctx->w, seq, 0, "Returned: [2,1]");
       return;
     }
     // Finish test.
     if (req_ == "[3]") {
       ctx->res4 = (ctx->number == 2);
-      webview_return(ctx->w, seq, 0, R"("Returned: [3]")");
+      webview_return(ctx->w, seq, 0, "Returned: [3]");
       webview_terminate(ctx->w);
       return;
     }
@@ -126,15 +126,15 @@ TEST_CASE("Test nested C binding and unbinding") {
   webview_bind(w, "test", tests, &ctx);
   // Attempting to bind multiple times only binds once
   webview_bind(w, "test", tests, &ctx);
-  webview_eval(w, js_str.bind_unbind_init().c_str());
+  webview_eval(w, test_js.bind_unbind_init().c_str());
   webview_run(w);
   auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4;
 
   if (!passed) {
-    tracer.print_here(tester::res_string("res1", ctx.res1));
-    tracer.print_here(tester::res_string("res2", ctx.res2));
-    tracer.print_here(tester::res_string("res3", ctx.res3));
-    tracer.print_here(tester::res_string("res4", ctx.res4));
+    trace_.print_here(tester::res_string("res1", ctx.res1));
+    trace_.print_here(tester::res_string("res2", ctx.res2));
+    trace_.print_here(tester::res_string("res3", ctx.res3));
+    trace_.print_here(tester::res_string("res4", ctx.res4));
   }
 
   REQUIRE(passed);
@@ -165,7 +165,7 @@ TEST_CASE("Test nested CC binding and unbinding") {
     if (req == "[0]") {
       ctx->res1 = ctx->number == 0;
       wv.bind("increment", increment, ctx);
-      wv.eval(js_str.bind_unbind(1));
+      wv.eval(test_js.bind_unbind(1));
       return "";
     }
 
@@ -173,7 +173,7 @@ TEST_CASE("Test nested CC binding and unbinding") {
     if (req == "[1]") {
       ctx->res2 = ctx->number == 1;
       wv.unbind("increment");
-      wv.eval(js_str.bind_unbind(2));
+      wv.eval(test_js.bind_unbind(2));
       return "";
     }
     // We should have gotten an error on the JS side.
@@ -181,7 +181,7 @@ TEST_CASE("Test nested CC binding and unbinding") {
     if (req == "[2,1]") {
       ctx->res3 = ctx->number == 1;
       wv.bind("increment", increment, ctx);
-      wv.eval(js_str.bind_unbind(3));
+      wv.eval(test_js.bind_unbind(3));
       return "";
     }
     // Finish test.
@@ -203,14 +203,14 @@ TEST_CASE("Test nested CC binding and unbinding") {
   wv.bind("test", tests, &ctx);
   // Attempting to bind multiple times only binds once
   wv.bind("test", tests, &ctx);
-  wv.init(js_str.bind_unbind_init());
+  wv.init(test_js.bind_unbind_init());
   wv.run();
   auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4;
   if (!passed) {
-    tracer.print_here(tester::res_string("res1", ctx.res1));
-    tracer.print_here(tester::res_string("res2", ctx.res2));
-    tracer.print_here(tester::res_string("res3", ctx.res3));
-    tracer.print_here(tester::res_string("res4", ctx.res4));
+    trace_.print_here(tester::res_string("res1", ctx.res1));
+    trace_.print_here(tester::res_string("res2", ctx.res2));
+    trace_.print_here(tester::res_string("res3", ctx.res3));
+    trace_.print_here(tester::res_string("res4", ctx.res4));
   }
   REQUIRE(passed);
 }
@@ -229,7 +229,7 @@ TEST_CASE("The string returned from a binding call must be JSON") {
             wv.terminate();
             return "";
           });
-  wv.set_html(string::tests::html.string_returned(
+  wv.set_html(test_html.string_returned(
       "The string returned from a binding call must be JSON"));
   wv.run();
 }
@@ -250,7 +250,7 @@ TEST_CASE("The string returned of a binding call must not be JS") {
             wv.terminate();
             return "";
           });
-  wv.set_html(string::tests::html.string_returned(
+  wv.set_html(test_html.string_returned(
       "The string returned of a binding call must not be JS"));
   wv.run();
 }
@@ -282,7 +282,7 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
     REQUIRE(tester::get_value() == "loaded");
 
     tester::expect_value("exiting 42");
-    tester::ping_value(R"("exiting " + window.x)", &wv, true);
+    tester::ping_value("exiting ${window.x}", &wv);
     tester::cv().wait_for(lock, tester::seconds(2),
                           [&] { return tester::values_match(); });
 
@@ -290,9 +290,8 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
 
     wv.terminate();
   });
-
-  wv.init(string::tests::js.init("loaded"));
-  wv.navigate(string::tests::html.navigate_encoded());
+  wv.init(test_js.init("loaded"));
+  wv.navigate(test_html.navigate_encoded());
   wv.run();
   worker.join();
 }

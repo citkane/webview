@@ -32,58 +32,11 @@
 #include <string>
 
 namespace webview {
-namespace _lib {
 namespace strings {
 
-/*
- * Do not change any value without explixitly updating the string templates.
- * NB!!
- */
-
-struct tokens_t {
-  tokens_t() noexcept = default;
-  std::string str = "_str_";
-  std::string intval = "_int_";
-  std::string var = "_var_";
-  std::string id = "_id_";
-  std::string status = "_status_";
-  std::string result = "_result_";
-  std::string post_fn = "_post_fn_";
-  std::string js_names = "_js_names_";
-  std::string user_js = "_user_js_";
-  std::string what = "_what_";
-};
-
-struct sys_flags_t {
-  sys_flags_t() noexcept = default;
-  std::string sysop = "_sysop";
-  std::string testop = "_testop";
-};
-
-struct sys_ops_t {
-  sys_ops_t() noexcept = default;
-  std::string dom_ready = "_dom_ready";
-  std::string webview_ready = "_webview_ready";
-  std::string bind_done = "_bind_done";
-  std::string unbind_done = "_unbind_done";
-  std::string js_eval_start = "_frontend_eval_ready";
-};
-
-/*
- * END NB!!
- * Do not change any value without explixitly updating the string templates.
- */
-
-} // namespace strings
-} // namespace _lib
-namespace strings {
-using namespace _lib::strings;
-using namespace _lib::strings::frontend;
-using namespace _lib::strings::tests;
-
-tokens_t const tokens{};
-sys_flags_t const sys_flags{};
-sys_ops_t const sys_ops{};
+_lib::strings::tokens_t const tokens{};
+_lib::strings::sys_flags_t const sys_flags{};
+_lib::strings::sys_ops_t const sys_ops{};
 
 /// Performs string replacement for tokens.
 /// @todo REGEX is probably going to be optimal for performance
@@ -111,21 +64,14 @@ std::string tokenise(cnst_str_r tmplate, strg_replacements_t &replacements) {
   return tokenised_string;
 }
 
-/// String API.
-class string {
-public:
-  static const js_string_t js;
-  static const error_message_t err;
-  struct tests {
-    static const test_html_t html;
-    static const test_js_t js;
-  };
-};
-
-const js_string_t string::js{};
-const error_message_t string::err{};
-const test_html_t string::tests::html{};
-const test_js_t string::tests::js{};
+/// API for JS strings.
+static const _lib::strings::frontend::js_string_t js{};
+/// API for error message strings
+static const _lib::strings::frontend::error_message_t err{};
+/// API for test HTML strings
+static const _lib::strings::tests::test_html_t test_html{};
+/// API for test JS strings
+static const _lib::strings::tests::test_js_t test_js{};
 
 } // namespace strings
 } // namespace webview
