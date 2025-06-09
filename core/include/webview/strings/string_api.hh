@@ -29,6 +29,7 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/strings/string_maker.hh"
 #include "webview/types/types.hh"
+#include <regex>
 #include <string>
 
 namespace webview {
@@ -62,6 +63,11 @@ std::string tokenise(cnst_str_r tmplate, strg_replacements_t &replacements) {
     tokenised_string = string_;
   };
   return tokenised_string;
+}
+
+std::string trim(cnst_str_r str) {
+  return std::regex_replace(std::regex_replace(str, std::regex("^\\s+"), ""),
+                            std::regex("\\s+$"), "");
 }
 
 /// API for JS strings.

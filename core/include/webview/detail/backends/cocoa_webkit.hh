@@ -31,6 +31,28 @@
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
 
+#include "webview/detail/engine_base.hh"
+#include "webview/detail/platform/darwin/cocoa/cocoa.hh"
+#include "webview/detail/platform/darwin/objc/objc.hh"
+#include "webview/detail/platform/darwin/webkit/webkit.hh"
+#include "webview/detail/user/cocoa_webkit_user.hh"
+#include "webview/strings/string_api.hh"
+#include "webview/types/types.hh"
+#include <atomic>
+#include <functional>
+#include <list>
+#include <memory>
+#include <objc/objc-runtime.h>
+#include <string>
+
+using namespace webview::types;
+using namespace webview::errors;
+namespace webview {
+namespace detail {
+namespace backend {
+using namespace cocoa;
+using namespace webkit;
+
 //
 // ====================================================================
 //
@@ -40,50 +62,6 @@
 //
 // ====================================================================
 //
-
-#include "webview/detail/engine_base.hh"
-#include "webview/detail/platform/darwin/cocoa/cocoa.hh"
-#include "webview/detail/platform/darwin/objc/objc.hh"
-#include "webview/detail/platform/darwin/webkit/webkit.hh"
-#include "webview/types/types.hh"
-
-#include <atomic>
-#include <functional>
-#include <list>
-#include <memory>
-#include <string>
-
-#include <objc/objc-runtime.h>
-
-using namespace webview::types;
-using namespace webview::errors;
-namespace webview {
-namespace detail {
-namespace user {
-
-class user_script::impl {
-public:
-  impl(id script) : m_script{objc::retain(script)} {}
-
-  ~impl() { objc::release(m_script); }
-
-  impl(const impl &) = delete;
-  impl &operator=(const impl &) = delete;
-  impl(impl &&) = delete;
-  impl &operator=(impl &&) = delete;
-
-  id get_native() const { return m_script; }
-
-private:
-  id m_script{};
-};
-
-} // namespace user
-
-namespace backend {
-
-using namespace cocoa;
-using namespace webkit;
 
 class cocoa_wkwebview_engine : public detail::engine_base {
 public:
@@ -218,9 +196,9 @@ protected:
   }
   noresult navigate_impl(cnst_str_r url) override {
     objc::autoreleasepool arp;
-
     WKWebView_loadRequest(
-        m_webview, NSURLRequest_requestWithURL(NSURL_URLWithString(url)));
+        m_webview,
+        NSURLRequest_requestWithURL(NSURL_URLWithString(strings::trim(url))));
 
     return {};
   }
