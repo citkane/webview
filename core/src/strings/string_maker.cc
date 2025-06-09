@@ -118,10 +118,9 @@ std::string test_html_t::string_returned(cnst_str_r title) const {
   return tokenise(TEMPLATE_TEST_STRING_RETURNS_HTML, tokens.str, title);
 }
 std::string test_html_t::navigate_encoded() const {
-  std::string html = "\
+  return "\
   data:text/html,%3Chtml%3EEnsure%20that%20JS%20code%20can%20call%20native%20code%20and%20vice%20versa%3C%2Fhtml%3E\
   ";
-  return html;
 }
 
 /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆

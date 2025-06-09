@@ -284,7 +284,6 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
                           [&] { return tester::values_match(); });
 
     ctx.res1 = tester::get_value() == "loaded";
-    trace_.print_here(tester::get_value());
 
     tester::expect_value("exiting 42");
     tester::ping_value("exiting ${window.x}", &wv);
@@ -292,14 +291,12 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
                           [&] { return tester::values_match(); });
 
     ctx.res2 = tester::get_value() == "exiting 42";
-    trace_.print_here(tester::get_value());
 
     wv.terminate();
   });
 
   wv.init(test_js.init("loaded"));
   wv.navigate(test_html.navigate_encoded());
-  //wv.set_html("Ensure that JS code can call native code and vice versa");
 
   wv.run();
   auto passed = ctx.res1 && ctx.res2;

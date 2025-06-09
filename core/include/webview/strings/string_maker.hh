@@ -160,7 +160,6 @@ struct test_html_t {
   test_html_t() noexcept = default;
 
   std::string string_returned(cnst_str_r title) const;
-
   std::string navigate_encoded() const;
 };
 
