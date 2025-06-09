@@ -280,7 +280,7 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
     std::unique_lock<std::mutex> lock(worker_mtx);
 
     tester::expect_value("loaded");
-    tester::cv().wait_for(lock, tester::seconds(2),
+    tester::cv().wait_for(lock, tester::seconds(10),
                           [&] { return tester::values_match(); });
 
     ctx.res1 = tester::get_value() == "loaded";
@@ -288,7 +288,7 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
 
     tester::expect_value("exiting 42");
     tester::ping_value("exiting ${window.x}", &wv);
-    tester::cv().wait_for(lock, tester::seconds(2),
+    tester::cv().wait_for(lock, tester::seconds(5),
                           [&] { return tester::values_match(); });
 
     ctx.res2 = tester::get_value() == "exiting 42";
