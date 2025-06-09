@@ -296,8 +296,11 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
 
     wv.terminate();
   });
+
   wv.init(test_js.init("loaded"));
   wv.navigate(test_html.navigate_encoded());
+  //wv.set_html("Ensure that JS code can call native code and vice versa");
+
   wv.run();
   auto passed = ctx.res1 && ctx.res2;
   if (!passed) {
