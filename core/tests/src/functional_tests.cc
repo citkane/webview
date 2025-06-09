@@ -270,6 +270,10 @@ TEST_CASE("webview_version()") {
 
 TEST_CASE("Ensure that JS code can call native code and vice versa") {
   webview_cc_t wv{true, nullptr};
+  struct cc_context_t {
+    bool res1;
+    bool res2;
+  } ctx{};
 
   auto worker = std::thread([&]() {
     std::mutex worker_mtx;
@@ -279,20 +283,28 @@ TEST_CASE("Ensure that JS code can call native code and vice versa") {
     tester::cv().wait_for(lock, tester::seconds(2),
                           [&] { return tester::values_match(); });
 
-    REQUIRE(tester::get_value() == "loaded");
+    ctx.res1 = tester::get_value() == "loaded";
+    trace_.print_here(tester::get_value());
 
     tester::expect_value("exiting 42");
     tester::ping_value("exiting ${window.x}", &wv);
     tester::cv().wait_for(lock, tester::seconds(2),
                           [&] { return tester::values_match(); });
 
-    REQUIRE(tester::get_value() == "exiting 42");
+    ctx.res2 = tester::get_value() == "exiting 42";
+    trace_.print_here(tester::get_value());
 
     wv.terminate();
   });
   wv.init(test_js.init("loaded"));
   wv.navigate(test_html.navigate_encoded());
   wv.run();
+  auto passed = ctx.res1 && ctx.res2;
+  if (!passed) {
+    trace_.print_here(tester::res_string("res1", ctx.res1));
+    trace_.print_here(tester::res_string("res2", ctx.res2));
+  }
+  REQUIRE(passed);
   worker.join();
 }
 
