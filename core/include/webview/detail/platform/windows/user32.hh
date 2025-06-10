@@ -23,78 +23,66 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_WINDOWS_USER32_HH
-#define WEBVIEW_PLATFORM_WINDOWS_USER32_HH
+#ifndef WEBVIEW_DETAIL_PLATFORM_WINDOWS_USER32_HH
+#define WEBVIEW_DETAIL_PLATFORM_WINDOWS_USER32_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include "webview/detail/platform/windows/native_library.hh"
-#include <windows.h>
+#include "webview/detail/platform/windows/types.hh"
 
 namespace webview {
 namespace detail {
 namespace platform {
 namespace _lib {
 namespace windows {
-namespace user32_symbols {
 
-using DPI_AWARENESS_CONTEXT = HANDLE;
-using SetProcessDpiAwarenessContext_t = BOOL(WINAPI *)(DPI_AWARENESS_CONTEXT);
-using SetProcessDPIAware_t = BOOL(WINAPI *)();
-using GetDpiForWindow_t = UINT(WINAPI *)(HWND);
-using EnableNonClientDpiScaling_t = BOOL(WINAPI *)(HWND);
-using AdjustWindowRectExForDpi_t = BOOL(WINAPI *)(LPRECT, DWORD, BOOL, DWORD,
-                                                  UINT);
-using GetWindowDpiAwarenessContext_t = DPI_AWARENESS_CONTEXT(WINAPI *)(HWND);
-using AreDpiAwarenessContextsEqual_t = BOOL(WINAPI *)(DPI_AWARENESS_CONTEXT,
-                                                      DPI_AWARENESS_CONTEXT);
+struct user32 {
 
-// Use intptr_t as the underlying type because we need to
-// reinterpret_cast<DPI_AWARENESS_CONTEXT> which is a pointer.
-// Available since Windows 10, version 1607
-enum class dpi_awareness : intptr_t {
-  per_monitor_v2_aware = -4, // Available since Windows 10, version 1703
-  per_monitor_aware = -3
+  // Use intptr_t as the underlying type because we need to
+  // reinterpret_cast<DPI_AWARENESS_CONTEXT> which is a pointer.
+  // Available since Windows 10, version 1607
+  enum class dpi_awareness : intptr_t {
+    per_monitor_v2_aware = -4, // Available since Windows 10, version 1703
+    per_monitor_aware = -3
+  };
+
+  constexpr native_library_symbol<
+      SetProcessDpiAwarenessContext_t> static SetProcessDpiAwarenessContext() {
+    return native_library_symbol<SetProcessDpiAwarenessContext_t>(
+        "SetProcessDpiAwarenessContext");
+  }
+  static constexpr native_library_symbol<SetProcessDPIAware_t>
+  SetProcessDPIAware() {
+    return native_library_symbol<SetProcessDPIAware_t>("SetProcessDPIAware");
+  }
+  static constexpr native_library_symbol<GetDpiForWindow_t> GetDpiForWindow() {
+    return native_library_symbol<GetDpiForWindow_t>("GetDpiForWindow");
+  }
+  static constexpr native_library_symbol<EnableNonClientDpiScaling_t>
+  EnableNonClientDpiScaling() {
+    return native_library_symbol<EnableNonClientDpiScaling_t>(
+        "EnableNonClientDpiScaling");
+  }
+  static constexpr native_library_symbol<AdjustWindowRectExForDpi_t>
+  AdjustWindowRectExForDpi() {
+    return native_library_symbol<AdjustWindowRectExForDpi_t>(
+        "AdjustWindowRectExForDpi");
+  }
+  static constexpr native_library_symbol<GetWindowDpiAwarenessContext_t>
+  GetWindowDpiAwarenessContext() {
+    return native_library_symbol<GetWindowDpiAwarenessContext_t>(
+        "GetWindowDpiAwarenessContext");
+  }
+  static constexpr native_library_symbol<AreDpiAwarenessContextsEqual_t>
+  AreDpiAwarenessContextsEqual() {
+    return native_library_symbol<AreDpiAwarenessContextsEqual_t>(
+        "AreDpiAwarenessContextsEqual");
+  }
 };
 
-constexpr library_symbol<SetProcessDpiAwarenessContext_t>
-SetProcessDpiAwarenessContext() {
-  return library_symbol<SetProcessDpiAwarenessContext_t>(
-      "SetProcessDpiAwarenessContext");
-}
-constexpr library_symbol<SetProcessDPIAware_t> SetProcessDPIAware() {
-  return library_symbol<SetProcessDPIAware_t>("SetProcessDPIAware");
-}
-constexpr library_symbol<GetDpiForWindow_t> GetDpiForWindow() {
-  return library_symbol<GetDpiForWindow_t>("GetDpiForWindow");
-}
-constexpr library_symbol<EnableNonClientDpiScaling_t>
-EnableNonClientDpiScaling() {
-  return library_symbol<EnableNonClientDpiScaling_t>(
-      "EnableNonClientDpiScaling");
-}
-constexpr library_symbol<AdjustWindowRectExForDpi_t>
-AdjustWindowRectExForDpi() {
-  return library_symbol<AdjustWindowRectExForDpi_t>("AdjustWindowRectExForDpi");
-}
-constexpr library_symbol<GetWindowDpiAwarenessContext_t>
-GetWindowDpiAwarenessContext() {
-  return library_symbol<GetWindowDpiAwarenessContext_t>(
-      "GetWindowDpiAwarenessContext");
-}
-constexpr library_symbol<AreDpiAwarenessContextsEqual_t>
-AreDpiAwarenessContextsEqual() {
-  return library_symbol<AreDpiAwarenessContextsEqual_t>(
-      "AreDpiAwarenessContextsEqual");
-}
-
-} // namespace user32_symbols
 } // namespace windows
 } // namespace _lib
 } // namespace platform
@@ -103,4 +91,4 @@ AreDpiAwarenessContextsEqual() {
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_WINDOWS_USER32_HH
+#endif // WEBVIEW_DETAIL_PLATFORM_WINDOWS_USER32_HH

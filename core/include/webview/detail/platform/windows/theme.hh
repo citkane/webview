@@ -23,17 +23,13 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_WINDOWS_THEME_HH
-#define WEBVIEW_PLATFORM_WINDOWS_THEME_HH
+#ifndef WEBVIEW_DETAIL_PLATFORM_WINDOWS_THEME_HH
+#define WEBVIEW_DETAIL_PLATFORM_WINDOWS_THEME_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include "webview/detail/platform/windows/dwmapi.hh"
 #include "webview/detail/platform/windows/native_library.hh"
 #include "webview/detail/platform/windows/reg_key.hh"
@@ -44,7 +40,8 @@ namespace platform {
 namespace _lib {
 namespace windows {
 
-inline bool is_dark_theme_enabled() {
+namespace theme {
+static bool is_dark_theme_enabled() {
   constexpr auto *sub_key =
       L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
   reg_key key(HKEY_CURRENT_USER, sub_key, 0, KEY_READ);
@@ -55,23 +52,24 @@ inline bool is_dark_theme_enabled() {
   return key.query_uint(L"AppsUseLightTheme", 1) == 0;
 }
 
-inline void apply_window_theme(HWND window) {
+static void apply_window_theme(HWND window) {
   auto dark_theme_enabled = is_dark_theme_enabled();
 
   // Use "immersive dark mode" on systems that support it.
   // Changes the color of the window's title bar (light or dark).
   BOOL use_dark_mode{dark_theme_enabled ? TRUE : FALSE};
   static native_library dwmapi{L"dwmapi.dll"};
-  if (auto fn = dwmapi.get(dwmapi_symbols::DwmSetWindowAttribute())) {
+  if (auto fn = dwmapi.get(dwmapi::DwmSetWindowAttribute())) {
     // Try the modern, documented attribute before the older, undocumented one.
-    if (fn(window, dwmapi_symbols::DWMWA_USE_IMMERSIVE_DARK_MODE,
-           &use_dark_mode, sizeof(use_dark_mode)) != S_OK) {
-      fn(window,
-         dwmapi_symbols::DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_V10_0_19041,
+    if (fn(window, dwmapi::DWMWA_USE_IMMERSIVE_DARK_MODE, &use_dark_mode,
+           sizeof(use_dark_mode)) != S_OK) {
+      fn(window, dwmapi::DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_V10_0_19041,
          &use_dark_mode, sizeof(use_dark_mode));
     }
   }
 }
+
+}; // namespace theme
 
 } // namespace windows
 } // namespace _lib
@@ -81,4 +79,4 @@ inline void apply_window_theme(HWND window) {
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_WINDOWS_THEME_HH
+#endif // WEBVIEW_DETAIL_PLATFORM_WINDOWS_THEME_HH

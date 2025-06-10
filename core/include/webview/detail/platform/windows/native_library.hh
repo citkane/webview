@@ -23,8 +23,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH
-#define WEBVIEW_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH
+#ifndef WEBVIEW_DETAIL_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH
+#define WEBVIEW_DETAIL_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
@@ -33,10 +33,10 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+#include <windows.h>
 
 #include "webview/detail/platform/windows/string.hh"
 #include "webview/types/types.hh"
-#include <windows.h>
 
 using namespace webview::types;
 namespace webview {
@@ -46,11 +46,11 @@ namespace _lib {
 namespace windows {
 
 // Holds a symbol name and associated type for code clarity.
-template <typename T> class library_symbol {
+template <typename T> class native_library_symbol {
 public:
   using type = T;
 
-  constexpr explicit library_symbol(const char *name) : m_name(name) {}
+  constexpr explicit native_library_symbol(const char *name) : m_name(name) {}
   constexpr const char *get_name() const { return m_name; }
 
 private:
@@ -117,14 +117,14 @@ public:
 
   // Returns true if the library by the given name is currently loaded; otherwise false.
   static bool is_loaded(cnst_str_r name) {
-    auto handle = GetModuleHandleW(widen_string(name).c_str());
+    auto handle = GetModuleHandleW(string::widen_string(name).c_str());
     return !!handle;
   }
 
 private:
   using mod_handle_t = HMODULE;
   static mod_handle_t load_library(cnst_str_r name) {
-    return load_library(widen_string(name));
+    return load_library(string::widen_string(name));
   }
   static mod_handle_t load_library(const std::wstring &name) {
     return LoadLibraryW(name.c_str());
@@ -140,4 +140,4 @@ private:
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH
+#endif // WEBVIEW_DETAIL_PLATFORM_WINDOWS_NATIVE_LIBRARY_HH

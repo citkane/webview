@@ -116,56 +116,56 @@ TEST_CASE("noresult class") {
 
 #if _WIN32
 TEST_CASE("Ensure that version number parsing works on Windows") {
-  auto v = parse_version("");
+  auto v = version::parse_version("");
   REQUIRE(v.size() == 4);
   REQUIRE(v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0);
-  v = parse_version("1");
+  v = version::parse_version("1");
   REQUIRE(v[0] == 1 && v[1] == 0 && v[2] == 0 && v[3] == 0);
-  v = parse_version("0.2");
+  v = version::parse_version("0.2");
   REQUIRE(v[0] == 0 && v[1] == 2 && v[2] == 0 && v[3] == 0);
-  v = parse_version("0.0.3");
+  v = version::parse_version("0.0.3");
   REQUIRE(v[0] == 0 && v[1] == 0 && v[2] == 3 && v[3] == 0);
-  v = parse_version("0.0.0.4");
+  v = version::parse_version("0.0.0.4");
   REQUIRE(v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 4);
-  v = parse_version("1.2.3.4.5");
+  v = version::parse_version("1.2.3.4.5");
   REQUIRE(v.size() == 4);
   REQUIRE(v[0] == 1 && v[1] == 2 && v[2] == 3 && v[3] == 4);
-  v = parse_version("1.2.3.4.5.6");
+  v = version::parse_version("1.2.3.4.5.6");
   REQUIRE(v[0] == 1 && v[1] == 2 && v[2] == 3 && v[3] == 4);
-  v = parse_version("11.22.33.44");
+  v = version::parse_version("11.22.33.44");
   REQUIRE(v[0] == 11 && v[1] == 22 && v[2] == 33 && v[3] == 44);
-  v = parse_version("0.0.0.0");
+  v = version::parse_version("0.0.0.0");
   REQUIRE(v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0);
-  v = parse_version("-1.-2.-3.-4");
+  v = version::parse_version("-1.-2.-3.-4");
   REQUIRE(v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0);
-  v = parse_version("a.b.c.d");
+  v = version::parse_version("a.b.c.d");
   REQUIRE(v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0);
-  v = parse_version("...");
+  v = version::parse_version("...");
   REQUIRE(v[0] == 0 && v[1] == 0 && v[2] == 0 && v[3] == 0);
 }
 
 TEST_CASE("Ensure that narrow/wide string conversion works on Windows") {
-  REQUIRE(widen_string("").empty());
-  REQUIRE(narrow_string(L"").empty());
-  REQUIRE(widen_string("foo") == L"foo");
-  REQUIRE(narrow_string(L"foo") == "foo");
-  REQUIRE(widen_string("フー") == L"フー");
-  REQUIRE(narrow_string(L"フー") == "フー");
-  REQUIRE(widen_string("æøå") == L"æøå");
-  REQUIRE(narrow_string(L"æøå") == "æøå");
+  REQUIRE(string::widen_string("").empty());
+  REQUIRE(string::narrow_string(L"").empty());
+  REQUIRE(string::widen_string("foo") == L"foo");
+  REQUIRE(string::narrow_string(L"foo") == "foo");
+  REQUIRE(string::widen_string("フー") == L"フー");
+  REQUIRE(string::narrow_string(L"フー") == "フー");
+  REQUIRE(string::widen_string("æøå") == L"æøå");
+  REQUIRE(string::narrow_string(L"æøå") == "æøå");
   // Unicode number for the smiley face below: U+1F600
-  REQUIRE(widen_string("😀") == L"😀");
-  REQUIRE(narrow_string(L"😀") == "😀");
+  REQUIRE(string::widen_string("😀") == L"😀");
+  REQUIRE(string::narrow_string(L"😀") == "😀");
   // Ensure that elements of wide string are correct
   {
-    auto s = widen_string("😀");
+    auto s = string::widen_string("😀");
     REQUIRE(s.size() == 2);
     REQUIRE(static_cast<std::uint16_t>(s[0]) == 0xD83D);
     REQUIRE(static_cast<std::uint16_t>(s[1]) == 0xDE00);
   }
   // Ensure that elements of narrow string are correct
   {
-    auto s = narrow_string(L"😀");
+    auto s = string::narrow_string(L"😀");
     REQUIRE(s.size() == 4);
     REQUIRE(static_cast<std::uint8_t>(s[0]) == 0xf0);
     REQUIRE(static_cast<std::uint8_t>(s[1]) == 0x9f);
@@ -173,7 +173,8 @@ TEST_CASE("Ensure that narrow/wide string conversion works on Windows") {
     REQUIRE(static_cast<std::uint8_t>(s[3]) == 0x80);
   }
   // Null-characters must also be converted
-  REQUIRE(widen_string(std::string(2, '\0')) == std::wstring(2, L'\0'));
-  REQUIRE(narrow_string(std::wstring(2, L'\0')) == std::string(2, '\0'));
+  REQUIRE(string::widen_string(std::string(2, '\0')) == std::wstring(2, L'\0'));
+  REQUIRE(string::narrow_string(std::wstring(2, L'\0')) ==
+          std::string(2, '\0'));
 }
 #endif

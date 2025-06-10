@@ -23,35 +23,31 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_WINDOWS_SHCORE_HH
-#define WEBVIEW_PLATFORM_WINDOWS_SHCORE_HH
+#ifndef WEBVIEW_DETAIL_PLATFORM_WINDOWS_SHCORE_HH
+#define WEBVIEW_DETAIL_PLATFORM_WINDOWS_SHCORE_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include "webview/detail/platform/windows/native_library.hh"
-#include <windows.h>
+#include "webview/detail/platform/windows/types.hh"
 
 namespace webview {
 namespace detail {
 namespace platform {
 namespace _lib {
 namespace windows {
-namespace shcore_symbols {
 
-typedef enum { PROCESS_PER_MONITOR_DPI_AWARE = 2 } PROCESS_DPI_AWARENESS;
-using SetProcessDpiAwareness_t = HRESULT(WINAPI *)(PROCESS_DPI_AWARENESS);
+struct shcore {
 
-constexpr library_symbol<SetProcessDpiAwareness_t> SetProcessDpiAwareness() {
-  return library_symbol<SetProcessDpiAwareness_t>("SetProcessDpiAwareness");
-}
+  constexpr native_library_symbol<
+      SetProcessDpiAwareness_t> static SetProcessDpiAwareness() {
+    return native_library_symbol<SetProcessDpiAwareness_t>(
+        "SetProcessDpiAwareness");
+  }
+};
 
-} // namespace shcore_symbols
 } // namespace windows
 } // namespace _lib
 } // namespace platform
@@ -60,4 +56,4 @@ constexpr library_symbol<SetProcessDpiAwareness_t> SetProcessDpiAwareness() {
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_WINDOWS_SHCORE_HH
+#endif // WEBVIEW_DETAIL_PLATFORM_WINDOWS_SHCORE_HH

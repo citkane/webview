@@ -23,43 +23,40 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_WINDOWS_DWMAPI_HH
-#define WEBVIEW_PLATFORM_WINDOWS_DWMAPI_HH
+#ifndef WEBVIEW_DETAIL_PLATFORM_WINDOWS_DWMAPI_HH
+#define WEBVIEW_DETAIL_PLATFORM_WINDOWS_DWMAPI_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include "webview/detail/platform/windows/native_library.hh"
-#include <windows.h>
+#include "webview/detail/platform/windows/types.hh"
 
 namespace webview {
 namespace detail {
 namespace platform {
 namespace _lib {
 namespace windows {
-namespace dwmapi_symbols {
 
-typedef enum {
-  // This undocumented value is used instead of DWMWA_USE_IMMERSIVE_DARK_MODE
-  // on Windows 10 older than build 19041 (2004/20H1).
-  DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_V10_0_19041 = 19,
-  // Documented as being supported since Windows 11 build 22000 (21H2) but it
-  // works since Windows 10 build 19041 (2004/20H1).
-  DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-} DWMWINDOWATTRIBUTE;
+struct dwmapi {
 
-using DwmSetWindowAttribute_t = HRESULT(WINAPI *)(HWND, DWORD, LPCVOID, DWORD);
+  typedef enum {
+    // This undocumented value is used instead of DWMWA_USE_IMMERSIVE_DARK_MODE
+    // on Windows 10 older than build 19041 (2004/20H1).
+    DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_V10_0_19041 = 19,
+    // Documented as being supported since Windows 11 build 22000 (21H2) but it
+    // works since Windows 10 build 19041 (2004/20H1).
+    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+  } DWMWINDOWATTRIBUTE;
 
-constexpr library_symbol<DwmSetWindowAttribute_t> DwmSetWindowAttribute() {
-  return library_symbol<DwmSetWindowAttribute_t>("DwmSetWindowAttribute");
-}
+  static constexpr native_library_symbol<DwmSetWindowAttribute_t>
+  DwmSetWindowAttribute() {
+    return native_library_symbol<DwmSetWindowAttribute_t>(
+        "DwmSetWindowAttribute");
+  }
+};
 
-} // namespace dwmapi_symbols
 } // namespace windows
 } // namespace _lib
 } // namespace platform
@@ -68,4 +65,4 @@ constexpr library_symbol<DwmSetWindowAttribute_t> DwmSetWindowAttribute() {
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_WINDOWS_DWMAPI_HH
+#endif // WEBVIEW_DETAIL_PLATFORM_WINDOWS_DWMAPI_HH

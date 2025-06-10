@@ -23,8 +23,8 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_WINDOWS_REG_KEY_HH
-#define WEBVIEW_PLATFORM_WINDOWS_REG_KEY_HH
+#ifndef WEBVIEW_DETAIL_PLATFORM_WINDOWS_REG_KEY_HH
+#define WEBVIEW_DETAIL_PLATFORM_WINDOWS_REG_KEY_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
@@ -33,13 +33,13 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
+#include <windows.h>
+
 #ifdef _MSC_VER
 #pragma comment(lib, "advapi32.lib")
 #endif
-
 #include <string>
 #include <vector>
-#include <windows.h>
 
 namespace webview {
 namespace detail {
@@ -136,4 +136,4 @@ private:
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_WINDOWS_REG_KEY_HH
+#endif // WEBVIEW_DETAIL_PLATFORM_WINDOWS_REG_KEY_HH

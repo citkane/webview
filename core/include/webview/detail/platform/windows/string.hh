@@ -23,22 +23,17 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_WINDOWS_STRING_HH
-#define WEBVIEW_PLATFORM_WINDOWS_STRING_HH
+#ifndef WEBVIEW_DETAIL_PLATFORM_WINDOWS_STRING_HH
+#define WEBVIEW_DETAIL_PLATFORM_WINDOWS_STRING_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include "webview/types/types.hh"
 #include <codecvt>
 #include <locale>
 #include <string>
-#include <windows.h>
 
 using namespace webview::types;
 namespace webview {
@@ -47,17 +42,19 @@ namespace platform {
 namespace _lib {
 namespace windows {
 
-// Converts a narrow (UTF-8-encoded) string into a wide (UTF-16-encoded) string.
-inline std::wstring widen_string(cnst_str_r input) {
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-  return converter.from_bytes(input);
-}
+struct string {
+  // Converts a narrow (UTF-8-encoded) string into a wide (UTF-16-encoded) string.
+  static std::wstring widen_string(cnst_str_r input) {
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.from_bytes(input);
+  }
 
-// Converts a wide (UTF-16-encoded) string into a narrow (UTF-8-encoded) string.
-inline std::string narrow_string(const std::wstring &input) {
-  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-  return converter.to_bytes(input);
-}
+  // Converts a wide (UTF-16-encoded) string into a narrow (UTF-8-encoded) string.
+  static std::string narrow_string(const std::wstring &input) {
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    return converter.to_bytes(input);
+  }
+};
 
 } // namespace windows
 } // namespace _lib
@@ -67,4 +64,4 @@ inline std::string narrow_string(const std::wstring &input) {
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_WINDOWS_STRING_HH
+#endif // WEBVIEW_DETAIL_PLATFORM_WINDOWS_STRING_HH

@@ -30,9 +30,6 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS) && defined(WEBVIEW_EDGE)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
 #ifdef _MSC_VER
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "shell32.lib")
@@ -45,7 +42,6 @@
 #include "webview/detail/platform/windows/dpi.hh"
 #include "webview/detail/platform/windows/string.hh"
 #include "webview/detail/platform/windows/theme.hh"
-#include "webview/detail/platform/windows/webview2/loader.hh"
 #include "webview/detail/user/win32_edge_user.hh"
 #include "webview/log/console_log.hh"
 #include "webview/log/win_console.hh"
@@ -57,7 +53,14 @@
 #include <objbase.h>
 #include <shlobj.h>
 #include <shlwapi.h>
-#include <windows.h>
+
+using namespace webview::types;
+using namespace webview::log;
+using namespace webview::errors;
+using namespace webview::detail::platform::_lib::windows;
+namespace webview {
+namespace detail {
+namespace backend {
 
 //
 // ====================================================================
@@ -67,14 +70,6 @@
 //
 // ====================================================================
 //
-
-using namespace webview::types;
-using namespace webview::log;
-using namespace webview::errors;
-using namespace webview::detail::platform::_lib::windows;
-namespace webview {
-namespace detail {
-namespace backend {
 
 class win32_edge_engine : public detail::engine_base {
 public:
@@ -176,7 +171,7 @@ protected:
   }
 
   noresult set_title_impl(cnst_str_r title) override {
-    SetWindowTextW(m_window, widen_string(title).c_str());
+    SetWindowTextW(m_window, string::widen_string(title).c_str());
     return {};
   }
 
@@ -196,12 +191,12 @@ protected:
       m_minsz.x = width;
       m_minsz.y = height;
     } else {
-      auto dpi = get_window_dpi(m_window);
+      auto dpi = dpi::get_window_dpi(m_window);
       m_dpi = dpi;
       auto scaled_size =
-          scale_size(width, height, get_default_window_dpi(), dpi);
-      auto frame_size =
-          make_window_frame_size(m_window, scaled_size.cx, scaled_size.cy, dpi);
+          dpi::scale_size(width, height, dpi::get_default_window_dpi(), dpi);
+      auto frame_size = dpi::make_window_frame_size(m_window, scaled_size.cx,
+                                                    scaled_size.cy, dpi);
       SetWindowPos(m_window, nullptr, 0, 0, frame_size.cx, frame_size.cy,
                    SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE |
                        SWP_FRAMECHANGED);
@@ -210,7 +205,7 @@ protected:
   }
 
   noresult navigate_impl(cnst_str_r url) override {
-    auto wurl = widen_string(url);
+    auto wurl = string::widen_string(url);
     m_webview->Navigate(wurl.c_str());
     return {};
   }
@@ -218,18 +213,18 @@ protected:
   noresult eval_impl(cnst_str_r js) override {
     // TODO: Skip if no content has begun loading yet. Can't check with
     //       ICoreWebView2::get_Source because it returns "about:blank".
-    auto wjs = widen_string(js);
+    auto wjs = string::widen_string(js);
     m_webview->ExecuteScript(wjs.c_str(), nullptr);
     return {};
   }
 
   noresult set_html_impl(cnst_str_r html) override {
-    m_webview->NavigateToString(widen_string(html).c_str());
+    m_webview->NavigateToString(string::widen_string(html).c_str());
     return {};
   }
 
   user_script add_user_script_impl(cnst_str_r js) override {
-    auto wjs = widen_string(js);
+    auto wjs = string::widen_string(js);
     std::wstring script_id;
     bool done{};
     webview2_user_script_added_handler handler{[&](HRESULT res, LPCWSTR id) {
@@ -294,7 +289,7 @@ private:
 
     if (owns_window()) {
       m_com_init = {COINIT_APARTMENTTHREADED};
-      enable_dpi_awareness();
+      dpi::enable_dpi_awareness();
 
       auto icon = (HICON)LoadImage(
           hInstance, IDI_APPLICATION, IMAGE_ICON, GetSystemMetrics(SM_CXICON),
@@ -316,8 +311,8 @@ private:
           w = static_cast<win32_edge_engine *>(lpcs->lpCreateParams);
           w->m_window = hwnd;
           SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(w));
-          enable_non_client_dpi_scaling_if_needed(hwnd);
-          apply_window_theme(hwnd);
+          dpi::enable_non_client_dpi_scaling_if_needed(hwnd);
+          theme::apply_window_theme(hwnd);
         } else {
           w = reinterpret_cast<win32_edge_engine *>(
               GetWindowLongPtrW(hwnd, GWLP_USERDATA));
@@ -389,12 +384,12 @@ private:
       }
       on_window_created();
 
-      m_dpi = get_window_dpi(m_window);
+      m_dpi = dpi::get_window_dpi(m_window);
     } else {
       m_window = IsWindow(static_cast<HWND>(window))
                      ? static_cast<HWND>(window)
                      : *(static_cast<HWND *>(window));
-      m_dpi = get_window_dpi(m_window);
+      m_dpi = dpi::get_window_dpi(m_window);
     }
     // Create a window that WebView2 will be embedded into.
     WNDCLASSEXW widget_wc{};
@@ -629,8 +624,8 @@ private:
 
   void on_dpi_changed(int dpi) {
     auto scaled_size = get_scaled_size(m_dpi, dpi);
-    auto frame_size =
-        make_window_frame_size(m_window, scaled_size.cx, scaled_size.cy, dpi);
+    auto frame_size = dpi::make_window_frame_size(m_window, scaled_size.cx,
+                                                  scaled_size.cy, dpi);
     SetWindowPos(m_window, nullptr, 0, 0, frame_size.cx, frame_size.cy,
                  SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOMOVE | SWP_FRAMECHANGED);
     m_dpi = dpi;
@@ -646,13 +641,13 @@ private:
 
   SIZE get_scaled_size(int from_dpi, int to_dpi) const {
     auto size = get_size();
-    return scale_size(size.cx, size.cy, from_dpi, to_dpi);
+    return dpi::scale_size(size.cx, size.cy, from_dpi, to_dpi);
   }
 
   void on_system_setting_change(const wchar_t *area) {
     // Detect light/dark mode change in system.
     if (lstrcmpW(area, L"ImmersiveColorSet") == 0) {
-      apply_window_theme(m_window);
+      theme::apply_window_theme(m_window);
     }
   }
 

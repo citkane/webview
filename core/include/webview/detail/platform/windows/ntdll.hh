@@ -23,35 +23,29 @@
  * SOFTWARE.
  */
 
-#ifndef WEBVIEW_PLATFORM_WINDOWS_NTDLL_HH
-#define WEBVIEW_PLATFORM_WINDOWS_NTDLL_HH
+#ifndef WEBVIEW_DETAIL_PLATFORM_WINDOWS_NTDLL_HH
+#define WEBVIEW_DETAIL_PLATFORM_WINDOWS_NTDLL_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include "webview/detail/platform/windows/native_library.hh"
-#include <windows.h>
+#include "webview/detail/platform/windows/types.hh"
 
 namespace webview {
 namespace detail {
 namespace platform {
 namespace _lib {
 namespace windows {
-namespace ntdll_symbols {
 
-using RtlGetVersion_t =
-    unsigned int /*NTSTATUS*/ (WINAPI *)(RTL_OSVERSIONINFOW *);
+struct ntdll {
 
-constexpr library_symbol<RtlGetVersion_t> RtlGetVersion() {
-  return library_symbol<RtlGetVersion_t>("RtlGetVersion");
-}
+  static constexpr native_library_symbol<RtlGetVersion_t> RtlGetVersion() {
+    return native_library_symbol<RtlGetVersion_t>("RtlGetVersion");
+  }
+};
 
-} // namespace ntdll_symbols
 } // namespace windows
 } // namespace _lib
 } // namespace platform
@@ -60,4 +54,4 @@ constexpr library_symbol<RtlGetVersion_t> RtlGetVersion() {
 
 #endif // defined(WEBVIEW_PLATFORM_WINDOWS)
 #endif // defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#endif // WEBVIEW_PLATFORM_WINDOWS_NTDLL_HH
+#endif // WEBVIEW_DETAIL_PLATFORM_WINDOWS_NTDLL_HH

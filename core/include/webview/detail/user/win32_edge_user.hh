@@ -69,7 +69,6 @@ public:
     return 0;
   }
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, LPVOID *ppv) {
-    using namespace mswebview2::cast_info;
 
     if (!ppv) {
       return E_POINTER;
@@ -85,10 +84,14 @@ public:
     // that it is the only interface requested in this case. None have been
     // observed to be requested when using the official WebView2 loader.
 
-    if (cast_if_equal_iid(this, riid, controller_completed(), ppv) ||
-        cast_if_equal_iid(this, riid, environment_completed(), ppv) ||
-        cast_if_equal_iid(this, riid, message_received(), ppv) ||
-        cast_if_equal_iid(this, riid, permission_requested(), ppv)) {
+    if (iid::cast_if_equal_iid(
+            this, riid, mswebview2::cast_info::controller_completed(), ppv) ||
+        iid::cast_if_equal_iid(
+            this, riid, mswebview2::cast_info::environment_completed(), ppv) ||
+        iid::cast_if_equal_iid(
+            this, riid, mswebview2::cast_info::message_received(), ppv) ||
+        iid::cast_if_equal_iid(
+            this, riid, mswebview2::cast_info::permission_requested(), ppv)) {
       return S_OK;
     }
 
@@ -135,7 +138,7 @@ public:
     LPWSTR message{};
     auto res = args->TryGetWebMessageAsString(&message);
     if (SUCCEEDED(res)) {
-      m_msgCb(narrow_string(message));
+      m_msgCb(string::narrow_string(message));
     }
 
     CoTaskMemFree(message);
@@ -224,15 +227,16 @@ public:
   }
 
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, LPVOID *ppv) {
-    using namespace mswebview2::cast_info;
 
     if (!ppv) {
       return E_POINTER;
     }
 
-    if (cast_if_equal_iid(this, riid,
-                          add_script_to_execute_on_document_created_completed(),
-                          ppv)) {
+    if (iid::cast_if_equal_iid(
+            this, riid,
+            mswebview2::cast_info::
+                add_script_to_execute_on_document_created_completed(),
+            ppv)) {
       return S_OK;
     }
 
