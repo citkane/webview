@@ -66,7 +66,7 @@ namespace webkitgtk {
 /**
  * WebKitGTK compatibility helper class.
  */
-class webkitgtk_compat {
+class compat {
 public:
 #if GTK_MAJOR_VERSION >= 4
   using wk_handler_js_value_t = JSCValue;

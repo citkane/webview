@@ -51,7 +51,7 @@ namespace gtk {
 /**
  * GTK compatibility helper class.
  */
-class gtk_compat {
+class compat {
 public:
   static gboolean init_check() {
 #if GTK_MAJOR_VERSION >= 4
