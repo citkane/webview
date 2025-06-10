@@ -30,7 +30,6 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
 // IWYU pragma: begin_exports
 #include "WKOpenPanelParameters.hh"
 #include "WKScriptMessage.hh"

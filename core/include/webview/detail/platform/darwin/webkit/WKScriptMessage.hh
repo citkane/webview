@@ -30,18 +30,26 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
-#include "../objc/objc.hh"
+#include "webview/detail/platform/darwin/objc/objc.hh"
 
 namespace webview {
 namespace detail {
-namespace webkit {
+namespace platform {
+namespace _lib {
+namespace darwin {
 
-inline id WKScriptMessage_get_body(id self) {
-  return objc::msg_send<id>(self, objc::selector("body"));
-}
+/// An object that encapsulates a message sent by JavaScript code from a webpage.
+/// @see https://developer.apple.com/documentation/webkit/wkscriptmessage?language=objc
+struct WKScriptMessage {
 
-} // namespace webkit
+  static id get_body(id self) {
+    return objc::msg_send<id>(self, objc::selector("body"));
+  }
+};
+
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

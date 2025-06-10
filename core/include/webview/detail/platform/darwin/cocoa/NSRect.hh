@@ -30,20 +30,25 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
+#include "webview/detail/platform/darwin/types.hh"
 #include <CoreGraphics/CoreGraphics.h>
 
 namespace webview {
 namespace detail {
-namespace cocoa {
+namespace platform {
+namespace _lib {
+namespace darwin {
 
-using NSRect = CGRect;
-
-constexpr inline NSRect NSRectMake(CGFloat x, CGFloat y, CGFloat w, CGFloat h) {
+/// Creates a new NSRect from the specified values.
+/// @see https://developer.apple.com/documentation/foundation/nsmakerect(_:_:_:_:)?language=objc
+constexpr inline NSRect_t NSRectMake(CGFloat x, CGFloat y, CGFloat w,
+                                     CGFloat h) {
   return CGRectMake(x, y, w, h);
 }
 
-} // namespace cocoa
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

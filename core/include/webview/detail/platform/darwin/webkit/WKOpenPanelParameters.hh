@@ -30,24 +30,32 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
-#include "../objc/objc.hh"
+#include "webview/detail/platform/darwin/objc/objc.hh"
 
 namespace webview {
 namespace detail {
-namespace webkit {
+namespace platform {
+namespace _lib {
+namespace darwin {
 
-inline bool WKOpenPanelParameters_get_allowsMultipleSelection(id self) {
-  return static_cast<bool>(
-      objc::msg_send<BOOL>(self, objc::selector("allowsMultipleSelection")));
-}
+/// The configuration details of a file upload control in your web content.
+/// @see https://developer.apple.com/documentation/webkit/wkopenpanelparameters?language=objc
+struct WKOpenPanelParameters {
 
-inline bool WKOpenPanelParameters_get_allowsDirectories(id self) {
-  return static_cast<bool>(
-      objc::msg_send<BOOL>(self, objc::selector("allowsDirectories")));
-}
+  static bool get_allowsMultipleSelection(id self) {
+    return static_cast<bool>(
+        objc::msg_send<BOOL>(self, objc::selector("allowsMultipleSelection")));
+  }
 
-} // namespace webkit
+  static bool get_allowsDirectories(id self) {
+    return static_cast<bool>(
+        objc::msg_send<BOOL>(self, objc::selector("allowsDirectories")));
+  }
+};
+
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

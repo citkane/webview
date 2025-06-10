@@ -30,19 +30,27 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
-#include "../objc/objc.hh"
+#include "webview/detail/platform/darwin/objc/objc.hh"
 
 namespace webview {
 namespace detail {
-namespace cocoa {
+namespace platform {
+namespace _lib {
+namespace darwin {
 
-inline id NSURLRequest_requestWithURL(id url) {
-  return objc::msg_send<id>(objc::get_class("NSURLRequest"),
-                            objc::selector("requestWithURL:"), url);
-}
+/// A URL load request that is independent of protocol or URL scheme.
+/// @see https://developer.apple.com/documentation/foundation/nsurlrequest?language=objc
+struct NSURLRequest {
 
-} // namespace cocoa
+  static id requestWithURL(id url) {
+    return objc::msg_send<id>(objc::get_class("NSURLRequest"),
+                              objc::selector("requestWithURL:"), url);
+  }
+};
+
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

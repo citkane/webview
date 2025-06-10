@@ -30,19 +30,27 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
-#include "../objc/objc.hh"
-#include "NSApplication.hh"
+#include "webview/detail/platform/darwin/cocoa/NSApplication.hh"
+#include "webview/detail/platform/darwin/objc/objc.hh"
 
 namespace webview {
 namespace detail {
-namespace cocoa {
+namespace platform {
+namespace _lib {
+namespace darwin {
 
-inline NSModalResponse NSSavePanel_runModal(id self) {
-  return objc::msg_send<NSModalResponse>(self, objc::selector("runModal"));
-}
+/// A panel that prompts the user for information about where to save a file.
+/// @see https://developer.apple.com/documentation/appkit/nssavepanel?language=objc
+struct NSSavePanel {
 
-} // namespace cocoa
+  static NSModalResponse runModal(id self) {
+    return objc::msg_send<NSModalResponse>(self, objc::selector("runModal"));
+  }
+};
+
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

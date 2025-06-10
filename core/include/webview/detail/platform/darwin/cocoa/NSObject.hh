@@ -30,18 +30,26 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
-#include "../objc/objc.hh"
+#include "webview/detail/platform/darwin/objc/objc.hh"
 
 namespace webview {
 namespace detail {
-namespace cocoa {
+namespace platform {
+namespace _lib {
+namespace darwin {
 
-inline void NSObject_setValue_forKey(id self, id value, id key) {
-  objc::msg_send<void>(self, objc::selector("setValue:forKey:"), value, key);
-}
+/// The root class of most Objective-C class hierarchies, from which subclasses inherit a basic interface to the runtime system and the ability to behave as Objective-C objects.
+/// @see https://developer.apple.com/documentation/objectivec/nsobject-swift.class?language=objc
+struct NSObject {
 
-} // namespace cocoa
+  static void setValue_forKey(id self, id value, id key) {
+    objc::msg_send<void>(self, objc::selector("setValue:forKey:"), value, key);
+  }
+};
+
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

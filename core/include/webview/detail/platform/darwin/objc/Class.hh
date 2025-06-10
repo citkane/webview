@@ -30,13 +30,14 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN)
-
-#include "invoke.hh"
-
+#include "webview/detail/platform/darwin/objc/invoke.hh"
 #include <objc/objc-runtime.h>
 
 namespace webview {
 namespace detail {
+namespace platform {
+namespace _lib {
+namespace darwin {
 namespace objc {
 
 inline id Class_new(Class class_) {
@@ -46,6 +47,9 @@ inline id Class_new(Class class_) {
 inline Class get_class(const char *name) { return objc_getClass(name); }
 
 } // namespace objc
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

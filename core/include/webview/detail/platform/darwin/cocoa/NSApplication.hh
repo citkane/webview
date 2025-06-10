@@ -30,74 +30,78 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
-#include "../objc/objc.hh"
-#include "NSString.hh"
+#include "webview/detail/platform/darwin/cocoa/NSString.hh"
+#include "webview/detail/platform/darwin/objc/objc.hh"
+#include "webview/detail/platform/darwin/types.hh"
 
 namespace webview {
 namespace detail {
-namespace cocoa {
-
-enum NSApplicationActivationPolicy : NSInteger {
-  NSApplicationActivationPolicyRegular = 0
-};
+namespace platform {
+namespace _lib {
+namespace darwin {
 
 enum NSEventMask : NSUInteger { NSEventMaskAny = NSUIntegerMax };
 
 enum NSModalResponse : NSInteger { NSModalResponseOK = 1 };
 
-namespace NSRunLoopMode {
-inline id NSDefaultRunLoopMode() {
-  return NSString_stringWithUTF8String("kCFRunLoopDefaultMode");
-}
-} // namespace NSRunLoopMode
+struct NSRunLoopMode {
+  static id NSDefaultRunLoopMode() {
+    return NSString::stringWithUTF8String("kCFRunLoopDefaultMode");
+  }
+};
 
-inline void NSApplication_set_delegate(id self, id delegate) {
-  objc::msg_send<void>(self, objc::selector("setDelegate:"), delegate);
-}
+/// An object that manages an app’s main event loop and resources used by all of that app’s objects.
+/// @see https://developer.apple.com/documentation/appkit/nsapplication
+struct NSApplication {
 
-inline void NSApplication_run(id self) {
-  objc::msg_send<void>(self, objc::selector("run"));
-}
+  enum ActivationPolicy : NSInteger { ActivationPolicyRegular = 0 };
 
-inline void NSApplication_stop(id self, id sender = nullptr) {
-  objc::msg_send<void>(self, objc::selector("stop:"), sender);
-}
+  static void set_delegate(id self, id delegate) {
+    objc::msg_send<void>(self, objc::selector("setDelegate:"), delegate);
+  }
 
-inline id NSApplication_get_sharedApplication() {
-  return objc::msg_send<id>(objc::get_class("NSApplication"),
-                            objc::selector("sharedApplication"));
-}
+  static void run(id self) {
+    objc::msg_send<void>(self, objc::selector("run"));
+  }
 
-inline void NSApplication_sendEvent(id self, id event) {
-  objc::msg_send<void>(self, objc::selector("sendEvent:"), event);
-}
+  static void stop(id self, id sender = nullptr) {
+    objc::msg_send<void>(self, objc::selector("stop:"), sender);
+  }
 
-inline id NSApplication_nextEventMatchingMask(id self, NSEventMask mask,
-                                              id expiration, id mode,
-                                              bool dequeue) {
-  return objc::msg_send<id>(
-      self, objc::selector("nextEventMatchingMask:untilDate:inMode:dequeue:"),
-      mask, expiration, mode, dequeue);
-}
+  static id get_sharedApplication() {
+    return objc::msg_send<id>(objc::get_class("NSApplication"),
+                              objc::selector("sharedApplication"));
+  }
 
-inline void
-NSApplication_setActivationPolicy(id self,
-                                  NSApplicationActivationPolicy policy) {
-  objc::msg_send<void>(self, objc::selector("setActivationPolicy:"), policy);
-}
+  static void sendEvent(id self, id event) {
+    objc::msg_send<void>(self, objc::selector("sendEvent:"), event);
+  }
 
-inline void NSApplication_activateIgnoringOtherApps(id self, bool ignore) {
-  objc::msg_send<void>(self, objc::selector("activateIgnoringOtherApps:"),
-                       static_cast<BOOL>(ignore));
-}
+  static id nextEventMatchingMask(id self, NSEventMask mask, id expiration,
+                                  id mode, bool dequeue) {
+    return objc::msg_send<id>(
+        self, objc::selector("nextEventMatchingMask:untilDate:inMode:dequeue:"),
+        mask, expiration, mode, dequeue);
+  }
 
-inline void NSApplication_postEvent(id self, id event, bool at_start) {
-  objc::msg_send<void>(self, objc::selector("postEvent:atStart:"), event,
-                       static_cast<BOOL>(at_start));
-}
+  static void setActivationPolicy(id self, ActivationPolicy policy) {
+    objc::msg_send<void>(self, objc::selector("setActivationPolicy:"), policy);
+  }
 
-} // namespace cocoa
+  static void activateIgnoringOtherApps(id self, bool ignore) {
+    objc::msg_send<void>(self, objc::selector("activateIgnoringOtherApps:"),
+                         static_cast<BOOL>(ignore));
+  }
+
+  static void postEvent(id self, id event, bool at_start) {
+    objc::msg_send<void>(self, objc::selector("postEvent:atStart:"), event,
+                         static_cast<BOOL>(at_start));
+  }
+};
+
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

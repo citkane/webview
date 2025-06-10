@@ -30,13 +30,15 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN)
-
-#include "invoke.hh"
-
+#include "webview/detail/platform/darwin/objc/Class.hh"
+#include "webview/detail/platform/darwin/objc/invoke.hh"
 #include <objc/objc-runtime.h>
 
 namespace webview {
 namespace detail {
+namespace platform {
+namespace _lib {
+namespace darwin {
 namespace objc {
 
 // Wrapper around NSAutoreleasePool that drains the pool on destruction.
@@ -61,6 +63,9 @@ private:
 };
 
 } // namespace objc
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

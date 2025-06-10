@@ -30,38 +30,45 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
-
-#include "../objc/objc.hh"
-#include "NSPoint.hh"
-#include "types.hh"
+#include "webview/detail/platform/darwin/objc/objc.hh"
+#include "webview/detail/platform/darwin/types.hh"
 
 namespace webview {
 namespace detail {
-namespace cocoa {
+namespace platform {
+namespace _lib {
+namespace darwin {
 
 enum NSEventType : NSUInteger {
   // For macOS 10.12+; replaces NSApplicationDefined (macOS 10.0–10.12)
   // with the same value
-  NSEventTypeApplicationDefined = 15
+  ApplicationDefined = 15
 };
 
 enum NSEventModifierFlags : NSUInteger {};
 
-inline id NSEvent_otherEventWithType(NSEventType type, NSPoint location,
-                                     NSEventModifierFlags modifier_flags,
-                                     NSTimeInterval timestamp,
-                                     NSInteger window_number, id context,
-                                     short subtype, NSInteger data1,
-                                     NSInteger data2) {
-  return objc::msg_send<id>(
-      objc::get_class("NSEvent"),
-      objc::selector("otherEventWithType:location:modifierFlags:timestamp:"
-                     "windowNumber:context:subtype:data1:data2:"),
-      type, location, modifier_flags, timestamp, window_number, context,
-      subtype, data1, data2);
-}
+/// An object that contains information about an input action, such as a mouse click or a key press.
+/// @see https://developer.apple.com/documentation/appkit/nsevent?language=objc
+struct NSEvent {
 
-} // namespace cocoa
+  static id otherEventWithType(NSEventType type, NSPoint_t location,
+                               NSEventModifierFlags modifier_flags,
+                               NSTimeInterval_t timestamp,
+                               NSInteger window_number, id context,
+                               short subtype, NSInteger data1,
+                               NSInteger data2) {
+    return objc::msg_send<id>(
+        objc::get_class("NSEvent"),
+        objc::selector("otherEventWithType:location:modifierFlags:timestamp:"
+                       "windowNumber:context:subtype:data1:data2:"),
+        type, location, modifier_flags, timestamp, window_number, context,
+        subtype, data1, data2);
+  }
+};
+
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

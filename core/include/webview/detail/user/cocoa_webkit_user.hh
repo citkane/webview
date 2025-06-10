@@ -35,6 +35,7 @@
 
 #include <objc/objc.h>
 
+using namespace webview::detail::platform::_lib::darwin;
 namespace webview {
 namespace detail {
 namespace user {

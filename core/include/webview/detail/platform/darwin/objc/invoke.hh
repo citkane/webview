@@ -30,11 +30,13 @@
 #include "webview/lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_DARWIN)
-
 #include <objc/objc-runtime.h>
 
 namespace webview {
 namespace detail {
+namespace platform {
+namespace _lib {
+namespace darwin {
 namespace objc {
 
 // A convenient template function for unconditionally casting the specified
@@ -66,6 +68,9 @@ Result msg_send_stret(Args... args) noexcept {
 inline SEL selector(const char *name) { return sel_registerName(name); }
 
 } // namespace objc
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 

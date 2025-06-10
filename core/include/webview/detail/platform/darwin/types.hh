@@ -31,15 +31,23 @@
 
 #if defined(WEBVIEW_PLATFORM_DARWIN) && defined(WEBVIEW_COCOA)
 
+#include <CoreGraphics/CoreGraphics.h>
 #include <objc/NSObjCRuntime.h>
 
 namespace webview {
 namespace detail {
-namespace cocoa {
+namespace platform {
+namespace _lib {
+namespace darwin {
 
-using NSTimeInterval = double;
+using NSPoint_t = CGPoint;
+using NSTimeInterval_t = double;
+using NSRect_t = CGRect;
+using NSSize_t = CGSize;
 
-} // namespace cocoa
+} // namespace darwin
+} // namespace _lib
+} // namespace platform
 } // namespace detail
 } // namespace webview
 
