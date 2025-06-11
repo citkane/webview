@@ -167,6 +167,7 @@ protected:
   }
   noresult dispatch_impl(dispatch_fn_t f) override {
     PostMessageW(m_message_window, WM_APP, 0, (LPARAM) new dispatch_fn_t(f));
+    // warning: Potential memory leak [clang-analyzer-cplusplus.NewDeleteLeaks]
     return {};
   }
 
