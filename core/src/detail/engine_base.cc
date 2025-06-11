@@ -35,8 +35,6 @@
 #include "webview/strings/string_api.hh"
 
 using namespace webview::detail;
-using namespace webview::detail::user;
-using namespace webview::log;
 using namespace webview::detail::threading;
 
 /* PUBLIC 
@@ -72,7 +70,7 @@ noresult engine_base::navigate(cnst_str_r url) {
   return {};
 }
 noresult engine_base::bind(cnst_str_r name, sync_binding_t fn) {
-  console.warn(
+  log::console.warn(
       "Synchronous bind is deprecated and may lead to undefined behaviour");
 
   auto wrapper = [this, fn](cnst_str_r id, cnst_str_r req, void * /*arg*/) {
@@ -87,13 +85,13 @@ noresult engine_base::bind(cnst_str_r name, sync_binding_t fn) {
   return {};
 }
 noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg) {
-  trace::base.bind.start(name);
+  log::trace::base.bind.start(name);
   if (queue.bind.is_duplicate(name)) {
     return error_info{WEBVIEW_ERROR_DUPLICATE};
   }
 
   auto do_work = [this, name, fn, arg] {
-    trace::base.bind.work(name);
+    log::trace::base.bind.work(name);
     list.bindings.emplace(name, fn, arg);
     replace_bind_script();
     eval(strings::js.onbind(name), true);
@@ -108,13 +106,13 @@ noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg) {
   return queue.bind.enqueue(do_work, name);
 }
 noresult engine_base::unbind(cnst_str_r name) {
-  trace::base.unbind.start(name);
+  log::trace::base.unbind.start(name);
   if (queue.unbind.not_found(name)) {
     return error_info{WEBVIEW_ERROR_NOT_FOUND};
   }
 
   auto do_work = [this, name]() {
-    trace::base.unbind.work(name);
+    log::trace::base.unbind.work(name);
     eval(strings::js.onunbind(name), true);
     list.bindings.erase(name);
     replace_bind_script();
@@ -122,18 +120,18 @@ noresult engine_base::unbind(cnst_str_r name) {
   return queue.unbind.enqueue(do_work, name);
 }
 noresult engine_base::eval(cnst_str_r js, bool skip_queue) {
-  trace::base.eval.start(js, skip_queue);
+  log::trace::base.eval.start(js, skip_queue);
   auto do_work = [this, js, skip_queue] {
     if (!skip_queue) {
       auto wrapped_js = strings::js.eval_wrapper(js);
-      trace::base.eval.work(wrapped_js, skip_queue);
+      log::trace::base.eval.work(wrapped_js, skip_queue);
       if (thread::is_main_thread()) {
         eval_impl(wrapped_js);
       } else {
         dispatch_([this, wrapped_js] { eval_impl(wrapped_js); });
       }
     } else {
-      trace::base.eval.work(js, skip_queue);
+      log::trace::base.eval.work(js, skip_queue);
       if (thread::is_main_thread()) {
         eval_impl(js);
       } else {
@@ -172,12 +170,12 @@ noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
   auto action = status == 0 ? "resolving" : "rejecting";
   auto message = "Bound function \"" + name + "\" is " + action + " promise " +
                  id + " with result: " + res_m;
-  status == 0 ? console.info(message) : console.warn(message);
+  status == 0 ? log::console.info(message) : log::console.warn(message);
 
   auto res_escaped =
       result.empty() ? "undefined" : strings::json.escape(result);
 
-  trace::base.eval.print_here(res_escaped);
+  log::trace::base.eval.print_here(res_escaped);
 
   auto js = strings::js.onreply(id, status, res_escaped);
   return eval(js, true);

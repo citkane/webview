@@ -34,8 +34,8 @@
 
 using namespace webview::log;
 using namespace webview::strings;
-using namespace webview::_lib::strings::tests;
-using namespace webview::_lib::strings::frontend;
+using namespace webview::_lib::_strings::_tests;
+using namespace webview::_lib::_strings::_frontend;
 
 /* Frontend
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */

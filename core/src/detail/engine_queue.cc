@@ -33,11 +33,8 @@
 #include "webview/strings/string_api.hh"
 #include <cstdio>
 
-using namespace webview::detail;
-using namespace webview::_lib::detail;
-using namespace webview::strings;
-using namespace webview::log;
 using namespace webview::types;
+using namespace webview::_lib::_detail;
 
 /* Nested_API_lib
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
@@ -96,27 +93,27 @@ void promise_api_t::resolve(cnst_str_r name, cnst_str_r id, cnst_str_r args) {
   resolver.detach();
 }
 bool promise_api_t::exec_system_message(cnst_str_r id, cnst_str_r method) {
-  if (id != sys_flags.sysop) {
+  if (id != strings::sys_flags.sysop) {
     return false;
   };
-  if (method == sys_ops.webview_ready) {
-    trace::queue.notify.on_message(method);
+  if (method == strings::sys_ops.webview_ready) {
+    log::trace::queue.notify.on_message(method);
     self->atomic.dom.webview_ready(true);
   }
-  if (method == sys_ops.dom_ready) {
-    trace::queue.notify.on_message(method);
+  if (method == strings::sys_ops.dom_ready) {
+    log::trace::queue.notify.on_message(method);
     self->atomic.dom.ready(true);
   }
-  if (method == sys_ops.bind_done) {
-    trace::queue.notify.on_message(method);
+  if (method == strings::sys_ops.bind_done) {
+    log::trace::queue.notify.on_message(method);
     self->atomic.done.bind(true);
   }
-  if (method == sys_ops.unbind_done) {
-    trace::queue.notify.on_message(method);
+  if (method == strings::sys_ops.unbind_done) {
+    log::trace::queue.notify.on_message(method);
     self->atomic.done.unbind(true);
   }
-  if (method == sys_ops.js_eval_start) {
-    trace::queue.notify.on_message(method);
+  if (method == strings::sys_ops.js_eval_start) {
+    log::trace::queue.notify.on_message(method);
     self->atomic.done.eval(true);
   }
   return true;
@@ -176,7 +173,7 @@ noresult engine_queue::queue_work(cnst_str_r name_or_js, dispatch_fn_t fn,
     list.pending.push_back("unbind-" + name);
   }
   list.queue.push_back(fn_ctx, fn, name_or_js);
-  trace::queue.enqueue.added(char(fn_ctx), list.queue.size(), name_or_js);
+  log::trace::queue.enqueue.added(char(fn_ctx), list.queue.size(), name_or_js);
   cv.queue.notify_one();
   return {};
 };

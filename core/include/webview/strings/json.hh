@@ -36,7 +36,7 @@
 using namespace webview::types;
 namespace webview {
 namespace _lib {
-namespace strings {
+namespace _strings {
 
 class json_t {
 public:
@@ -350,10 +350,11 @@ private:
   bool is_ascii_control_char(char c) const { return c >= 0 && c <= 0x1f; }
 };
 
-} // namespace strings
+} // namespace _strings
 } // namespace _lib
+
+using namespace _lib::_strings;
 namespace strings {
-using namespace _lib::strings;
 
 const json_t json{};
 

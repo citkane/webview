@@ -35,7 +35,7 @@
 using namespace webview::types;
 namespace webview {
 namespace _lib {
-namespace log {
+namespace _log {
 
 static std::string to_ansi_string(std::initializer_list<int> codes) {
   std::string ansi_string;
@@ -144,7 +144,7 @@ private:
   }
 };
 
-} // namespace log
+} // namespace _log
 } // namespace _lib
 } // namespace webview
 

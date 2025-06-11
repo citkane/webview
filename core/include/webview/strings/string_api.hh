@@ -32,12 +32,13 @@
 #include <regex>
 #include <string>
 
+using namespace webview::_lib::_strings;
 namespace webview {
 namespace strings {
 
-_lib::strings::tokens_t const tokens{};
-_lib::strings::sys_flags_t const sys_flags{};
-_lib::strings::sys_ops_t const sys_ops{};
+tokens_t const tokens{};
+sys_flags_t const sys_flags{};
+sys_ops_t const sys_ops{};
 
 /// Performs string replacement for tokens.
 /// @todo REGEX is probably going to be optimal for performance
@@ -71,13 +72,13 @@ std::string trim(cnst_str_r str) {
 }
 
 /// API for JS strings.
-static const _lib::strings::frontend::js_string_t js{};
+static const _frontend::js_string_t js{};
 /// API for error message strings
-static const _lib::strings::frontend::error_message_t err{};
+static const _frontend::error_message_t err{};
 /// API for test HTML strings
-static const _lib::strings::tests::test_html_t test_html{};
+static const _tests::test_html_t test_html{};
 /// API for test JS strings
-static const _lib::strings::tests::test_js_t test_js{};
+static const _tests::test_js_t test_js{};
 
 } // namespace strings
 } // namespace webview

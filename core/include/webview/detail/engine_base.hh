@@ -167,7 +167,7 @@ protected:
   /// Gets a flag for whether the Webview window is embedded, or is owned by the user process.
   bool owns_window() const;
 
-  friend struct _lib::detail::threading::user_scripts_t;
+  friend struct _lib::_detail::_threading::user_scripts_t;
 
 private:
   /// Keeps track of the number of platform window instances.

@@ -33,7 +33,7 @@
 using namespace webview::types;
 namespace webview {
 namespace _lib {
-namespace log {
+namespace _log {
 
 struct util_t {
   std::string get_handle_kind(webview_native_handle_kind_t kind) const {
@@ -85,12 +85,14 @@ public:
   util_t util{};
 };
 
-} // namespace log
+} // namespace _log
 } // namespace _lib
+
+using namespace _lib::_log;
 namespace log {
-using namespace _lib::log;
 
 static const console_t console{};
+
 } // namespace log
 } // namespace webview
 

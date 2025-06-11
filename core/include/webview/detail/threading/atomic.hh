@@ -40,8 +40,8 @@ class atomic_api_t;
 } // namespace detail
 using namespace detail::threading;
 namespace _lib {
-namespace detail {
-namespace threading {
+namespace _detail {
+namespace _threading {
 
 /// Nested API to get and set if the window DOM is ready
 struct atomic_dom_ready_t : nested_api_t<atomic_api_t> {
@@ -73,12 +73,13 @@ struct atomic_done_t : nested_api_t<atomic_api_t> {
   /// Sets the eval flag state
   void eval(bool val);
 };
-} // namespace threading
-} // namespace detail
+} // namespace _threading
+} // namespace _detail
 } // namespace _lib
+
+using namespace _lib::_detail::_threading;
 namespace detail {
 namespace threading {
-using namespace _lib::detail::threading;
 
 /// Root API to work with atomic flags
 class atomic_api_t {
@@ -128,8 +129,8 @@ protected:
   cv_api_t cv{};
   api_root_t atomic{this};
 
-  friend struct _lib::detail::threading::atomic_done_t;
-  friend struct _lib::detail::threading::atomic_dom_ready_t;
+  friend struct _lib::_detail::_threading::atomic_done_t;
+  friend struct _lib::_detail::_threading::atomic_dom_ready_t;
 };
 
 } // namespace threading

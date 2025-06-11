@@ -39,8 +39,6 @@ static const unsigned int webview_unbind_timeout = WEBVIEW_UNBIND_TIMEOUT;
 #endif
 
 using namespace webview::log;
-using namespace webview::strings;
-using namespace webview::strings;
 using namespace webview::detail;
 
 void engine_queue::queue_thread_constructor() {

@@ -33,6 +33,7 @@
 #include <thread>
 
 using namespace webview::types;
+using namespace webview::_lib::_detail;
 namespace webview {
 namespace detail {
 
@@ -53,7 +54,7 @@ public:
   // NOLINTBEGIN(cppcoreguidelines-non-private-member-variables-in-classes)
 
   /// API root for the engine_queue class instance.
-  _lib::detail::queue_api_t queue;
+  queue_api_t queue;
 
   // NOLINTEND(cppcoreguidelines-non-private-member-variables-in-classes)
 
@@ -95,11 +96,11 @@ private:
   /// The Webview class instance;
   engine_base *wv;
 
-  friend struct _lib::detail::bind_api_t;
-  friend struct _lib::detail::unbind_api_t;
-  friend struct _lib::detail::eval_api_t;
-  friend struct _lib::detail::promise_api_t;
-  friend struct _lib::detail::queue_api_t;
+  friend struct _lib::_detail::bind_api_t;
+  friend struct _lib::_detail::unbind_api_t;
+  friend struct _lib::_detail::eval_api_t;
+  friend struct _lib::_detail::promise_api_t;
+  friend struct _lib::_detail::queue_api_t;
 };
 
 } // namespace detail

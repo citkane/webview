@@ -35,10 +35,9 @@
 #include "webview/strings/json.hh"
 #include "webview/types/types.hh"
 
-using namespace webview::log;
-using namespace webview::strings;
 using namespace webview::api;
-using namespace webview::_lib::api;
+using namespace webview::log;
+using namespace webview::_lib::_api;
 using namespace webview::detail::threading;
 
 /* PUBLIC C API implementations
@@ -46,12 +45,12 @@ using namespace webview::detail::threading;
 
 WEBVIEW_API webview_t webview_create(int debug, void *wnd) {
   webview_cc_t *w{};
-  auto err = api_filter(
+  auto err_ = api_filter(
       [=]() -> result<webview_cc_t *> {
         return new webview_cc_t{static_cast<bool>(debug), wnd};
       },
       [&](webview_cc_t *w_) { w = w_; });
-  if (err == WEBVIEW_ERROR_OK) {
+  if (err_ == WEBVIEW_ERROR_OK) {
     return w;
   }
   console.error("Failed to create Webview", WEBVIEW_ERROR_UNSPECIFIED);
@@ -96,19 +95,19 @@ RESTORE_IGNORED_WARNINGS
 
 WEBVIEW_API void *webview_get_window(webview_t w) {
   void *window = nullptr;
-  auto err = api_filter([=] { return cast_to_webview(w)->window(); },
-                        [&](void *value) { window = value; });
-  if (err == WEBVIEW_ERROR_OK) {
+  auto err_ = api_filter([=] { return cast_to_webview(w)->window(); },
+                         [&](void *value) { window = value; });
+  if (err_ == WEBVIEW_ERROR_OK) {
     return window;
   }
-  console.error("Failed to get a valid `window` handle", err);
+  console.error("Failed to get a valid `window` handle", err_);
   return nullptr;
 }
 
 WEBVIEW_API void *webview_get_native_handle(webview_t w,
                                             webview_native_handle_kind_t kind) {
   void *handle{};
-  auto err = api_filter(
+  auto err_ = api_filter(
       [=]() -> result<void *> {
         auto *w_ = cast_to_webview(w);
         switch (kind) {
@@ -123,12 +122,12 @@ WEBVIEW_API void *webview_get_native_handle(webview_t w,
         }
       },
       [&](void *handle_) { handle = handle_; });
-  if (err == WEBVIEW_ERROR_OK) {
+  if (err_ == WEBVIEW_ERROR_OK) {
     return handle;
   }
   console.error("Failed to get a valid `" + console.util.get_handle_kind(kind) +
                     "` handle",
-                err);
+                err_);
   return nullptr;
 }
 
@@ -243,7 +242,7 @@ WEBVIEW_API webview_error_t json_parse(char **buffer, const char *json_str,
   std::string parsed_res;
   auto err_mess = "Failed to JSON parse the string";
   try {
-    parsed_res = json.parse(json_str, key, index);
+    parsed_res = webview::strings::json.parse(json_str, key, index);
   } catch (...) {
     console.error(err_mess, WEBVIEW_ERROR_UNSPECIFIED);
     return WEBVIEW_ERROR_UNSPECIFIED;
@@ -256,7 +255,7 @@ WEBVIEW_API webview_error_t json_escape(char **buffer, const char *str,
   std::string escaped_res;
   auto err_mess = "Failed to JSON parse the string";
   try {
-    escaped_res = json.escape(str, add_quotes);
+    escaped_res = webview::strings::json.escape(str, add_quotes);
   } catch (...) {
     console.error(err_mess, WEBVIEW_ERROR_UNSPECIFIED);
     return WEBVIEW_ERROR_UNSPECIFIED;
@@ -271,8 +270,9 @@ WEBVIEW_API webview_error_t json_escape(char **buffer, const char *str,
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
 template <typename WorkFn, typename ResultFn>
-webview_error_t webview::_lib::api::api_filter(WorkFn &&do_work,
-                                               ResultFn &&put_result) noexcept {
+webview_error_t
+webview::_lib::_api::api_filter(WorkFn &&do_work,
+                                ResultFn &&put_result) noexcept {
   try {
     auto result = do_work();
     if (result.ok()) {
@@ -288,7 +288,7 @@ webview_error_t webview::_lib::api::api_filter(WorkFn &&do_work,
 }
 
 template <typename WorkFn>
-webview_error_t webview::_lib::api::api_filter(WorkFn &&do_work) noexcept {
+webview_error_t webview::_lib::_api::api_filter(WorkFn &&do_work) noexcept {
   try {
     auto result = do_work();
     if (result.ok()) {
@@ -302,7 +302,7 @@ webview_error_t webview::_lib::api::api_filter(WorkFn &&do_work) noexcept {
   }
 }
 
-inline webview_cc_t *webview::_lib::api::cast_to_webview(void *w) {
+inline webview_cc_t *webview::_lib::_api::cast_to_webview(void *w) {
   if (!w) {
     throw exception{WEBVIEW_ERROR_INVALID_ARGUMENT,
                     "Cannot cast null pointer to webview instance"};
@@ -312,9 +312,9 @@ inline webview_cc_t *webview::_lib::api::cast_to_webview(void *w) {
 
 IGNORE_UNUSED_PARAMETERS
 // NOLINTBEGIN(misc-unused-parameters)
-webview_error_t webview::_lib::api::alloc_string_buffer(char **buffer,
-                                                        cnst_str_r str,
-                                                        cnst_str_r err_mess) {
+webview_error_t webview::_lib::_api::alloc_string_buffer(char **buffer,
+                                                         cnst_str_r str,
+                                                         cnst_str_r err_mess) {
   auto size = str.size() + 1;
   // NOLINTNEXTLINE(hicpp-no-malloc, cppcoreguidelines-no-malloc)
   *buffer = static_cast<char *>(malloc(size));

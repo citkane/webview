@@ -77,13 +77,13 @@ public:
 #if defined(WEBVIEW_PLATFORM_WINDOWS)
 using namespace detail::threading;
 namespace _lib {
-namespace detail {
-namespace threading {
+namespace _detail {
+namespace _threading {
 // We want to statically initialise the main thread id at program start before user main.
 // There is no practical use for this instance, so we put it in the `_lib` namespace.
 static const thread thread_{};
-} // namespace threading
-} // namespace detail
+} // namespace _threading
+} // namespace _detail
 } // namespace _lib
 #endif
 

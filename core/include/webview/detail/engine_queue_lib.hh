@@ -36,7 +36,7 @@ namespace detail {
 class engine_queue;
 } // namespace detail
 namespace _lib {
-namespace detail {
+namespace _detail {
 using engine_queue = webview::detail::engine_queue;
 /// Nested API structure for bind operations
 struct bind_api_t : nested_api_t<engine_queue> {
@@ -91,7 +91,7 @@ struct queue_api_t : nested_api_t<engine_queue> {
   void terminate();
 };
 
-} // namespace detail
+} // namespace _detail
 } // namespace _lib
 } // namespace webview
 

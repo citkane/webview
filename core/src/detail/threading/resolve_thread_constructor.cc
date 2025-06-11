@@ -30,7 +30,6 @@
 #include "webview/detail/engine_queue.hh"
 #include "webview/strings/string_api.hh"
 
-using namespace webview::strings;
 using namespace webview::detail;
 
 void engine_queue::resolve_thread_constructor(std::string name, cnst_str_r id,

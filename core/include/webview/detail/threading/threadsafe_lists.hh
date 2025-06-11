@@ -46,8 +46,8 @@ namespace detail {
 class engine_base;
 } // namespace detail
 namespace _lib {
-namespace detail {
-namespace threading {
+namespace _detail {
+namespace _threading {
 
 /// Structure to hold information about a queued action.
 struct action_t {
@@ -173,12 +173,13 @@ private:
   std::deque<std::string> pending_bind_unbind;
   std::mutex mutable mtx;
 };
-} // namespace threading
-} // namespace detail
+} // namespace _threading
+} // namespace _detail
 } // namespace _lib
+
+using namespace _lib::_detail::_threading;
 namespace detail {
 namespace threading {
-using namespace _lib::detail::threading;
 
 class engine_lists_t {
 

@@ -31,8 +31,7 @@
 #include <iostream>
 
 using namespace webview::types;
-using namespace webview::log;
-using namespace webview::_lib::log;
+using namespace webview::_lib::_log;
 
 /* Common API utils
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
@@ -326,9 +325,9 @@ RESTORE_IGNORED_WARNINGS
  * Root API
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
-const base_trace_t &trace::base = get_base();
-const queue_trace_t &trace::queue = get_queue();
-const tests_trace_t &trace::test = get_tests();
+const base_trace_t &webview::log::trace::base = get_base();
+const queue_trace_t &webview::log::trace::queue = get_queue();
+const tests_trace_t &webview::log::trace::test = get_tests();
 
 /* ∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆∆
  * Root API */

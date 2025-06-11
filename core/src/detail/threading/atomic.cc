@@ -29,7 +29,7 @@
 #include "webview/detail/threading/atomic.hh"
 
 using namespace webview::detail::threading;
-using namespace webview::_lib::detail::threading;
+using namespace webview::_lib::_detail::_threading;
 
 /* Nested_API_lib
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */

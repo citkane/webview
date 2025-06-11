@@ -1,7 +1,6 @@
 #ifndef WEBVIEW_EXAMPLES_BIND_LIB
 #define WEBVIEW_EXAMPLES_BIND_LIB
 
-#ifndef WEBVIEW_BIND_EXAMPLE_HTML
 #define WEBVIEW_BIND_EXAMPLE_HTML                                              \
   "<div>\n"                                                                    \
   "  <button id=\"increment\">+</button>\n"                                    \
@@ -33,16 +32,16 @@
   "    ui.compute.disabled = false;\n"                                         \
   "  });\n"                                                                    \
   "</script>"
-#endif
+
+#define ANSWER_MACHINE_HTML                                                    \
+  "<br><p><strong>42:</strong> is the answer.</p><p>Would you like to "        \
+  "know the question, Dave?</p>"
 
 #if defined(__cplusplus)
 #include <random>
 #include <string>
 
-std::string question_machine() {
-  return "<br><p><strong>42:</strong> is the answer.</p><p>Would you like to "
-         "know the question, Dave?</p>";
-}
+std::string question_machine() { return ANSWER_MACHINE_HTML; }
 
 #else // !defined(__cplusplus)
 #ifdef _WIN32
@@ -97,11 +96,7 @@ char *to_string(int value) {
   return buffer;
 }
 
-struct timespec const ts;
-char *question_machine(void) {
-  return "<br><p><strong>42:</strong> is the answer.</p><p>Would you like to "
-         "know the question, Dave?</p>";
-}
+char *question_machine(void) { return ANSWER_MACHINE_HTML; }
 
 #endif // !defined(__cplusplus)
 #endif // WEBVIEW_EXAMPLES_BIND_LIB

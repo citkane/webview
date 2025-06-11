@@ -55,8 +55,7 @@
 
 #include "WebView2.h" // amalgamate(skip)
 #include "webview/detail/platform/windows/native_library.hh"
-#include "webview/detail/platform/windows/reg_key.hh"
-#include "webview/detail/platform/windows/version.hh"
+#include "webview/detail/platform/windows/types.hh"
 #include <objbase.h>
 #include <string>
 
@@ -110,21 +109,27 @@ struct mswebview2 {
           0x47B5,
           {0xBC, 0x6F, 0x8E, 0x78, 0x95, 0xFC, 0xEA, 0x17}};
 
-  struct symbols {
-#if WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL == 1
-    static native_library_symbol<CreateWebViewEnvironmentWithOptionsInternal_t>
-        CreateWebViewEnvironmentWithOptionsInternal;
-    static native_library_symbol<DllCanUnloadNow_t> DllCanUnloadNow;
+  using create_internal_t =
+      native_library_symbol<CreateWebViewEnvironmentWithOptionsInternal_t>;
+  using dll_can_unload_t = native_library_symbol<DllCanUnloadNow_t>;
+  using create_with_options_t =
+      native_library_symbol<CreateCoreWebView2EnvironmentWithOptions_t>;
+  using get_version_string_t =
+      native_library_symbol<GetAvailableCoreWebView2BrowserVersionString_t>;
 
+  struct symbols {
+
+#if WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL == 1
+    static const create_internal_t &
+    CreateWebViewEnvironmentWithOptionsInternal();
+    static const dll_can_unload_t &DllCanUnloadNow();
 #endif // WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL
 
 #if WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK == 1
-
-    static native_library_symbol<CreateCoreWebView2EnvironmentWithOptions_t>
-        CreateCoreWebView2EnvironmentWithOptions;
-    static native_library_symbol<GetAvailableCoreWebView2BrowserVersionString_t>
-        GetAvailableCoreWebView2BrowserVersionString;
-
+    static const create_with_options_t &
+    CreateCoreWebView2EnvironmentWithOptions();
+    static const get_version_string_t &
+    GetAvailableCoreWebView2BrowserVersionString();
 #endif // WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK
   };
 
@@ -134,46 +139,11 @@ struct mswebview2 {
         PCWSTR browser_dir, PCWSTR user_data_dir,
         ICoreWebView2EnvironmentOptions *env_options,
         ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler
-            *created_handler) const {
-#if WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK == 1
-      if (m_lib.is_loaded()) {
-        if (auto fn =
-                m_lib.get(symbols::CreateCoreWebView2EnvironmentWithOptions)) {
-          return fn(browser_dir, user_data_dir, env_options, created_handler);
-        }
-      }
-#if WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL == 1
-      return create_environment_with_options_impl(browser_dir, user_data_dir,
-                                                  env_options, created_handler);
-#else
-      return S_FALSE;
-#endif
-#else
-      return ::CreateCoreWebView2EnvironmentWithOptions(
-          browser_dir, user_data_dir, env_options, created_handler);
-#endif // WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK
-    }
+            *created_handler) const;
 
     HRESULT
     get_available_browser_version_string(PCWSTR browser_dir,
-                                         LPWSTR *version) const {
-#if WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK == 1
-      if (m_lib.is_loaded()) {
-        if (auto fn = m_lib.get(
-                symbols::GetAvailableCoreWebView2BrowserVersionString)) {
-          return fn(browser_dir, version);
-        }
-      }
-#if WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL == 1
-      return get_available_browser_version_string_impl(browser_dir, version);
-#else
-      return S_FALSE;
-#endif
-#else
-      return ::GetAvailableCoreWebView2BrowserVersionString(browser_dir,
-                                                            version);
-#endif // WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK
-    }
+                                         LPWSTR *version) const;
 
   private:
 #if WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL == 1
@@ -197,121 +167,22 @@ struct mswebview2 {
         PCWSTR browser_dir, PCWSTR user_data_dir,
         ICoreWebView2EnvironmentOptions *env_options,
         ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler
-            *created_handler) const {
-      auto found_client = find_available_client(browser_dir);
-      if (!found_client.found) {
-        return -1;
-      }
-      auto client_dll = native_library(found_client.dll_path);
-      if (auto fn = client_dll.get(
-              symbols::CreateWebViewEnvironmentWithOptionsInternal)) {
-        return fn(true, found_client.runtime_type, user_data_dir, env_options,
-                  created_handler);
-      }
-      if (auto fn = client_dll.get(symbols::DllCanUnloadNow)) {
-        if (!fn()) {
-          client_dll.detach();
-        }
-      }
-      return ERROR_SUCCESS;
-    }
+            *created_handler) const;
 
     HRESULT
     get_available_browser_version_string_impl(PCWSTR browser_dir,
-                                              LPWSTR *version) const {
-      if (!version) {
-        return -1;
-      }
-      auto found_client = find_available_client(browser_dir);
-      if (!found_client.found) {
-        return -1;
-      }
-      auto info_length_bytes =
-          found_client.version.size() * sizeof(found_client.version[0]);
-      auto info = static_cast<LPWSTR>(CoTaskMemAlloc(info_length_bytes));
-      if (!info) {
-        return -1;
-      }
-      CopyMemory(info, found_client.version.c_str(), info_length_bytes);
-      *version = info;
-      return 0;
-    }
+                                              LPWSTR *version) const;
 
-    client_info_t find_available_client(PCWSTR browser_dir) const {
-      if (browser_dir) {
-        return find_embedded_client(api_version, browser_dir);
-      }
-      auto found_client = find_installed_client(api_version, true,
-                                                default_release_channel_guid);
-      if (!found_client.found) {
-        found_client = find_installed_client(api_version, false,
-                                             default_release_channel_guid);
-      }
-      return found_client;
-    }
+    client_info_t find_available_client(PCWSTR browser_dir) const;
 
-    std::wstring make_client_dll_path(const std::wstring &dir) const {
-      auto dll_path = dir;
-      if (!dll_path.empty()) {
-        auto last_char = dir[dir.size() - 1];
-        if (last_char != L'\\' && last_char != L'/') {
-          dll_path += L'\\';
-        }
-      }
-      dll_path += L"EBWebView\\";
-#if defined(_M_X64) || defined(__x86_64__)
-      dll_path += L"x64";
-#elif defined(_M_IX86) || defined(__i386__)
-      dll_path += L"x86";
-#elif defined(_M_ARM64) || defined(__aarch64__)
-      dll_path += L"arm64";
-#else
-#error WebView2 integration for this platform is not yet supported.
-#endif
-      dll_path += L"\\EmbeddedBrowserWebView.dll";
-      return dll_path;
-    }
+    std::wstring make_client_dll_path(const std::wstring &dir) const;
 
     client_info_t
     find_installed_client(unsigned int min_api_version, bool system,
-                          const std::wstring &release_channel) const {
-      std::wstring sub_key = client_state_reg_sub_key;
-      sub_key += release_channel;
-      auto root_key = system ? HKEY_LOCAL_MACHINE : HKEY_CURRENT_USER;
-      reg_key key(root_key, sub_key, 0, KEY_READ | KEY_WOW64_32KEY);
-      if (!key.is_open()) {
-        return {};
-      }
-      auto ebwebview_value = key.query_string(L"EBWebView");
-
-      auto client_version_string =
-          get_last_native_path_component(ebwebview_value);
-      auto client_version = version::parse_version(client_version_string);
-      if (client_version[2] < min_api_version) {
-        // Our API version is greater than the runtime API version.
-        return {};
-      }
-
-      auto client_dll_path = make_client_dll_path(ebwebview_value);
-      return {true, std::move(client_dll_path),
-              std::move(client_version_string), runtime_type::installed};
-    }
+                          const std::wstring &release_channel) const;
 
     client_info_t find_embedded_client(unsigned int min_api_version,
-                                       const std::wstring &dir) const {
-      auto client_dll_path = make_client_dll_path(dir);
-
-      auto client_version_string =
-          version::get_file_version_string(client_dll_path);
-      auto client_version = version::parse_version(client_version_string);
-      if (client_version[2] < min_api_version) {
-        // Our API version is greater than the runtime API version.
-        return {};
-      }
-
-      return {true, std::move(client_dll_path),
-              std::move(client_version_string), runtime_type::embedded};
-    }
+                                       const std::wstring &dir) const;
 
     // The minimum WebView2 API version we need regardless of the SDK release
     // actually used. The number comes from the SDK release version,
@@ -366,28 +237,6 @@ struct mswebview2 {
     }
   };
 };
-
-// NOLINTBEGIN(cert-err58-cpp)
-#if WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL == 1
-native_library_symbol<CreateWebViewEnvironmentWithOptionsInternal_t>
-    mswebview2::symbols::CreateWebViewEnvironmentWithOptionsInternal{
-        "CreateWebViewEnvironmentWithOptionsInternal"};
-native_library_symbol<DllCanUnloadNow_t> mswebview2::symbols::DllCanUnloadNow{
-    "DllCanUnloadNow"};
-
-#endif // WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL
-
-#if WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK == 1
-
-native_library_symbol<CreateCoreWebView2EnvironmentWithOptions_t>
-    mswebview2::symbols::CreateCoreWebView2EnvironmentWithOptions{
-        "CreateCoreWebView2EnvironmentWithOptions"};
-native_library_symbol<GetAvailableCoreWebView2BrowserVersionString_t>
-    mswebview2::symbols::GetAvailableCoreWebView2BrowserVersionString{
-        "GetAvailableCoreWebView2BrowserVersionString"};
-
-#endif // WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK
-// NOLINTEND(cert-err58-cpp)
 
 } // namespace windows
 } // namespace _lib

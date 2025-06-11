@@ -28,13 +28,11 @@
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/threading/threadsafe_lists.hh"
 #include "webview/detail/engine_base.hh"
-#include "webview/strings/string_api.hh"
 #include <algorithm>
 #include <iterator>
 
-using namespace webview::strings;
 using namespace webview::detail::threading;
-using namespace webview::_lib::detail::threading;
+using namespace webview::_lib::_detail::_threading;
 
 /* Nested API _lib for thread-safe functions
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */

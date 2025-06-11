@@ -32,7 +32,7 @@
 
 namespace webview {
 namespace _lib {
-namespace log {
+namespace _log {
 
 /* Common API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 
@@ -301,11 +301,11 @@ public:
       : print_here_t(prefix, postfix) {}
 };
 
-} // namespace log
+} // namespace _log
 } // namespace _lib
 
+using namespace _lib::_log;
 namespace log {
-using namespace _lib::log;
 
 /* Root API ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ */
 

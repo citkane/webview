@@ -35,7 +35,7 @@
 using namespace webview::api;
 namespace webview {
 namespace _lib {
-namespace api {
+namespace _api {
 
 // The library's version information.
 constexpr const webview_version_info_t library_version_info{
@@ -55,7 +55,7 @@ inline webview_cc_t *cast_to_webview(void *w);
 webview_error_t alloc_string_buffer(char **buffer, types::cnst_str_r str,
                                     types::cnst_str_r err_mess);
 
-} // namespace api
+} // namespace _api
 } // namespace _lib
 } // namespace webview
 
