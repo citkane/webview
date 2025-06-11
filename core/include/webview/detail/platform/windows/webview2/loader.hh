@@ -80,34 +80,14 @@ get_last_native_path_component(const std::basic_string<T> &path) {
 #endif // WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL
 
 struct mswebview2 {
-  static constexpr IID
-      IID_ICoreWebView2CreateCoreWebView2ControllerCompletedHandler{
-          0x6C4819F3,
-          0xC9B7,
-          0x4260,
-          {0x81, 0x27, 0xC9, 0xF5, 0xBD, 0xE7, 0xF6, 0x8C}};
-  static constexpr IID
-      IID_ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler{
-          0x4E8A3389,
-          0xC9D8,
-          0x4BD2,
-          {0xB6, 0xB5, 0x12, 0x4F, 0xEE, 0x6C, 0xC1, 0x4D}};
-  static constexpr IID IID_ICoreWebView2PermissionRequestedEventHandler{
-      0x15E1C6A3,
-      0xC72A,
-      0x4DF3,
-      {0x91, 0xD7, 0xD0, 0x97, 0xFB, 0xEC, 0x6B, 0xFD}};
-  static constexpr IID IID_ICoreWebView2WebMessageReceivedEventHandler{
-      0x57213F19,
-      0x00E6,
-      0x49FA,
-      {0x8E, 0x07, 0x89, 0x8E, 0xA0, 0x1E, 0xCB, 0xD2}};
-  static constexpr IID
-      IID_ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler{
-          0xB99369F3,
-          0x9B11,
-          0x47B5,
-          {0xBC, 0x6F, 0x8E, 0x78, 0x95, 0xFC, 0xEA, 0x17}};
+  static const IID &
+  IID_ICoreWebView2CreateCoreWebView2ControllerCompletedHandler();
+  static const IID &
+  IID_ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler();
+  static const IID &IID_ICoreWebView2PermissionRequestedEventHandler();
+  static const IID &IID_ICoreWebView2WebMessageReceivedEventHandler();
+  static const IID &
+  IID_ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler();
 
   using create_internal_t =
       native_library_symbol<CreateWebViewEnvironmentWithOptionsInternal_t>;
@@ -207,33 +187,33 @@ struct mswebview2 {
   };
   struct cast_info {
 
-    static constexpr cast_info_t<
+    static cast_info_t<
         ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>
     controller_completed() {
-      return {IID_ICoreWebView2CreateCoreWebView2ControllerCompletedHandler};
+      return {IID_ICoreWebView2CreateCoreWebView2ControllerCompletedHandler()};
     }
 
-    static constexpr cast_info_t<
+    static cast_info_t<
         ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>
     environment_completed() {
-      return {IID_ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler};
+      return {IID_ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler()};
     }
 
-    static constexpr cast_info_t<ICoreWebView2WebMessageReceivedEventHandler>
+    static cast_info_t<ICoreWebView2WebMessageReceivedEventHandler>
     message_received() {
-      return {IID_ICoreWebView2WebMessageReceivedEventHandler};
+      return {IID_ICoreWebView2WebMessageReceivedEventHandler()};
     }
 
-    static constexpr cast_info_t<ICoreWebView2PermissionRequestedEventHandler>
+    static cast_info_t<ICoreWebView2PermissionRequestedEventHandler>
     permission_requested() {
-      return {IID_ICoreWebView2PermissionRequestedEventHandler};
+      return {IID_ICoreWebView2PermissionRequestedEventHandler()};
     }
 
-    static constexpr cast_info_t<
+    static cast_info_t<
         ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler>
     add_script_to_execute_on_document_created_completed() {
       return {
-          IID_ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler};
+          IID_ICoreWebView2AddScriptToExecuteOnDocumentCreatedCompletedHandler()};
     }
   };
 };
