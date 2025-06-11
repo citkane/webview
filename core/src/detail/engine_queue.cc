@@ -28,6 +28,7 @@
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_queue.hh"
+#include "webview/detail/threading/thread_detector.hh"
 #include "webview/errors/errors.h"
 #include "webview/log/trace_log.hh"
 #include "webview/strings/string_api.hh"
@@ -153,6 +154,9 @@ engine_queue::engine_queue(engine_base *wv) : queue{this}, wv(wv) {
  * ∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇∇ */
 
 bool engine_queue::will_be_bound(cnst_str_r name) const {
+  if (thread::is_main_thread() && list.bindings.count(name) > 0) {
+    return true;
+  }
   auto i = list.pending.indices(name);
   auto is_bound = list.bindings.count(name) > 0;
   if (is_bound) {

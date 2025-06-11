@@ -437,3 +437,63 @@ Bind and set_html before run must evaluate
 
   REQUIRE(passed);
 }
+
+TEST_CASE("Bind eval unbind before run must evaluate") {
+  webview_cc_t wv{true, nullptr};
+  bool passed;
+
+  wv.bind("loadData", [&](cnst_str_r /*id*/, cnst_str_r req, void * /**/) {
+    passed = req == "[1]";
+    wv.terminate();
+  });
+  wv.eval("loadData(1)");
+  wv.unbind("loadData");
+  wv.run();
+
+  REQUIRE(passed);
+}
+
+TEST_CASE("Bind eval unbind before run must evaluate") {
+  webview_cc_t wv{true, nullptr};
+  bool passed;
+
+  wv.bind("loadData", [&](cnst_str_r /*id*/, cnst_str_r req, void * /**/) {
+    passed = req == "[1]";
+    wv.terminate();
+  });
+  wv.eval("loadData(1)");
+  wv.unbind("loadData");
+  wv.run();
+
+  REQUIRE(passed);
+}
+
+TEST_CASE("Bind eval unbind and re-bind must evaluate from a child thread") {
+  webview_cc_t wv{true, nullptr};
+  struct test_ctx_t {
+    bool res1;
+    bool res2;
+  } ctx{};
+  std::thread worker{[&]() {
+    wv.bind("loadData", [&](cnst_str_r /*id*/, cnst_str_r req, void * /**/) {
+      ctx.res1 = req == "[1]";
+    });
+    wv.eval("loadData(1)");
+    wv.unbind("loadData");
+    wv.bind("loadData", [&](cnst_str_r /*id*/, cnst_str_r req, void * /**/) {
+      ctx.res2 = req == "[2]";
+      wv.terminate();
+    });
+    wv.eval("loadData(2)");
+  }};
+
+  wv.run();
+  worker.join();
+
+  auto passed = ctx.res1 && ctx.res2;
+  if (!passed) {
+    trace_.print_here(tester::res_string("res1", ctx.res1));
+    trace_.print_here(tester::res_string("res2", ctx.res2));
+  }
+  REQUIRE(passed);
+}

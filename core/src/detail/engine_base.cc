@@ -87,6 +87,13 @@ noresult engine_base::bind(cnst_str_r name, sync_binding_t fn) {
 noresult engine_base::bind(cnst_str_r name, binding_t fn, void *arg) {
   log::trace::base.bind.start(name);
   if (queue.bind.is_duplicate(name)) {
+    auto msg = "\"" + name + "\" was not bound because it was already bound.";
+    if (thread::is_main_thread()) {
+      log::console.warn(msg +
+                        "\nRe-binding is not supported from the main thread.");
+    } else {
+      log::console.warn(msg);
+    }
     return error_info{WEBVIEW_ERROR_DUPLICATE};
   }
 
