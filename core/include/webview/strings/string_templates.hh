@@ -38,78 +38,151 @@ namespace _templates {
 
 const std::string &TEMPLATE_WEVBIEW_INIT_JS() {
   static std::string tmplt = R"(
-(function() {
-  'use strict';
+(function () {
+  "use strict";
   function generateId() {
     var crypto = window.crypto || window.msCrypto;
     var bytes = new Uint8Array(16);
     crypto.getRandomValues(bytes);
-    return Array.prototype.slice.call(bytes).map(function(n) {
-      var s = n.toString(16);
-      return ((s.length % 2) == 1 ? '0' : '') + s;
-    }).join('');
+    return Array.prototype.slice
+      .call(bytes)
+      .map(function (n) {
+        var s = n.toString(16);
+        return (s.length % 2 == 1 ? "0" : "") + s;
+      })
+      .join("");
   }
+  const sandboxHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <script>
+    window.addEventListener('message', function (e) {
+      let result;
+      try {
+        result = eval(e.data);
+        e.source.postMessage('executable', '*');
+      } catch (err) {
+        e.source.postMessage('not executable', '*');
+      }
+    });
+  </script>
+</head>
+<body></body>
+</html>
+  `;
 
-  var Webview = (function() {
+  var Webview = (function () {
     var _promises = {};
     function Webview_() {}
 
-    Webview_.prototype.post = function(message) {
-      return (_post_fn_)(message);
+    Webview_.prototype.post = function (message) {
+      return _post_fn_(message);
     };
 
-    Webview_.prototype.sysop = function(command) {
-      this.post(JSON.stringify({
-        id: '_sysop',
-        method: command,
-        params: []
-      }));
+    Webview_.prototype.sysop = function (command) {
+      this.post(
+        JSON.stringify({
+          id: "_sysop",
+          method: command,
+          params: [],
+        })
+      );
     };
 
-    Webview_.prototype.call = function(method) {
+    Webview_.prototype.call = function (method) {
       var _id = generateId();
       var _params = Array.prototype.slice.call(arguments, 1);
-      var promise = new Promise(function(resolve, reject) {
+      var promise = new Promise(function (resolve, reject) {
         _promises[_id] = { resolve, reject };
       });
-      this.post(JSON.stringify({
-        id: _id,
-        method: method,
-        params: _params
-      }));
+      this.post(
+        JSON.stringify({
+          id: _id,
+          method: method,
+          params: _params,
+        })
+      );
       return promise;
     };
 
-    Webview_.prototype.onReply = function(id, status, result) {
-      var promise = _promises[id];
-      if (result !== undefined) {
-        try {
-          result = JSON.parse(result);
-        } catch (e) {
-          if(typeof result !== 'string'){
-            promise.reject(new Error('Failed to parse binding result as JSON'));
-            return;
-          }
-        }
-      }
-      if (status === 0) {
-        promise.resolve(result);
-      } else {
-        promise.reject(result);
+    Webview_.prototype.unsafeError = function (type, result) {
+      return `Unsafe ${type} passed to a binding return:
+"${result}"
+Consider "\"double quoting\"" your input string if this was intentional`;
+    };
+    Webview_.prototype.parseJSON = function (result) {
+      try {
+        return JSON.parse(result);
+      } catch (err) {
+        return false;
       }
     };
+    Webview_.prototype.parseNumber = function (result) {
+      const num = Number(result);
+      return num === NaN ? false : num;
+    };
+    Webview_.prototype.scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
+    Webview_.prototype.containsHTMLScript = function (result) {
+      return !!result.match(this.scriptRegex);
+    };
+    Webview_.prototype.jsCodeSandbox = function () {
+      const iframe = document.createElement("iframe");
+      iframe.hidden = true;
+      iframe.sandbox = "allow-scripts";
+      iframe.src = `data:text/html;charset=utf-8,${encodeURIComponent(sandboxHtml)}`;
+      document.body.appendChild(iframe);
+      return iframe;
+    };
+    Webview_.prototype.resolver = function (status, id, result) {
+      var promise = _promises[id];
+      if (status === 0) {
+        result === undefined ? promise.resolve() : promise.resolve(result);
+      } else {
+        result === undefined ? promise.reject() : promise.reject(result);
+      }
+    };
+    Webview_.prototype.onReply = function (id, status, result) {
+      let val;
+      if (result === undefined) return this.resolver(status, id, result);
+      if (result === "true") return this.resolver(status, id, true);
+      if (result === "false") return this.resolver(status, id, false);
+      val = this.parseNumber(result);
+      if (!!val) return this.resolver(status, id, val);
+      val = this.parseJSON(result);
+      if (!!val) return this.resolver(status, id, val);
+      if (this.containsHTMLScript(result)) return this.resolver(1, id, this.unsafeError("HTML with <script>", result));
+      const iframe = this.jsCodeSandbox();
+      const messageHandler = ("message", (e) => {
+        if (e.source !== iframe.contentWindow) return;
+        switch (e.data) {
+          case "executable":
+            this.resolver(1, id, this.unsafeError("evaluable JS", result));
+            break;
+          case "not executable":
+            this.resolver(status, id, result);
+            break;
+        }
+        document.body.removeChild(iframe);
+        window.removeEventListener("message", messageHandler);
+      });
+      window.addEventListener("message", messageHandler);
+      iframe.addEventListener("load", () => {
+        iframe.contentWindow.postMessage(result, "*");
+      });
+    };
 
-    Webview_.prototype.onBind = function(name) {
+    Webview_.prototype.onBind = function (name) {
       if (window.hasOwnProperty(name)) {
         throw new Error(`Binding '${name}' already exists`);
       }
-      window[name] = (function() {
+      window[name] = function () {
         var params = [name].concat(Array.prototype.slice.call(arguments));
         return Webview_.prototype.call.apply(this, params);
-      }).bind(this);
+      }.bind(this);
     };
 
-    Webview_.prototype.onUnbind = function(name) {
+    Webview_.prototype.onUnbind = function (name) {
       if (!window.hasOwnProperty(name)) {
         throw new Error(`Binding '${name}' does not exist`);
       }
@@ -119,16 +192,16 @@ const std::string &TEMPLATE_WEVBIEW_INIT_JS() {
   })();
 
   window.__webview__ = new Webview();
-  window.__webview__.sysop('_webview_ready');
+  window.__webview__.sysop("_webview_ready");
 
-  const domReadyInterval = setInterval(()=>{
+  const domReadyInterval = setInterval(() => {
     const ready = document.readyState;
-    if (ready === 'interactive' || ready === 'complete') {
+    if (ready === "interactive" || ready === "complete") {
       clearInterval(domReadyInterval);
-      window.__webview__.sysop('_dom_ready');
+      window.__webview__.sysop("_dom_ready");
     }
-  })
-})()
+  });
+})();
 )";
   return tmplt;
 }

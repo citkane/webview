@@ -71,13 +71,14 @@ TEST_CASE("Test nested C binding and unbinding") {
     bool res2;
     bool res3;
     bool res4;
+    bool end;
   } ctx{};
 
   auto static increment =
       +[](const char *seq, const char * /*req*/, void *arg) {
         auto *ctx = static_cast<c_context_t *>(arg);
         ++ctx->number;
-        std::string message = "Incremented: " + std::to_string(ctx->number);
+        std::string message = "Incremented " + std::to_string(ctx->number);
         webview_return(ctx->w, seq, 0, message.c_str());
       };
 
@@ -89,7 +90,7 @@ TEST_CASE("Test nested C binding and unbinding") {
       ctx->res1 = (ctx->number == 0);
       webview_bind(ctx->w, "increment", increment, ctx);
       webview_eval(ctx->w, test_js.bind_unbind(1).c_str());
-      webview_return(ctx->w, seq, 0, "Returned: [0]");
+      webview_return(ctx->w, seq, 0, "Returned [0]");
       return;
     }
     // Unbind and make sure that we cannot increment even if we try.
@@ -97,7 +98,7 @@ TEST_CASE("Test nested C binding and unbinding") {
       ctx->res2 = (ctx->number == 1);
       webview_unbind(ctx->w, "increment");
       webview_eval(ctx->w, test_js.bind_unbind(2).c_str());
-      webview_return(ctx->w, seq, 0, "Returned: [1]");
+      webview_return(ctx->w, seq, 0, "Returned [1]");
       return;
     }
     // Number should not have changed but we can bind again and change the number.
@@ -105,17 +106,17 @@ TEST_CASE("Test nested C binding and unbinding") {
       ctx->res3 = (ctx->number == 1);
       webview_bind(ctx->w, "increment", increment, ctx);
       webview_eval(ctx->w, test_js.bind_unbind(3).c_str());
-      webview_return(ctx->w, seq, 0, "Returned: [2,1]");
+      webview_return(ctx->w, seq, 0, "Returned [2,1]");
       return;
     }
     // Finish test.
     if (req_ == "[3]") {
       ctx->res4 = (ctx->number == 2);
-      webview_return(ctx->w, seq, 0, "Returned: [3]");
+      webview_return(ctx->w, seq, 0, "Returned [3]");
       webview_terminate(ctx->w);
       return;
     }
-    REQUIRE(!"Should not reach here");
+    ctx->end = true;
   };
 
   auto w = webview_create(1, nullptr);
@@ -128,13 +129,14 @@ TEST_CASE("Test nested C binding and unbinding") {
   webview_bind(w, "test", tests, &ctx);
   webview_eval(w, test_js.bind_unbind_init().c_str());
   webview_run(w);
-  auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4;
 
+  auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4 && !ctx.end;
   if (!passed) {
     trace_.print_here(tester::res_string("res1", ctx.res1));
     trace_.print_here(tester::res_string("res2", ctx.res2));
     trace_.print_here(tester::res_string("res3", ctx.res3));
     trace_.print_here(tester::res_string("res4", ctx.res4));
+    trace_.print_here(tester::res_string("end", ctx.end));
   }
 
   REQUIRE(passed);
@@ -149,16 +151,17 @@ TEST_CASE("Test nested CC binding and unbinding") {
     bool res2;
     bool res3;
     bool res4;
+    bool end;
   } ctx{};
 
   auto increment = [&](cnst_str_r id, cnst_str_r /**/, void *arg) {
     auto *ctx = static_cast<cc_context_t *>(arg);
     ctx->number++;
-    auto message = "Incremented: " + std::to_string(ctx->number);
+    auto message = "Incremented " + std::to_string(ctx->number);
     wv.resolve(id, 0, message);
   };
 
-  auto tests = [&](cnst_str_r /**/, cnst_str_r req, void *arg) -> std::string {
+  auto tests = [&](cnst_str_r /**/, cnst_str_r req, void *arg) {
     auto *ctx = static_cast<cc_context_t *>(arg);
 
     // Bind and increment number.
@@ -166,7 +169,7 @@ TEST_CASE("Test nested CC binding and unbinding") {
       ctx->res1 = ctx->number == 0;
       wv.bind("increment", increment, ctx);
       wv.eval(test_js.bind_unbind(1));
-      return "";
+      return;
     }
 
     // Unbind and make sure that we cannot increment even if we try.
@@ -174,7 +177,7 @@ TEST_CASE("Test nested CC binding and unbinding") {
       ctx->res2 = ctx->number == 1;
       wv.unbind("increment");
       wv.eval(test_js.bind_unbind(2));
-      return "";
+      return;
     }
     // We should have gotten an error on the JS side.
     // Number should not have changed but we can bind again and change the number.
@@ -182,7 +185,7 @@ TEST_CASE("Test nested CC binding and unbinding") {
       ctx->res3 = ctx->number == 1;
       wv.bind("increment", increment, ctx);
       wv.eval(test_js.bind_unbind(3));
-      return "";
+      return;
     }
     // Finish test.
     if (req == "[3]") {
@@ -190,11 +193,9 @@ TEST_CASE("Test nested CC binding and unbinding") {
       wv.unbind("test");
       wv.unbind("increment");
       wv.terminate();
-      return "";
+      return;
     }
-    REQUIRE(!"Should not reach here");
-
-    return "";
+    ctx->end = true;
   };
 
   wv.set_html("Test nested CC binding and unbinding");
@@ -205,54 +206,133 @@ TEST_CASE("Test nested CC binding and unbinding") {
   wv.bind("test", tests, &ctx);
   wv.init(test_js.bind_unbind_init());
   wv.run();
-  auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4;
+
+  auto passed = ctx.res1 && ctx.res2 && ctx.res3 && ctx.res4 && !ctx.end;
   if (!passed) {
     trace_.print_here(tester::res_string("res1", ctx.res1));
     trace_.print_here(tester::res_string("res2", ctx.res2));
     trace_.print_here(tester::res_string("res3", ctx.res3));
     trace_.print_here(tester::res_string("res4", ctx.res4));
+    trace_.print_here(tester::res_string("end", ctx.end));
   }
   REQUIRE(passed);
 }
 
-TEST_CASE("The string returned from a binding call must be JSON") {
+TEST_CASE("The string returned from a binding call can be JSON") {
   webview_cc_t wv(true, nullptr);
+  bool passed;
 
   wv.bind("loadData", [&](cnst_str_r id, cnst_str_r /**/, void * /**/) {
-    wv.resolve(id, 0, "hello");
+    wv.resolve(id, 0, R"({"val": "hello"})");
   });
-  wv.bind("endTest",
-          [&](cnst_str_r /**/, cnst_str_r req, void * /**/) -> std::string {
-            REQUIRE(req != "[2]");
-            REQUIRE(req != "[1]");
-            REQUIRE(req == "[0]");
-            wv.terminate();
-            return "";
-          });
+  wv.bind("endTest", [&](cnst_str_r /**/, cnst_str_r req, void * /**/) {
+    auto returned = json.parse(req, "", 0);
+    auto res = json.parse(returned, "val", 0);
+    trace_.print_here("Req: " + req + " Returned: " + returned +
+                      " Res: " + res);
+    passed = req != "[2]" && req != "[1]" && res == "hello";
+    wv.terminate();
+  });
   wv.set_html(test_html.string_returned(
-      "The string returned from a binding call must be JSON"));
+      "The string returned from a binding call can be JSON"));
   wv.run();
+  REQUIRE(passed);
+}
+
+TEST_CASE("The string returned from a binding call can be a number") {
+  webview_cc_t wv(true, nullptr);
+  bool passed;
+
+  wv.bind("loadData", [&](cnst_str_r id, cnst_str_r /**/, void * /**/) {
+    wv.resolve(id, 0, "1.234");
+  });
+  wv.bind("endTest", [&](cnst_str_r /**/, cnst_str_r req, void * /**/) {
+    trace_.print_here(req);
+    passed = req != "[2]" && req != "[1]" && req == "[1.234]";
+    wv.terminate();
+  });
+  wv.set_html(test_html.string_returned(
+      "The string returned from a binding call can be a number"));
+  wv.run();
+  REQUIRE(passed);
+}
+
+TEST_CASE("The string returned from a binding call can be a bool") {
+  webview_cc_t wv(true, nullptr);
+  bool passed;
+
+  wv.bind("loadData", [&](cnst_str_r id, cnst_str_r /**/, void * /**/) {
+    wv.resolve(id, 0, "false");
+  });
+  wv.bind("endTest", [&](cnst_str_r /**/, cnst_str_r req, void * /**/) {
+    trace_.print_here(req);
+    passed = req != "[2]" && req != "[1]" && req == "[false]";
+    wv.terminate();
+  });
+  wv.set_html(test_html.string_returned(
+      "The string returned from a binding call can be a bool"));
+  wv.run();
+  REQUIRE(passed);
+}
+
+TEST_CASE("The string returned from a binding call can be a string") {
+  webview_cc_t wv(true, nullptr);
+  bool passed;
+
+  wv.bind("loadData", [&](cnst_str_r id, cnst_str_r /**/, void * /**/) {
+    wv.resolve(id, 0, "this is a string");
+  });
+  wv.bind("endTest", [&](cnst_str_r /**/, cnst_str_r req, void * /**/) {
+    trace_.print_here(req);
+    passed = req != "[2]" && req != "[1]" && req == R"(["this is a string"])";
+    wv.terminate();
+  });
+  wv.set_html(test_html.string_returned(
+      "The string returned from a binding call can be a string"));
+  wv.run();
+  REQUIRE(passed);
 }
 
 TEST_CASE("The string returned of a binding call must not be JS") {
   webview_cc_t wv(true, nullptr);
+  bool passed;
 
   wv.bind("loadData", [&](cnst_str_r id, cnst_str_r /*req*/, void * /**/) {
     // Try to load malicious JS code
     wv.resolve(id, 0,
                "(()=>{document.body.innerHTML='gotcha';return 'hello';})()");
   });
-  wv.bind("endTest",
-          [&](cnst_str_r /*req*/, cnst_str_r req, void * /**/) -> std::string {
-            REQUIRE(req != "[0]");
-            REQUIRE(req != "[2]");
-            REQUIRE(req == "[1]");
-            wv.terminate();
-            return "";
-          });
+  wv.bind("endTest", [&](cnst_str_r /*req*/, cnst_str_r req, void * /**/) {
+    trace_.print_here(req);
+    passed = req != "[2]" && req == "[1]";
+    wv.terminate();
+  });
   wv.set_html(test_html.string_returned(
       "The string returned of a binding call must not be JS"));
   wv.run();
+  REQUIRE(passed);
+}
+
+TEST_CASE("The string returned of a binding call must not be a HTML script") {
+  webview_cc_t wv(true, nullptr);
+  bool passed;
+
+  wv.bind("loadData", [&](cnst_str_r id, cnst_str_r /*req*/, void * /**/) {
+    // Try to load malicious JS code
+    wv.resolve(id, 0,
+               R"(
+<script>(()=>{document.body.innerHTML='gotcha';return 'hello';})()</script>
+)");
+  });
+  wv.bind("endTest", [&](cnst_str_r /*req*/, cnst_str_r req, void * /**/) {
+    trace_.print_here(req);
+    passed = req != "[2]" && req == "[1]";
+    wv.terminate();
+  });
+  wv.set_html(test_html.string_returned(
+      "The string returned of a binding call must not be a HTML script"));
+  wv.run();
+  REQUIRE(passed);
 }
 
 TEST_CASE("webview_version()") {

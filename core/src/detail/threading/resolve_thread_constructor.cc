@@ -25,6 +25,7 @@
 #ifndef WEBVIEW_DETAIL_THREADING_RESOLVE_THREAD_CONSTRUCTOR_CC
 #define WEBVIEW_DETAIL_THREADING_RESOLVE_THREAD_CONSTRUCTOR_CC
 
+#include "webview/log/trace_log.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
 #include "webview/detail/engine_base.hh"
 #include "webview/detail/engine_queue.hh"
@@ -38,6 +39,7 @@ void engine_queue::resolve_thread_constructor(std::string name, cnst_str_r id,
     return;
   }
   try {
+    log::trace::queue.eval.print_here(name + ": " + args);
     list.bindings.at(name).call(id, args);
   } catch (const std::exception &err_) {
     if (atomic.terminating()) {
