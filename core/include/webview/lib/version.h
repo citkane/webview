@@ -48,7 +48,7 @@
 
 #ifndef WEBVIEW_VERSION_PRE_RELEASE
 /// SemVer 2.0.0 pre-release labels prefixed with "-".
-#define WEBVIEW_VERSION_PRE_RELEASE "alpha"
+#define WEBVIEW_VERSION_PRE_RELEASE "-alpha"
 #endif
 
 #ifndef WEBVIEW_VERSION_BUILD_METADATA
