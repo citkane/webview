@@ -29,7 +29,7 @@
 #include "webview/tests/test_helper.hh"
 #include "webview/detail/engine_base.hh"
 #include "webview/log/trace_log.hh"
-#include "webview/strings/string_api.hh"
+#include "webview/tests/test_templates.hh"
 
 using namespace webview::strings;
 using namespace webview::log;

@@ -80,6 +80,7 @@ get_last_native_path_component(const std::basic_string<T> &path) {
 #endif // WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL
 
 struct mswebview2 {
+private:
   static const IID &
   IID_ICoreWebView2CreateCoreWebView2ControllerCompletedHandler();
   static const IID &
@@ -113,6 +114,7 @@ struct mswebview2 {
 #endif // WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK
   };
 
+public:
   class loader {
   public:
     HRESULT create_environment_with_options(
@@ -185,8 +187,8 @@ struct mswebview2 {
     native_library m_lib{L"WebView2Loader.dll"};
 #endif
   };
-  struct cast_info {
 
+  struct cast_info {
     static cast_info_t<
         ICoreWebView2CreateCoreWebView2ControllerCompletedHandler>
     controller_completed() {

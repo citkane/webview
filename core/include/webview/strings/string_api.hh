@@ -33,6 +33,7 @@
 #include <string>
 
 using namespace webview::_lib::_strings;
+using namespace webview::_lib::_strings::_frontend;
 namespace webview {
 namespace strings {
 
@@ -72,13 +73,9 @@ std::string trim(cnst_str_r str) {
 }
 
 /// API for JS strings.
-static const _frontend::js_string_t js{};
+static constexpr js_string_t js{};
 /// API for error message strings
-static const _frontend::error_message_t err{};
-/// API for test HTML strings
-static const _tests::test_html_t test_html{};
-/// API for test JS strings
-static const _tests::test_js_t test_js{};
+static constexpr error_message_t err{};
 
 } // namespace strings
 } // namespace webview
