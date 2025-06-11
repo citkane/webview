@@ -228,8 +228,6 @@ TEST_CASE("The string returned from a binding call can be JSON") {
   wv.bind("endTest", [&](cnst_str_r /**/, cnst_str_r req, void * /**/) {
     auto returned = json.parse(req, "", 0);
     auto res = json.parse(returned, "val", 0);
-    trace_.print_here("Req: " + req + " Returned: " + returned +
-                      " Res: " + res);
     passed = req != "[2]" && req != "[1]" && res == "hello";
     wv.terminate();
   });
@@ -247,7 +245,6 @@ TEST_CASE("The string returned from a binding call can be a number") {
     wv.resolve(id, 0, "1.234");
   });
   wv.bind("endTest", [&](cnst_str_r /**/, cnst_str_r req, void * /**/) {
-    trace_.print_here(req);
     passed = req != "[2]" && req != "[1]" && req == "[1.234]";
     wv.terminate();
   });
@@ -265,7 +262,6 @@ TEST_CASE("The string returned from a binding call can be a bool") {
     wv.resolve(id, 0, "false");
   });
   wv.bind("endTest", [&](cnst_str_r /**/, cnst_str_r req, void * /**/) {
-    trace_.print_here(req);
     passed = req != "[2]" && req != "[1]" && req == "[false]";
     wv.terminate();
   });
@@ -283,7 +279,6 @@ TEST_CASE("The string returned from a binding call can be a string") {
     wv.resolve(id, 0, "this is a string");
   });
   wv.bind("endTest", [&](cnst_str_r /**/, cnst_str_r req, void * /**/) {
-    trace_.print_here(req);
     passed = req != "[2]" && req != "[1]" && req == R"(["this is a string"])";
     wv.terminate();
   });
@@ -303,7 +298,6 @@ TEST_CASE("The string returned of a binding call must not be JS") {
                "(()=>{document.body.innerHTML='gotcha';return 'hello';})()");
   });
   wv.bind("endTest", [&](cnst_str_r /*req*/, cnst_str_r req, void * /**/) {
-    trace_.print_here(req);
     passed = req != "[2]" && req == "[1]";
     wv.terminate();
   });
@@ -325,7 +319,6 @@ TEST_CASE("The string returned of a binding call must not be a HTML script") {
 )");
   });
   wv.bind("endTest", [&](cnst_str_r /*req*/, cnst_str_r req, void * /**/) {
-    trace_.print_here(req);
     passed = req != "[2]" && req == "[1]";
     wv.terminate();
   });

@@ -147,6 +147,7 @@ Consider "\"double quoting\"" your input string if this was intentional`;
       if (result === undefined) return this.resolver(status, id, result);
       if (result === "true") return this.resolver(status, id, true);
       if (result === "false") return this.resolver(status, id, false);
+      if (result === "0") return this.resolver(status, id, 0);
       val = this.parseNumber(result);
       if (!!val) return this.resolver(status, id, val);
       val = this.parseJSON(result);

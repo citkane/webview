@@ -181,9 +181,6 @@ noresult engine_base::resolve(cnst_str_r id, int status, cnst_str_r result) {
 
   auto res_escaped =
       result.empty() ? "undefined" : strings::json.escape(result);
-
-  log::trace::base.eval.print_here(res_escaped);
-
   auto js = strings::js.onreply(id, status, res_escaped);
   return eval(js, true);
 }

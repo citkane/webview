@@ -29,7 +29,7 @@ int main() {
         [&](cnst_str_r id, cnst_str_r /*req*/, void * /*arg*/) {
           // Simulate load.
           std::this_thread::sleep_for(std::chrono::seconds(3));
-          wv.resolve(id, 0, json.escape(question_machine()));
+          wv.resolve(id, 0, answer_machine_result());
         },
         nullptr);
 

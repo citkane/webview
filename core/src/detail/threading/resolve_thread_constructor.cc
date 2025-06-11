@@ -39,7 +39,6 @@ void engine_queue::resolve_thread_constructor(std::string name, cnst_str_r id,
     return;
   }
   try {
-    log::trace::queue.eval.print_here(name + ": " + args);
     list.bindings.at(name).call(id, args);
   } catch (const std::exception &err_) {
     if (atomic.terminating()) {

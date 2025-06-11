@@ -41,7 +41,7 @@
 #include <random>
 #include <string>
 
-std::string question_machine() { return ANSWER_MACHINE_HTML; }
+std::string answer_machine_result() { return ANSWER_MACHINE_HTML; }
 
 #else // !defined(__cplusplus)
 #ifdef _WIN32
@@ -96,7 +96,7 @@ char *to_string(int value) {
   return buffer;
 }
 
-char *question_machine(void) { return ANSWER_MACHINE_HTML; }
+char *answer_machine_result(void) { return ANSWER_MACHINE_HTML; }
 
 #endif // !defined(__cplusplus)
 #endif // WEBVIEW_EXAMPLES_BIND_LIB
