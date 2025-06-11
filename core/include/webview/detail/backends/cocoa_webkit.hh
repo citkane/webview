@@ -484,9 +484,12 @@ private:
         m_manager, script_message_handler,
         NSString::stringWithUTF8String("__webview__"));
 
-    add_init_script("function(message) {\n\
+    add_init_script("\
+function(message) {\n\
   return window.webkit.messageHandlers.__webview__.postMessage(message);\n\
 }");
+    // We must initialise the DOM else init scripts may not run
+    set_html("");
     set_up_widget();
     NSWindow::set_contentView(m_window, m_widget);
     if (owns_window()) {

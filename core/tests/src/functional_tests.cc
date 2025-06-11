@@ -405,3 +405,35 @@ TEST_CASE("Bad C API usage without crash") {
   ASSERT_WEBVIEW_FAILED(webview_terminate(w));
   ASSERT_WEBVIEW_FAILED(webview_run(w));
 }
+
+TEST_CASE("Bind and init before run must evalute") {
+  webview_cc_t wv{true, nullptr};
+  bool passed;
+
+  wv.bind("loadData", [&](cnst_str_r /*id*/, cnst_str_r req, void * /**/) {
+    passed = req == "[1]";
+    wv.set_html("Bind and init before run must evalute");
+    wv.terminate();
+  });
+  wv.init("loadData(1)");
+  wv.run();
+
+  REQUIRE(passed);
+}
+
+TEST_CASE("Bind and set_html before run must evaluate") {
+  webview_cc_t wv{true, nullptr};
+  bool passed;
+
+  wv.bind("loadData", [&](cnst_str_r /*id*/, cnst_str_r req, void * /**/) {
+    passed = req == "[1]";
+    wv.terminate();
+  });
+  wv.set_html(R"(
+Bind and set_html before run must evaluate
+<script>loadData(1)</script>
+)");
+  wv.run();
+
+  REQUIRE(passed);
+}
