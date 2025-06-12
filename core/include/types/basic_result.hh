@@ -31,7 +31,6 @@
 #include "optional.hh"
 #include <utility>
 
-
 using namespace webview::errors;
 namespace webview {
 namespace types {
