@@ -26,8 +26,8 @@
 #define WEBVIEW_DETAIL_THREADSAFE_LISTS_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/threading/threadsafe_lists.hh"
-#include "webview/detail/engine_base.hh"
+#include "detail/threading/threadsafe_lists.hh"
+#include "detail/engine_base.hh"
 #include <algorithm>
 #include <iterator>
 

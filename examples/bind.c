@@ -1,6 +1,6 @@
 #include "bind_lib.h"
-#include "webview/lib/macros.h"
-#include "webview/webview.h"
+#include "lib/macros.h"
+#include "webview.h"
 
 typedef struct {
   webview_t w;

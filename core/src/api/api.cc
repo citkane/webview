@@ -27,13 +27,13 @@
 #define WEBVIEW_C_API_IMPL_HH
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/api/api.h"
-#include "webview/api/api_lib.hh"
-#include "webview/detail/threading/thread_detector.hh"
-#include "webview/errors/errors.h"
-#include "webview/log/console_log.hh"
-#include "webview/strings/json.hh"
-#include "webview/types/types.hh"
+#include "api/api.h"
+#include "api/api_lib.hh"
+#include "detail/threading/thread_detector.hh"
+#include "errors/errors.h"
+#include "log/console_log.hh"
+#include "strings/json.hh"
+#include "types/types.hh"
 
 using namespace webview::api;
 using namespace webview::log;

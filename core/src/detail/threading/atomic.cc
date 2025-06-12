@@ -26,7 +26,7 @@
 #define WEBVIEW_DETAIL_THREADING_ATOMIC_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/threading/atomic.hh"
+#include "detail/threading/atomic.hh"
 
 using namespace webview::detail::threading;
 using namespace webview::_lib::_detail::_threading;

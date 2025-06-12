@@ -26,8 +26,8 @@
 #define WEBVIEW_LOG_TRACE_LOG_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/log/trace_log.hh"
-#include "webview/lib/macros.h"
+#include "log/trace_log.hh"
+#include "lib/macros.h"
 #include <iostream>
 
 using namespace webview::types;

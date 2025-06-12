@@ -27,12 +27,12 @@
 #define WEBVIEW_BACKENDS_WEBVIEW2_LOADER_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/lib/macros.h"
+#include "lib/macros.h"
 
 #if defined(WEBVIEW_PLATFORM_WINDOWS) && defined(WEBVIEW_EDGE)
-#include "webview/detail/platform/windows/reg_key.hh"
-#include "webview/detail/platform/windows/version.hh"
-#include "webview/detail/platform/windows/webview2/loader.hh"
+#include "detail/platform/windows/reg_key.hh"
+#include "detail/platform/windows/version.hh"
+#include "detail/platform/windows/webview2/loader.hh"
 
 using namespace webview::detail::platform::_lib::windows;
 

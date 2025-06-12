@@ -27,12 +27,12 @@
 #define WEBVIEW_DETAIL_ENGINE_BASE_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/engine_base.hh"
-#include "webview/detail/threading/thread_detector.hh"
-#include "webview/log/console_log.hh"
-#include "webview/log/trace_log.hh"
-#include "webview/strings/json.hh"
-#include "webview/strings/string_api.hh"
+#include "detail/engine_base.hh"
+#include "detail/threading/thread_detector.hh"
+#include "log/console_log.hh"
+#include "log/trace_log.hh"
+#include "strings/json.hh"
+#include "strings/string_api.hh"
 
 using namespace webview::detail;
 using namespace webview::detail::threading;

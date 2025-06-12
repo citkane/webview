@@ -26,11 +26,11 @@
 #define WEBVIEW_STRINGS_STRING_MAKER_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/strings/string_maker.hh"
-#include "webview/log/trace_log.hh"
-#include "webview/strings/json.hh"
-#include "webview/strings/string_api.hh"
-#include "webview/strings/string_templates.hh"
+#include "strings/string_maker.hh"
+#include "log/trace_log.hh"
+#include "strings/json.hh"
+#include "strings/string_api.hh"
+#include "strings/string_templates.hh"
 
 using namespace webview::log;
 using namespace webview::strings;

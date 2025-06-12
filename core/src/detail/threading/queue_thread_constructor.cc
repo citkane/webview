@@ -26,10 +26,10 @@
 #define WEBVIEW_DETAIL_THREADING_QUEUE_THREAD_CONSTRUCTOR_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/cc_api.hh"
-#include "webview/detail/engine_queue.hh"
-#include "webview/log/trace_log.hh"
-#include "webview/strings/string_api.hh"
+#include "cc_api.hh"
+#include "detail/engine_queue.hh"
+#include "log/trace_log.hh"
+#include "strings/string_api.hh"
 #include <mutex>
 
 #ifndef WEBVIEW_UNBIND_TIMEOUT

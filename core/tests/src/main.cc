@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-#include "webview/test_driver.hh"
+#include "test_driver.hh"
 #include <deque>
 #include <iostream>
 #include <string>

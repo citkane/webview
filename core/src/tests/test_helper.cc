@@ -26,10 +26,10 @@
 #define WEBVIEW_TEST_HELPER_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/tests/test_helper.hh"
-#include "webview/detail/engine_base.hh"
-#include "webview/log/trace_log.hh"
-#include "webview/tests/test_templates.hh"
+#include "tests/test_helper.hh"
+#include "detail/engine_base.hh"
+#include "log/trace_log.hh"
+#include "tests/test_templates.hh"
 
 using namespace webview::strings;
 using namespace webview::log;

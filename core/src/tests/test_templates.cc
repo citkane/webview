@@ -26,8 +26,8 @@
 #define WEBVIEW_TEST_TEMPLATES_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/tests/test_templates.hh"
-#include "webview/strings/string_api.hh"
+#include "tests/test_templates.hh"
+#include "strings/string_api.hh"
 
 using namespace webview::strings;
 using namespace webview::_lib::_strings::_tests;

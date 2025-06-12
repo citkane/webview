@@ -27,11 +27,11 @@
 #define WEBVIEW_DETAIL_ENGINE_QUEUE_CC
 
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/engine_queue.hh"
-#include "webview/detail/threading/thread_detector.hh"
-#include "webview/errors/errors.h"
-#include "webview/log/trace_log.hh"
-#include "webview/strings/string_api.hh"
+#include "detail/engine_queue.hh"
+#include "detail/threading/thread_detector.hh"
+#include "errors/errors.h"
+#include "log/trace_log.hh"
+#include "strings/string_api.hh"
 #include <cstdio>
 
 using namespace webview::types;

@@ -25,11 +25,11 @@
 #ifndef WEBVIEW_DETAIL_THREADING_RESOLVE_THREAD_CONSTRUCTOR_CC
 #define WEBVIEW_DETAIL_THREADING_RESOLVE_THREAD_CONSTRUCTOR_CC
 
-#include "webview/log/trace_log.hh"
+#include "log/trace_log.hh"
 #if defined(__cplusplus) && !defined(WEBVIEW_HEADER)
-#include "webview/detail/engine_base.hh"
-#include "webview/detail/engine_queue.hh"
-#include "webview/strings/string_api.hh"
+#include "detail/engine_base.hh"
+#include "detail/engine_queue.hh"
+#include "strings/string_api.hh"
 
 using namespace webview::detail;
 

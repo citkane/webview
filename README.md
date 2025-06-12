@@ -127,8 +127,8 @@ target_link_libraries(example PRIVATE webview::core)
 
 `main.cc`:
 ```cpp
-#include "webview/webview.h"
-#include "webview/strings/string_api.hh"
+#include "webview.h"
+#include "strings/string_api.hh"
 #include <iostream>
 #include <chrono>
 
@@ -228,7 +228,7 @@ target_link_libraries(example PRIVATE webview::core_static)
 
 `main.c`:
 ```cpp
-#include "webview/webview.h"
+#include "webview.h"
 #include <stddef.h>
 
 #ifdef _WIN32
